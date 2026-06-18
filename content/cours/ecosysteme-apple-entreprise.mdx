@@ -1,0 +1,104 @@
+---
+title: "Écosystème Apple en entreprise"
+slug: "ecosysteme-apple-entreprise"
+---
+
+## Pourquoi Apple en entreprise ?
+
+Apple représente aujourd'hui une part croissante du parc informatique des organisations. MacBook, iPhone et iPad sont devenus des outils de travail standards dans de nombreuses entreprises, notamment dans les secteurs de la finance, de la santé, du conseil et des médias.
+
+> **Chiffre clé** : Plus de 75 % des entreprises du Fortune 500 déploient des appareils Apple. Le programme *Shared Purchase* d'Apple génère plus de 12 milliards de dollars de revenus annuels dans le segment Enterprise.
+
+## Les appareils Apple gérés en entreprise
+
+### Mac
+Le Mac est utilisé pour les postes de travail des développeurs, designers, managers et équipes IT. Les modèles couramment déployés en entreprise :
+
+- **MacBook Air M3** — mobilité, autonomie (18h), léger (1,24 kg)
+- **MacBook Pro M4 Pro/Max** — performance pour les usages intensifs (vidéo, dev, data)
+- **Mac mini M4** — poste fixe économique, idéal pour les call centers et salles de réunion
+- **Mac Studio / Mac Pro** — stations de travail haute performance
+
+### iPhone
+En entreprise, l'iPhone est principalement géré pour :
+- Les emails et communications (Microsoft 365, Google Workspace)
+- Les applications métier internes
+- L'authentification multi-facteurs (Microsoft Authenticator, Duo)
+- Les équipes terrain (BTP, logistique, santé)
+
+### iPad et iPadOS
+L'iPad est particulièrement présent dans :
+- L'éducation (Jamf School)
+- La santé (dossiers patients)
+- La vente au détail (point de vente)
+- Le secteur industriel (formulaires terrain)
+
+## L'écosystème de gestion Apple
+
+```
+┌─────────────────────────────────────────────────────┐
+│                Apple Business Manager               │
+│         (portail d'administration central)          │
+└──────────────────┬──────────────────────────────────┘
+                   │ ADE / Apps & Books
+          ┌────────▼────────┐
+          │   MDM Server    │  ← Jamf Pro, Intune, etc.
+          └────────┬────────┘
+         ┌─────────┼─────────┐
+         ▼         ▼         ▼
+       macOS      iOS     iPadOS
+```
+
+### Apple Business Manager (ABM)
+Le portail ABM est le **point d'entrée central** pour toute organisation Apple. Il permet de :
+- Enrôler automatiquement les appareils dès leur mise en service (ADE)
+- Distribuer des applications sans intervention de l'utilisateur
+- Gérer les Managed Apple Accounts
+- Lier un ou plusieurs serveurs MDM
+
+### MDM (Mobile Device Management)
+Le protocole MDM d'Apple (basé sur APNS — Apple Push Notification Service) permet à un serveur distant de gérer les appareils de façon sécurisée. Les principales solutions :
+
+| Solution | Éditeur | Spécialité |
+|----------|---------|------------|
+| Jamf Pro | Jamf | Apple-only, le plus complet |
+| Jamf School | Jamf | Éducation |
+| Microsoft Intune | Microsoft | Multi-plateforme (Apple + Android + Windows) |
+| Jamf Connect | Jamf | Identité et SSO pour macOS |
+
+## Concepts Zero-Touch Deployment
+
+Le **Zero-Touch Deployment** est la capacité à déployer un appareil Apple entièrement configuré sans intervention manuelle du service IT.
+
+### Flux ADE (Automated Device Enrollment)
+
+1. L'appareil est acheté (Apple/revendeur agrée ABM)
+2. ABM détecte le numéro de série et l'associe au MDM
+3. L'utilisateur allume l'appareil
+4. L'assistant de configuration (Setup Assistant) se connecte à ABM
+5. ABM redirige vers le MDM
+6. Le MDM pousse les profils, apps et configurations automatiquement
+7. L'appareil est prêt à l'emploi en quelques minutes
+
+> **Avantage clé** : L'IT n'a plus besoin de "toucher" physiquement chaque appareil. Les déploiements à grande échelle (centaines, milliers d'appareils) deviennent gérables par une petite équipe.
+
+## Sécurité Apple native
+
+Apple intègre la sécurité à plusieurs niveaux :
+
+### Secure Enclave
+Puce dédiée à la sécurité présente dans tous les appareils modernes. Elle stocke les clés cryptographiques, gère Touch ID/Face ID et protège les données même en cas de compromission du système principal.
+
+### System Integrity Protection (SIP)
+Empêche les processus — même avec les droits root — de modifier les fichiers système protégés. Activé par défaut, il ne doit jamais être désactivé en production.
+
+### Gatekeeper & Notarization
+- **Gatekeeper** : vérifie la signature des applications avant exécution
+- **Notarization** : Apple scanne les apps tierces pour détecter les malwares
+
+### FileVault 2
+Chiffrement complet du disque basé sur XTS-AES-128. Sur Apple Silicon (M1+), le chiffrement est matériel et transparent, sans impact perceptible sur les performances.
+
+---
+
+## Quiz de validation

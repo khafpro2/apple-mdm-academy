@@ -1,0 +1,116 @@
+---
+title: "Apple Business Manager (ABM)"
+slug: "apple-business-manager"
+---
+
+## Qu'est-ce qu'Apple Business Manager ?
+
+Apple Business Manager (ABM) est un portail web gratuit fourni par Apple, accessible à l'adresse **business.apple.com**. Il centralise la gestion des appareils, des applications, des livres et des comptes pour les organisations.
+
+> ABM est le **prérequis absolu** de toute stratégie MDM Apple professionnelle. Sans ABM, vous ne pouvez pas utiliser ADE (Automated Device Enrollment) ni distribuer des apps en volume.
+
+## Inscription à ABM
+
+### Prérequis
+- Un numéro DUNS (Dun & Bradstreet) pour les entreprises hors USA
+- Un nom de domaine d'entreprise vérifié
+- Une adresse email professionnel (pas @gmail, @yahoo, etc.)
+- Un représentant légal habilité à signer
+
+### Processus d'inscription
+1. Accédez à **business.apple.com**
+2. Cliquez sur "S'inscrire maintenant"
+3. Remplissez le formulaire avec les informations de votre organisation
+4. Apple vérifie votre organisation (1-3 jours ouvrés)
+5. Vous recevez un email de confirmation
+6. Connectez-vous et complétez la configuration initiale
+
+## Structure de compte ABM
+
+```
+Organisation ABM
+├── Administrateurs
+│   ├── Admin principal (propriétaire)
+│   └── Admins délégués
+├── Managed Apple Accounts
+│   ├── Comptes Administrateur
+│   ├── Comptes Gestionnaire
+│   └── Comptes Personnel (utilisateurs finaux)
+├── Appareils
+│   └── Assignés à un MDM Server
+├── Apps & Books
+│   └── Licences VPP (Volume Purchase Program)
+└── MDM Servers
+    ├── Jamf Pro
+    └── Microsoft Intune (ou autre)
+```
+
+## Rôles dans ABM
+
+| Rôle | Permissions |
+|------|-------------|
+| **Administrateur** | Accès complet, gestion des admins, MDM servers |
+| **Gestionnaire de personnes** | Créer/modifier les Managed Apple Accounts |
+| **Gestionnaire de contenus** | Acheter et assigner des apps |
+| **Gestionnaire d'appareils** | Assigner des appareils à des MDM Servers |
+
+## Lier un MDM Server à ABM
+
+### Jamf Pro
+1. Dans Jamf Pro : **Settings → Device Enrollment Program**
+2. Téléchargez le certificat public (`.pem`)
+3. Dans ABM : **Settings → MDM Servers → Ajouter**
+4. Uploadez le certificat `.pem`
+5. Téléchargez le token ABM (`.p7m`)
+6. Dans Jamf Pro : uploadez le token `.p7m`
+7. Testez la connexion
+
+### Microsoft Intune
+1. Dans Intune : **Devices → iOS/iPadOS → Enrollment → Apple MDM Push Certificate**
+2. Téléchargez la CSR (Certificate Signing Request)
+3. Uploadez la CSR sur le portail Apple Push Certificates
+4. Téléchargez le certificat MDM Push (`.pem`)
+5. Uploadez le `.pem` dans Intune
+
+## Apps & Books (Volume Purchase Program)
+
+ABM intègre le programme Apps & Books (anciennement VPP) pour acheter des applications en volume et les distribuer sans Apple ID personnel.
+
+### Acheter des licences
+1. Dans ABM : **Apps et Livres → Rechercher une app**
+2. Sélectionnez l'app (App Store, B2B, ou apps internes)
+3. Choisissez le nombre de licences
+4. Confirmez l'achat (carte de crédit ou bon de commande)
+
+### Assigner les licences au MDM
+1. Dans ABM : sélectionnez les licences achetées
+2. Choisissez "Assigner à un MDM Server"
+3. Sélectionnez Jamf Pro ou Intune
+4. Le MDM reçoit automatiquement les licences
+5. Déployez l'app via le MDM sans Apple ID utilisateur
+
+> **Avantage clé** : Les apps assignées via Apps & Books ne nécessitent pas de compte Apple ID personnel sur l'appareil. Elles sont installées silencieusement par le MDM.
+
+## Automated Device Enrollment (ADE)
+
+ADE (anciennement DEP — Device Enrollment Program) permet l'enrôlement automatique des appareils dès la première mise en service.
+
+### Appareils éligibles
+- Appareils achetés directement chez Apple ou chez un revendeur agréé ABM
+- Appareils ajoutés manuellement via le numéro de série (BYOD limité)
+- Appareils remisés (via Apple Configurator 2)
+
+### Configuration dans ABM
+1. **Appareils → Tous les appareils** : les appareils achetés apparaissent automatiquement
+2. Sélectionnez les appareils à enrôler
+3. Assignez-les à un MDM Server
+4. Le MDM reçoit la notification ADE
+
+### Configuration dans le MDM (Profil d'enrollment)
+Le MDM crée un **Enrollment Profile** qui définit :
+- Quelles étapes du Setup Assistant sont affichées ou masquées
+- Si l'enrôlement est supervisé (Supervised)
+- Si le profil MDM peut être retiré par l'utilisateur
+- Le nom, le département, l'image de démarrage
+
+---
