@@ -1,36 +1,113 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🍎 MDM Academy — V2 Premium
 
-## Getting Started
+Plateforme de formation professionnelle Apple Enterprise, Jamf Pro, Microsoft Intune et Android Enterprise.
 
-First, run the development server:
+[![Next.js](https://img.shields.io/badge/Next.js-16.2-black?logo=nextdotjs)](https://nextjs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-Strict-blue?logo=typescript)](https://www.typescriptlang.org)
+[![Build](https://img.shields.io/badge/Build-80%2F80%20pages-green)](/)
+[![License](https://img.shields.io/badge/License-MIT-purple)](LICENSE)
+
+## ✨ Fonctionnalités V2
+
+- 🎓 **9 modules** — du débutant à l'expert (57+ cours)
+- 📊 **Tableau de bord** — progression XP, leçons, quiz
+- 🔍 **Recherche instantanée** — Fuse.js, raccourci ⌘K
+- 📚 **Bibliothèque de ressources** — scripts, profils, politiques
+- 📝 **Contenu MDX** — cours avec schémas, code, tableaux
+- 🏆 **Quiz interactifs** — scoring, review, récompenses XP
+- 📱 **PWA** — installable sur Android et iOS
+- 🌐 **100% statique** — 80 pages SSG, zéro backend requis
+
+## 🛠 Stack technique
+
+| Technologie | Version | Rôle |
+|-------------|---------|------|
+| Next.js | 16.2.9 | Framework App Router |
+| TypeScript | ^5 | Typage strict |
+| Tailwind CSS | ^4 | Design system |
+| Fuse.js | latest | Recherche fuzzy |
+| gray-matter | latest | MDX frontmatter |
+
+## 🚀 Démarrage rapide
 
 ```bash
+# Installation
+npm install
+
+# Développement
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# Production
+npm run build
+npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 📁 Structure du projet
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+apple-mdm-academy/
+├── app/                    # Routes Next.js App Router
+│   ├── page.tsx           # Homepage
+│   ├── parcours/          # Parcours de formation
+│   ├── modules/[slug]/    # Pages modules (SSG)
+│   ├── cours/[slug]/      # Pages cours (SSG)
+│   ├── dashboard/         # Tableau de bord étudiant
+│   ├── certifications/    # Certifications
+│   └── ressources/        # Bibliothèque de ressources
+├── components/
+│   ├── cours/             # CourseCard, ModuleCard, Quiz, LessonPlayer
+│   ├── layout/            # Header, Footer
+│   └── ui/                # Badges, ProgressRing
+├── content/cours/         # Contenu MDX des cours
+├── hooks/                 # useProgress()
+└── lib/
+    ├── courses.ts         # Source de données (9 modules, 57+ cours)
+    ├── progress.ts        # Système XP localStorage
+    ├── search.ts          # Moteur Fuse.js
+    ├── mdx.ts             # Loader MDX
+    ├── quizzes.ts         # Questions de quiz
+    └── resources.ts       # Bibliothèque de ressources
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 📚 Modules de formation
 
-## Learn More
+| # | Module | Niveau |
+|---|--------|--------|
+| 1 | Fondations Apple Enterprise (ABM, ADE) | Débutant |
+| 2 | Administration macOS avec Jamf Pro | Intermédiaire |
+| 3 | Automatisation Jamf Pro (API, Bash) | Avancé |
+| 4 | Sécurité Apple avec Jamf (Protect, Security Cloud) | Avancé |
+| 5 | Jamf School (iPad éducation) | Intermédiaire |
+| 6 | Jamf Connect (Entra ID, SSO, Zero Trust) | Avancé |
+| 7 | Microsoft Intune pour Apple | Intermédiaire |
+| 8 | Android Enterprise avec Intune | Intermédiaire |
+| 9 | Certifications (Apple, Jamf, Microsoft) | Expert |
 
-To learn more about Next.js, take a look at the following resources:
+## 🏅 Certifications couvertes
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Apple Device Support
+- Apple Deployment and Management
+- Jamf 100, 170, 200
+- Microsoft MD-102
+- Microsoft MS-102
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 📦 Build
 
-## Deploy on Vercel
+```
+✓ 80/80 pages statiques générées
+✓ TypeScript strict : 0 erreur
+✓ ESLint : 0 avertissement
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🗺 Roadmap V3
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [ ] Contenu MDX des 55 cours restants
+- [ ] Labs pratiques (terminal simulé)
+- [ ] Service Worker offline (PWA complète)
+- [ ] Authentification + progression cloud
+- [ ] Génération de certificats PDF
+- [ ] Examens blancs simulés
+
+## 📄 Licence
+
+MIT — voir [LICENSE](LICENSE)
