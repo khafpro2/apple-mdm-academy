@@ -1,0 +1,282 @@
+---
+title: "Politiques de conformité Intune pour Apple"
+description: "Créer et gérer des politiques de conformité macOS et iOS dans Microsoft Intune pour l'accès conditionnel."
+module: "microsoft-intune-apple"
+level: "intermédiaire"
+duration: "75 min"
+prerequisites: ["enrolement-ade-intune", "gestion-macos-intune"]
+tags: ["Intune", "Compliance", "macOS", "iOS", "Accès conditionnel"]
+---
+
+## Introduction
+
+Une politique de conformité dans Microsoft Intune définit les règles et paramètres qu'un appareil doit respecter pour être considéré **conforme**. Le statut de conformité est ensuite transmis à Entra ID, qui l'utilise comme signal dans l'**accès conditionnel** pour autoriser ou bloquer l'accès aux ressources Microsoft 365.
+
+Sans politiques de conformité correctement configurées, votre accès conditionnel ne peut pas différencier un Mac d'entreprise géré d'un appareil personnel non contrôlé.
+
+---
+
+## Objectifs pédagogiques
+
+À la fin de ce cours, vous serez capable de :
+- Comprendre la relation entre conformité Intune et accès conditionnel Entra ID
+- Créer des politiques de conformité macOS et iOS adaptées au contexte professionnel
+- Configurer des actions pour les appareils non conformes
+- Lire et interpréter le tableau de bord de conformité
+- Debugger les problèmes de conformité courants
+
+---
+
+## Contexte professionnel
+
+Dans une organisation utilisant Microsoft 365, l'accès conditionnel est la pierre angulaire de la sécurité Zero Trust. Une politique d'accès conditionnel typique dit :
+
+> "Pour accéder à Exchange Online et SharePoint, l'appareil doit être marqué **conforme** par Intune."
+
+Cela signifie que si un Mac n'a pas FileVault activé, ou si un iPhone n'a pas de code PIN configuré, Intune le marque **Non conforme** et l'accès conditionnel bloque l'accès — même si l'utilisateur a les bonnes credentials.
+
+Le cycle est donc : **MDM enrôle → Intune évalue → Entra ID reçoit → Accès conditionnel décide**.
+
+---
+
+## Notions clés
+
+### Statuts de conformité
+
+| Statut | Signification |
+|--------|---------------|
+| **Conforme** | Toutes les règles sont respectées |
+| **Non conforme** | Au moins une règle échoue |
+| **En attente** | Évaluation en cours (nouvel appareil) |
+| **En période de grâce** | Non conforme mais dans le délai configuré |
+| **Erreur** | Impossible d'évaluer (agent, connexion...) |
+
+### Paramètres évaluables sur macOS
+
+- Version minimale macOS (ex : 14.0)
+- FileVault activé
+- Pare-feu système activé
+- Gatekeeper activé (apps depuis l'App Store ou développeurs identifiés)
+- Mot de passe requis (complexité, longueur minimale, délai de verrouillage)
+- Conformité Microsoft Defender for Endpoint (intégration)
+- Attestation d'intégrité de l'appareil
+
+### Paramètres évaluables sur iOS/iPadOS
+
+- Version minimale iOS (ex : 17.0)
+- Passcode requis (complexité, délai verrouillage)
+- Jailbreak détecté
+- Chiffrement activé (toujours activé sur iOS, mais vérifiable)
+- Niveau de menace Mobile Threat Defense
+
+---
+
+## Procédure : Créer une politique de conformité macOS
+
+### Étape 1 — Accéder aux politiques de conformité
+
+1. Ouvrir **https://intune.microsoft.com**
+2. Naviguer vers **Devices → Compliance policies**
+3. Cliquer **+ Create policy**
+4. Sélectionner **Platform : macOS**
+5. Cliquer **Create**
+
+### Étape 2 — Paramètres de base
+
+**Nom :** `Compliance-macOS-Enterprise-v1`
+**Description :** `Politique de conformité pour Mac d'entreprise — FileVault + Pare-feu + macOS 14+`
+
+### Étape 3 — Configurer les règles de conformité
+
+Dans l'onglet **Compliance settings** :
+
+**Device Health :**
+- Require a password to unlock mobile devices : **Yes**
+
+**Device Properties :**
+- Minimum OS version : `14.0`
+- Maximum OS version : laisser vide (sauf besoins spécifiques)
+
+**System Security :**
+- Require encryption of data storage on device : **Yes**
+- Require Firewall : **Yes**
+- Require Gatekeeper : **Yes**
+- Require all apps from App Store : **No** (entreprise = apps signées développeur)
+
+**Password :**
+- Require a password to unlock mobile devices : **Yes**
+- Minimum password length : `8`
+- Password type : **Alphanumeric**
+- Maximum minutes of inactivity before screen lock : `5`
+- Number of sign-in failures before wiping the device : `10`
+- Password expiration (days) : `90`
+- Number of previous passwords to prevent reuse : `5`
+
+### Étape 4 — Actions pour non-conformité
+
+Dans l'onglet **Actions for noncompliance** :
+
+| Délai | Action |
+|-------|--------|
+| 0 jours (immédiat) | Marquer l'appareil non conforme |
+| 3 jours | Envoyer un email à l'utilisateur |
+| 7 jours | Envoyer une notification push |
+| 30 jours | Retirer l'accès (optionnel, configurer dans accès conditionnel) |
+
+**Configuration de l'email :**
+1. Cliquer sur **Send email to end user**
+2. Sélectionner un template de notification existant ou créer un nouveau
+3. Message : `Votre Mac nécessite une mise en conformité. Contactez le support IT.`
+
+### Étape 5 — Assigner la politique
+
+1. Onglet **Assignments**
+2. **Include → Select groups**
+3. Sélectionner le groupe Entra ID contenant vos Mac gérés
+4. Exclure si besoin : comptes de service, kiosques
+5. Cliquer **Next → Create**
+
+---
+
+## Procédure : Politique de conformité iOS
+
+```
+Platform : iOS/iPadOS
+Nom : Compliance-iOS-Enterprise-v1
+
+Device Health :
+  - Jailbroken devices : Block
+  - Require the device to be at or under the Device Threat Level : Medium
+
+Device Properties :
+  - Minimum OS version : 17.0
+
+System Security :
+  - Require a password : Yes
+  - Simple passwords : Block
+  - Minimum password length : 6
+  - Required password type : Alphanumeric
+  - Maximum minutes after screen lock before password is required : 5
+  - Maximum minutes of inactivity until screen locks : 5
+  - Password expiration (days) : 365
+  - Number of previous passwords to prevent reuse : 5
+```
+
+---
+
+## Exemple concret : Audit de conformité
+
+Vous êtes responsable IT dans une PME de 200 personnes, tous sur Microsoft 365. La direction demande un rapport de conformité avant l'audit ISO 27001.
+
+**Tableau de bord :** Devices → Compliance → Monitor → Device compliance
+
+```
+Résultat type :
+- 180 appareils conformes (90%)
+- 12 non conformes :
+  - 8 Mac avec macOS 13.x (trop ancien)
+  - 3 Mac sans FileVault
+  - 1 iPhone jailbreaké
+- 8 en période de grâce
+```
+
+**Actions :**
+1. Pour les Mac trop anciens → vérifier éligibilité mise à jour macOS 14 → utiliser Intune pour déployer la mise à jour
+2. Pour les Mac sans FileVault → vérifier que le profil FileVault est bien assigné → forcer le check-in Intune
+3. Pour l'iPhone jailbreaké → escalader, wipe si nécessaire
+
+---
+
+## Bonnes pratiques
+
+**1. Toujours commencer par une période de grâce**
+Ne jamais appliquer une politique avec action immédiate de blocage en production. Commencer avec 7-14 jours de grâce, mesurer l'impact, puis réduire.
+
+**2. Tester sur un groupe pilote**
+Créer un groupe `GRP-Intune-Pilot-Compliance` avec 10-15 utilisateurs volontaires. Appliquer la politique en premier sur ce groupe.
+
+**3. Coordonner avec les utilisateurs**
+Envoyer une communication avant déploiement : "À partir du [date], votre Mac devra avoir FileVault activé pour accéder à vos emails."
+
+**4. Documenter les exclusions**
+Certains appareils (kiosques, salles de conférence) peuvent avoir des exceptions légitimes. Les documenter et créer des groupes d'exclusion nommés.
+
+**5. Version minimale réaliste**
+Ne pas exiger la dernière version de macOS dès sa sortie. Laisser 4-6 semaines pour les tests de compatibilité des apps métier.
+
+---
+
+## Erreurs fréquentes
+
+**Erreur 1 : Politique non appliquée**
+- Cause : Appareil dans aucun groupe assigné
+- Fix : Vérifier l'appartenance aux groupes dans Entra ID → vérifier les assignments Intune
+
+**Erreur 2 : Appareil bloqué immédiatement lors du déploiement**
+- Cause : Accès conditionnel configuré avec conformité obligatoire ET politique de conformité déployée simultanément
+- Fix : Toujours déployer la politique de conformité AVANT d'activer l'accès conditionnel
+
+**Erreur 3 : "En attente" permanent**
+- Cause : L'appareil ne checke pas dans Intune (problème de certificat MDM, VPN requis, réseau)
+- Fix : Lancer manuellement un sync → Applications → Portail d'entreprise → Sync
+
+**Erreur 4 : macOS version non reconnue**
+- Cause : Format incorrect (ex : "14" au lieu de "14.0")
+- Fix : Toujours utiliser le format `X.Y.Z` (ex : `14.0.0`)
+
+---
+
+## Mini-lab pratique
+
+**Scénario :** Configurer une politique de conformité pour 10 Mac de test et vérifier les résultats.
+
+**Pré-requis :** Accès Intune admin, au moins un Mac enrôlé en test
+
+**Étapes :**
+
+```
+1. Créer le groupe de test :
+   Entra ID → Groups → + New group
+   Nom : GRP-LAB-Compliance-Test
+   Type : Security
+   Ajouter vos Mac de test
+
+2. Créer la politique de conformité :
+   Platform : macOS
+   Nom : LAB-Compliance-Test
+   Règles : macOS >= 14.0, FileVault requis, Pare-feu requis
+   Actions : Marquer non conforme immédiatement (pas d'email pour le lab)
+   Assignment : GRP-LAB-Compliance-Test
+
+3. Forcer le sync sur un Mac de test :
+   System Settings → Privacy & Security → Profiles → Sync
+   (ou : sudo profiles renew -type enrollment)
+
+4. Vérifier dans Intune :
+   Devices → macOS → [votre Mac de test]
+   → Device compliance → vérifier le statut et les règles
+
+5. Simuler une non-conformité :
+   Sur le Mac test, désactiver le pare-feu temporairement
+   → Resync → Vérifier que la règle échoue dans Intune
+
+6. Remettre en conformité et re-vérifier
+```
+
+**Résultat attendu :** Le Mac passe de "Conforme" à "Non conforme" puis revient "Conforme" après correction.
+
+---
+
+## Résumé
+
+| Point clé | Détail |
+|-----------|--------|
+| Rôle | Définit les règles pour qu'un appareil soit "conforme" |
+| Évaluation | Faite par l'agent Intune sur l'appareil |
+| Signal transmis | À Entra ID pour l'accès conditionnel |
+| Plateforme macOS | FileVault, Pare-feu, Gatekeeper, version macOS, password |
+| Plateforme iOS | Passcode, jailbreak, version iOS, niveau de menace |
+| Actions | Email, notification, blocage selon délai configuré |
+| Bonne pratique | Période de grâce + groupe pilote + communication préalable |
+
+La conformité Intune est le fondement du Zero Trust pour les appareils Apple dans un environnement Microsoft 365. Sans elle, votre accès conditionnel n'a pas de signal d'intégrité des appareils.

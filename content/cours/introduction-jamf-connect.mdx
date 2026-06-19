@@ -1,0 +1,185 @@
+---
+title: "Introduction à Jamf Connect"
+slug: "introduction-jamf-connect"
+---
+
+## Introduction
+
+Jamf Connect est la solution de Jamf pour lier l'identité cloud (Microsoft Entra ID, Okta, Google Workspace) à la gestion macOS. Il résout un problème fondamental : sur macOS, le compte local de l'utilisateur et son identité cloud (Azure AD) sont deux choses distinctes. Jamf Connect les synchronise pour offrir une expérience Single Sign-On cohérente.
+
+## Objectifs pédagogiques
+
+- Comprendre le problème d'identité que Jamf Connect résout
+- Distinguer les composants : Login Window, Menu Bar App, Verify
+- Comprendre l'intégration avec Microsoft Entra ID (Azure AD)
+- Comprendre le flux d'authentification moderne (OIDC)
+- Identifier les prérequis avant déploiement
+
+## Le problème d'identité sur macOS
+
+### Situation sans Jamf Connect
+
+```
+Utilisateur "jean.dupont@entreprise.com" dans Azure AD
+
+Mac local :
+├── Compte local "jean.dupont" (mot de passe macOS)
+│   ├── Créé lors de la configuration initiale
+│   ├── Mot de passe indépendant d'Azure AD
+│   └── Ne se synchronise pas avec Azure AD
+└── Résultat :
+    ├── 2 mots de passe à gérer (local + Azure AD)
+    ├── Rotation de mot de passe Azure AD ≠ mise à jour Mac
+    └── Expérience utilisateur fragmentée
+```
+
+### Situation avec Jamf Connect
+
+```
+Jamf Connect → Pont entre macOS et Azure AD
+
+Mac avec Jamf Connect :
+├── Login Window : authentification via Azure AD (OIDC)
+├── Synchronisation automatique du mot de passe
+├── Single Sign-On : un seul mot de passe pour tout
+└── Résultat :
+    ├── Expérience unifiée Mac + Microsoft 365
+    ├── Rotation de mot de passe Azure AD → Mac synchronisé
+    └── Conformité Zero Trust (authentification cloud-first)
+```
+
+## Composants de Jamf Connect
+
+### 1. Jamf Connect Login (Login Window)
+
+Remplace la fenêtre de connexion macOS native par un écran de connexion cloud :
+
+```
+Écran de connexion macOS classique
+         ↓ (avec Jamf Connect Login)
+Écran de connexion Jamf Connect
+├── Logo de votre entreprise
+├── Bouton "Se connecter avec Microsoft"
+├── Redirige vers le portail Microsoft (authentification Azure AD)
+├── MFA si configuré dans Azure AD
+└── Connexion au Mac avec les identifiants Azure AD
+```
+
+### 2. Jamf Connect (Menu Bar App)
+
+Application dans la barre de menu macOS qui :
+- Affiche le statut de synchronisation du mot de passe
+- Notifie l'utilisateur si son mot de passe Azure AD a changé
+- Permet de synchroniser manuellement
+- Affiche les informations du compte (nom, email, groupes)
+
+```
+Barre de menu macOS :
+[🔐 Jamf Connect] → Status: Synchronized ✅
+                  → Sync Password
+                  → View Account Info
+                  → Sign Out
+```
+
+### 3. Jamf Connect Verify
+
+Vérifie périodiquement que le Mac est toujours authentifié et peut accéder à Azure AD. Si non, invite l'utilisateur à se réauthentifier.
+
+## Flux d'authentification OIDC
+
+Jamf Connect utilise OpenID Connect (OIDC) — le standard d'authentification moderne :
+
+```
+1. Utilisateur arrive sur l'écran de connexion Jamf Connect
+2. Clique "Se connecter avec Microsoft"
+3. Navigateur web s'ouvre → portail Microsoft
+4. Utilisateur saisit email + mot de passe Azure AD
+5. MFA si activé (Authenticator, SMS, etc.)
+6. Microsoft retourne un token OIDC à Jamf Connect
+7. Jamf Connect vérifie le token + crée/déverrouille le compte local macOS
+8. Synchronise le mot de passe local avec les identifiants Azure AD
+9. L'utilisateur est connecté ✅
+```
+
+## Prérequis avant déploiement
+
+### Côté Microsoft Entra ID
+
+- Azure AD P1 ou P2 (ou Microsoft 365 Business Premium)
+- Application Jamf Connect enregistrée dans Azure AD (Enterprise App)
+- Client ID et Tenant ID notés
+
+### Côté Jamf Pro
+
+- Jamf Pro 10.x ou supérieur
+- Licence Jamf Connect (par appareil)
+- macOS 12 Monterey minimum (macOS 13+ recommandé)
+
+### Côté réseau
+
+- Accès à `login.microsoftonline.com` (authentification Azure AD)
+- Accès aux endpoints Jamf Connect
+- Résolution DNS fonctionnelle
+
+## Cas d'usage typiques
+
+### Déploiement Zero-Touch complet
+
+```
+Processus ADE + Jamf Connect :
+1. Mac neuf reçu par l'utilisateur
+2. Allumage → ADE → Jamf Pro enrôle le Mac
+3. Jamf Pro déploie Jamf Connect Login
+4. Au redémarrage : écran de connexion Jamf Connect
+5. L'utilisateur se connecte avec ses identifiants Azure AD
+6. Compte macOS créé automatiquement avec son nom Azure AD
+7. Mac prêt → sans intervention IT
+```
+
+### Synchronisation des mots de passe
+
+```
+Scénario : Jean change son mot de passe Azure AD le lundi
+→ Jamf Connect Menu Bar App détecte le changement
+→ Notification à Jean : "Votre mot de passe Microsoft a changé"
+→ Jean entre son nouveau mot de passe dans Jamf Connect
+→ Mot de passe macOS synchronisé
+→ Plus de désynchronisation entre Mac et Microsoft 365
+```
+
+## Différence avec NoMAD (legacy)
+
+Jamf Connect succède à NoMAD (solution open-source). Les différences clés :
+
+| Critère | NoMAD | Jamf Connect |
+|---------|-------|--------------|
+| Support | ❌ Arrêté | ✅ Actif |
+| macOS récent | ❌ Problèmes | ✅ Optimisé |
+| OIDC moderne | Partiel | ✅ Complet |
+| Jamf intégration | Manuel | ✅ Natif |
+| Support Apple Silicon | ❌ Limité | ✅ Natif |
+
+## Bonnes pratiques
+
+- **Tester sur un groupe pilote** avant le déploiement global
+- **Former les utilisateurs** à la nouvelle expérience de connexion
+- **Configurer les fallback** : que se passe-t-il si Azure AD est inaccessible ?
+- **MFA recommandé** : Jamf Connect + MFA Azure AD = sécurité optimale
+- **Nommer clairement l'app Azure AD** : "Jamf Connect - Production"
+
+## Mini-lab
+
+### Enregistrer Jamf Connect dans Azure AD
+
+1. Dans Azure AD → App registrations → New registration
+2. Name: "Jamf Connect"
+3. Supported account types: Single tenant
+4. Redirect URI: `https://127.0.0.1/jamfconnect`
+5. Notez le **Application (client) ID** et le **Directory (tenant) ID**
+6. Dans Certificates & Secrets : créez un secret client (notez la valeur)
+
+Ces informations seront utilisées dans la configuration Jamf Connect (cours suivants).
+
+## Résumé
+
+Jamf Connect résout le problème fondamental de l'identité macOS en entreprise : la désynchronisation entre le compte local et l'identité cloud. En remplaçant la fenêtre de connexion macOS par une authentification Azure AD moderne (OIDC), Jamf Connect unifie l'expérience utilisateur, simplifie la gestion des mots de passe, et positionne macOS dans une stratégie Zero Trust cloud-first.

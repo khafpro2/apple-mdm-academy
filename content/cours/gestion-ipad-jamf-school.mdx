@@ -1,0 +1,241 @@
+---
+title: "Gestion des iPad avec Jamf School"
+slug: "gestion-ipad-jamf-school"
+---
+
+## Introduction
+
+La gestion des iPad est le cœur de Jamf School. Qu'il s'agisse d'iPad attribués individuellement à chaque élève ou d'iPad partagés entre plusieurs classes, Jamf School offre des outils adaptés à chaque modèle de déploiement scolaire.
+
+## Objectifs pédagogiques
+
+- Enrôler des iPad via ADE/ASM dans Jamf School
+- Configurer les profils de base pour iPads scolaires
+- Déployer des applications pédagogiques
+- Gérer les iPad en classe via Jamf Teacher
+- Configurer et utiliser le mode Shared iPad
+
+## Enrôlement des iPad scolaires
+
+### Via Apple School Manager (recommandé)
+
+```
+1. iPad acheté via Apple Education ou revendeur agréé ASM
+2. iPad apparaît automatiquement dans ASM
+3. ASM → Appareils → Assigner à Jamf School MDM
+4. Jamf School → Devices → Create Enrollment Profile
+
+Profil d'enrôlement iPad Scolaire :
+  ├── Supervised: Yes (obligatoire)
+  ├── Shared iPad: Optionnel (si partage entre élèves)
+  ├── Setup Assistant options masquées :
+  │   ├── Location Services (configurer via profil)
+  │   ├── Apple ID (utiliser les comptes ASM)
+  │   ├── Siri
+  │   ├── Screen Time
+  │   └── Restore
+  └── Device name pattern: ECOLE-CLASSE-{SERIAL}
+```
+
+### Enrôlement en masse — Apple Configurator
+
+Pour les iPad achetés hors circuit ASM :
+
+```
+Mac avec Apple Configurator 2 :
+1. Connecter les iPad (hub USB-C ou Lightning recommandé)
+2. Préparer → Organisation → Jamf School
+3. Les iPad sont ajoutés à ASM et enrôlés dans Jamf School
+⚠️ Nécessite une réinitialisation de chaque iPad
+```
+
+## Profils de configuration iPad scolaires
+
+### Profil de base — Restrictions scolaires
+
+```xml
+<!-- Restrictions standard pour iPad scolaire -->
+com.apple.applicationaccess:
+  
+  # App Store
+  allowAppInstallation: false  # L'IT contrôle les apps
+  allowInAppPurchases: false
+  
+  # iCloud
+  allowCloudBackup: false  # Backup géré par l'école
+  allowCloudDocumentSync: false  # Sauf apps managées
+  allowManagedAppsCloudSync: true
+  
+  # Communication
+  allowFaceTime: false  # Selon politique école
+  allowSafariCookies: true
+  allowSafariJavaScript: true
+  
+  # Contenu
+  ratingRegion: fr
+  ratingApps: 400  # 12+ max
+  ratingMovies: 1000  # Tout public
+  
+  # Système
+  allowScreenShot: true
+  allowAirDrop: false  # Évite les partages non contrôlés
+  forceWifiWhitelisting: false
+```
+
+### Profil Wi-Fi scolaire
+
+```
+Jamf School → Profiles → Add → Wi-Fi
+
+SSID: WiFi-Eleves
+Security: WPA2 Enterprise
+EAP Type: PEAP ou TTLS
+Username: {{USERNAME}} (variable Jamf School)
+Password: {{PASSWORD}}
+Certificate: [Certificat racine de l'école]
+```
+
+### Restriction Temps d'écran
+
+```
+Jamf School → Profiles → Screen Time
+
+App Limits:
+├── Social Networking: Block
+├── Games: 30 minutes/day (si autorisé)
+└── Always Allowed: Cours, Notes, Calculator
+
+Downtime: 
+├── Start: 17:00
+└── End: 08:00 (heures scolaires uniquement)
+```
+
+## Déploiement d'applications pédagogiques
+
+### Apps via Apple Education Store
+
+```
+ASM → Apps et Livres → Apps :
+├── Swift Playgrounds (gratuite éducation)
+├── GoodNotes 5 (achat en volume)
+├── Explain Everything (licences scolaires)
+├── Keynote, Pages, Numbers (inclus Apple)
+├── iMovie (inclus Apple)
+└── Duolingo (gratuite)
+
+→ Assigner les licences à Jamf School MDM
+→ Dans Jamf School : Apps → Add → App Store App
+→ Déployer sur les groupes concernés
+```
+
+### Apps gérées vs apps personnelles
+
+```
+Apps managées (déployées par Jamf School) :
+├── Données séparées du reste de l'iPad
+├── Supprimées si l'iPad est retiré du MDM
+└── Configuration possible par l'IT (App Config Policies)
+
+Apps personnelles (installées par l'utilisateur) :
+├── Uniquement si App Store autorisé
+└── Non contrôlées par l'IT
+```
+
+## Contrôle en classe — Jamf Teacher
+
+### Démarrer une session de cours
+
+```
+App Jamf Teacher (iPad ou iPhone enseignant) :
+1. Sélectionner la classe
+2. "Start Class" → iPads des élèves entrent en mode cours
+3. L'enseignant voit en temps réel :
+   ├── Quels élèves sont en ligne
+   ├── Quelle app est ouverte sur chaque iPad
+   └── Niveau de batterie
+```
+
+### Contrôles disponibles pendant le cours
+
+```
+Actions de classe :
+├── Focus App : bloquer tout sauf 1 app (ex: limiter à Keynote)
+├── Pause App Store : désactiver l'App Store pendant le cours
+├── Clear Passcodes : utile si un élève a oublié son code
+├── Share Website : envoyer une URL à tous les iPads de la classe
+├── Lock Screen : verrouiller tous les iPads (attention en classe!)
+└── AirPlay : diffuser l'écran sur l'Apple TV de la classe
+```
+
+### Exemple — Cours de mathématiques
+
+```
+Enseignant (Jamf Teacher) :
+1. Démarrer la classe "6ème B"
+2. Focus App → "Calculatrice" (limite à l'app math)
+3. Cours se déroule... 
+4. "Share Website" → envoyer le lien vers l'exercice Khan Academy
+5. Changer Focus → "Safari" (pour les exercices en ligne)
+6. Fin du cours → "End Class" → restrictions levées
+
+Élèves (ce qu'ils vivent) :
+→ L'iPad leur dit quelle app est autorisée
+→ Les autres apps sont grisées
+→ Impossible d'ouvrir Instagram ou YouTube pendant le cours
+→ À la fin, l'iPad revient à la normale
+```
+
+## Shared iPad — Configuration et gestion
+
+Le Shared iPad permet à plusieurs élèves de partager le même iPad avec leurs données personnelles :
+
+```
+Configuration dans Jamf School :
+├── Activer Shared iPad dans le profil d'enrôlement
+├── Quota par élève : 10 Go (ajuster selon stockage iPad)
+├── Comptes en cache : 3 (nombre d'élèves en cache simultané)
+└── Temps max inactivité avant effacement : 7 jours
+
+Connexion élève :
+1. iPad partagé à l'accueil de connexion
+2. Élève entre son Managed Apple ID
+3. Chargement des données de l'élève depuis iCloud (si premier accès)
+4. L'élève travaille avec ses données
+5. À la déconnexion : données sauvegardées, prêt pour le prochain élève
+```
+
+## Mise à jour iOS sur les iPads scolaires
+
+```
+Jamf School → Devices → Software Updates
+
+Stratégie recommandée :
+├── Semaine 1 après sortie iOS : tester sur 5 iPads pilotes
+├── Semaine 2 : déployer sur 20% du parc si pas de problèmes
+├── Semaine 3-4 : déployer sur le reste
+└── Hors vacances : éviter les mises à jour forcées en période de cours
+
+Déploiement forcé (hors période scolaire) :
+→ Schedule : vendredi 22h00 (charge des iPad le week-end)
+→ Force update: Yes
+→ Tous les iPads à jour avant la rentrée
+```
+
+## Bonnes pratiques
+
+- **Nommer les appareils** avec un format standardisé : ECOLE-CLASSE-NUMERO
+- **Inventaire physique** à chaque rentrée + vérification dans Jamf School
+- **Mises à jour iOS** uniquement pendant les vacances scolaires
+- **Shared iPad quota** : prévoir 10-15 Go par élève pour éviter les problèmes
+- **Formation enseignants** : Jamf Teacher est simple mais une session de 30 min fait toute la différence
+
+## Mini-lab
+
+1. Dans un compte Jamf School d'essai, créez une classe fictive (3 "élèves")
+2. Créez un profil de restriction simple (bloquer App Store, FaceTime)
+3. Assignez le profil à la classe
+4. Explorez les options de l'app Jamf Teacher (disponible sur App Store, peut se connecter à un compte d'essai)
+
+## Résumé
+
+Jamf School simplifie radicalement la gestion des iPads en milieu scolaire. L'IT peut déployer des centaines d'iPad avec des apps et configurations cohérentes. Les enseignants gardent le contrôle pédagogique au quotidien via Jamf Teacher. Les élèves bénéficient d'une expérience cohérente et sécurisée, que ce soit sur leur iPad dédié ou un iPad partagé. Le Shared iPad, en particulier, maximise l'utilisation du parc matériel tout en préservant les données personnelles de chaque élève.

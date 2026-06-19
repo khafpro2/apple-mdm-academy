@@ -1,0 +1,144 @@
+---
+title: "Jamf Protect — Introduction"
+slug: "jamf-protect-introduction"
+---
+
+## Introduction
+
+**Jamf Protect** est la solution de sécurité endpoint d'Apple, conçue exclusivement pour macOS. Contrairement aux antivirus traditionnels qui scannent les fichiers, Jamf Protect surveille les comportements anormaux en temps réel — exploitant les API kernel d'Apple (Endpoint Security Framework) pour détecter les menaces sans degrader les performances.
+
+## Ce que fait Jamf Protect
+
+```
+Surveillance comportementale    → détecte les actions suspectes en temps réel
+Analytics Apple                 → intègre les signaux de sécurité Apple natifs
+Threat Detection               → bibliothèque de règles MITRE ATT&CK
+Compliance Benchmarking        → CIS Benchmark macOS automatisé
+Telemetry Export               → intégration SIEM (Splunk, Microsoft Sentinel)
+Alerting                       → notifications en temps réel
+```
+
+## Architecture technique
+
+```
+macOS Endpoint Security Framework (Apple API)
+    │ événements kernel : process, file, network, user
+    ▼
+Jamf Protect Agent
+    ├── Analyze Lite (règles comportementales)
+    ├── Compliance (CIS checks)
+    └── Telemetry (logs structurés)
+    │
+    ▼
+Jamf Security Cloud (backend SaaS)
+    ├── Dashboard central
+    ├── Alertes et incidents
+    └── Export SIEM
+```
+
+## Installation via Jamf Pro
+
+```
+1. Jamf Security Cloud → Télécharger le package Jamf Protect
+2. Jamf Pro → Packages → Uploader JamfProtect.pkg
+3. Jamf Pro → Policies → New
+   Trigger : Enrollment + Recurring Check-in
+   Package : JamfProtect.pkg
+   Action  : Install
+   Scope   : All Managed Computers
+```
+
+Vérification post-installation :
+```bash
+# Vérifier que l'agent est actif
+sudo /usr/local/bin/protectctl info
+
+# Statut du service
+launchctl list | grep -i protect
+
+# Logs en temps réel
+log stream --predicate 'subsystem == "com.jamf.protect"' --level info
+```
+
+## Règles de détection (Analytic Checks)
+
+Jamf Protect fournit des règles OOTB basées sur MITRE ATT&CK. Exemples :
+
+| Règle | MITRE | Description |
+|-------|-------|-------------|
+| Launchd Persistence | T1543.004 | Service malveillant ajouté au système |
+| Python Downloader | T1059.006 | Script Python téléchargeant du code |
+| Hidden File Created | T1564.001 | Fichier masqué créé dans le home |
+| Login Items Modified | T1547.011 | Ajout d'un item de démarrage |
+| SSH Tunneling | T1572 | Tunnel SSH non autorisé |
+| Keychain Access | T1555.001 | Accès anormal au Keychain |
+
+Vous pouvez créer des règles personnalisées en Unified Logging Predicate :
+```
+Règle custom : "Accès à /etc/sudoers"
+Predicate : eventType == "ES_EVENT_TYPE_NOTIFY_OPEN" AND file.path == "/etc/sudoers"
+Severity : High
+```
+
+## CIS Compliance dans Jamf Protect
+
+Jamf Protect vérifie automatiquement les 100+ contrôles CIS macOS :
+
+```
+Jamf Security Cloud → [votre appareil] → Compliance
+
+Résultats :
+✅ 2.1.1 — FileVault activé
+✅ 2.6.1 — Gatekeeper activé
+❌ 6.1.1 — Screen lock non configuré (délai > 5 min)
+⚠️  2.3.2 — Remote Login activé (SSH)
+```
+
+Score de conformité : 87/100 → objectif : 95/100
+
+## Alertes et incidents
+
+```
+Jamf Security Cloud → Alerts
+
+Types d'alertes :
+  Critical : action immédiate requise (malware actif, exfiltration)
+  High     : investigation requise (comportement suspect)
+  Medium   : à vérifier lors du prochain cycle
+  Info     : telemetry (informationnel)
+
+Configuration des notifications :
+  Email       → admins IT
+  Slack/Teams → canal #security-alerts
+  Webhook     → SIEM (Splunk, Sentinel, Datadog)
+```
+
+## Intégration SIEM
+
+```bash
+# Jamf Protect exporte en JSON structuré (format OCSF ou CEF)
+# Configuration dans Jamf Security Cloud → Integrations → SIEM
+
+# Exemple de log exporté (simplifié) :
+{
+  "timestamp": "2025-01-15T14:32:00Z",
+  "severity": "high",
+  "type": "threat_detected",
+  "host": "ACME-C02G1234",
+  "user": "john.doe",
+  "rule": "Python Downloader",
+  "process": "/usr/bin/python3",
+  "commandLine": "python3 -c 'import urllib; urllib.request.urlretrieve(...)'"
+}
+```
+
+## Bonnes pratiques
+
+- **Déployez dès l'enrollment** via le bootstrap Zero-Touch — tout Mac sans Jamf Protect est une faille
+- **Configurez les alertes Critical vers un canal urgent** (SMS, appel) — pas juste email
+- **Révisez les alertes hebdomadairement** — calibrez la sensibilité pour éviter la "alert fatigue"
+- **Connectez au SIEM** si vous en avez un — la valeur de Jamf Protect est décuplée en corrélation
+
+## Résumé
+
+Jamf Protect est la couche de sécurité comportementale native pour macOS. Son integration avec l'Endpoint Security Framework Apple garantit une couverture sans failles et des performances préservées. Le CIS Benchmark automatisé et les alertes MITRE ATT&CK font de Jamf Protect un outil de référence pour la compliance et la détection de menaces en environnement Apple.

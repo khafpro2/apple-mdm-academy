@@ -1,0 +1,482 @@
+---
+title: "Jamf 170 — Administration macOS avec Jamf Pro"
+description: "Préparation à la certification Jamf 170 : administration avancée macOS, automatisation, scripting Bash, packaging et sécurité."
+module: "certifications"
+level: "intermédiaire"
+duration: "120 min"
+prerequisites: ["certification-jamf-100", "scripting-bash-jamf", "packaging-avance-jamf"]
+tags: ["Certification", "Jamf", "Jamf 170", "macOS", "Scripting", "Administration"]
+---
+
+## Introduction
+
+La certification **Jamf 170** (anciennement "Jamf Certified Tech") est la certification intermédiaire de Jamf. Elle valide les compétences d'administration avancée de macOS avec Jamf Pro : scripting, packaging, automatisation, et gestion de la sécurité.
+
+Si la Jamf 100 couvre les bases (enrôlement, profils, politiques simples), la Jamf 170 se concentre sur la **mise en œuvre technique réelle** dans un environnement de production.
+
+---
+
+## Objectifs pédagogiques
+
+À la fin de ce cours, vous serez capable de :
+- Identifier les domaines approfondis de la Jamf 170 vs Jamf 100
+- Maîtriser les concepts avancés de scripting Bash dans Jamf
+- Comprendre le packaging macOS et les outils associés
+- Préparer les scénarios avancés d'administration
+- Planifier votre préparation avec les ressources appropriées
+
+---
+
+## Informations sur l'examen
+
+| Paramètre | Détail |
+|-----------|--------|
+| **Durée** | 90 minutes |
+| **Format** | QCM + scénarios |
+| **Questions** | 60 questions |
+| **Score minimum** | 75% |
+| **Prix** | ~200 USD |
+| **Pré-requis recommandés** | Jamf 100 + 6-12 mois d'expérience Jamf Pro |
+| **Validité** | 2 ans |
+
+---
+
+## Domaines évalués
+
+### 1. Scripting Bash avancé dans Jamf Pro (25%)
+
+**Variables Jamf dans les scripts :**
+```bash
+#!/bin/bash
+# Variables passées automatiquement par Jamf Pro
+
+# $1 = Mount point of target volume (généralement /)
+# $2 = Computer name
+# $3 = Username (utilisateur connecté)
+# $4-$11 = Variables personnalisées (définies dans le script Jamf)
+
+MOUNT_POINT="$1"
+COMPUTER_NAME="$2"
+CURRENT_USER="$3"
+CUSTOM_VAR1="$4"  # Ex: valeur passée depuis la Policy
+
+echo "Exécution sur: $COMPUTER_NAME"
+echo "Utilisateur: $CURRENT_USER"
+echo "Variable personnalisée: $CUSTOM_VAR1"
+```
+
+**Détection de l'utilisateur connecté :**
+```bash
+#!/bin/bash
+# Méthode robuste pour trouver l'utilisateur actuel
+CURRENT_USER=$(stat -f "%Su" /dev/console)
+
+# Vérifier qu'un utilisateur est connecté
+if [ "$CURRENT_USER" = "root" ] || [ -z "$CURRENT_USER" ]; then
+    echo "Aucun utilisateur connecté, sortie."
+    exit 0
+fi
+
+echo "Utilisateur trouvé: $CURRENT_USER"
+USER_HOME=$(dscl . -read /Users/$CURRENT_USER NFSHomeDirectory | awk '{print $2}')
+echo "Home directory: $USER_HOME"
+```
+
+**Récupération de données système :**
+```bash
+#!/bin/bash
+# Collecte d'informations système pour Extension Attribute
+
+# Version macOS
+OS_VERSION=$(sw_vers -productVersion)
+BUILD=$(sw_vers -buildVersion)
+
+# Modèle Mac
+MODEL=$(system_profiler SPHardwareDataType | awk '/Model Identifier/{print $3}')
+SERIAL=$(system_profiler SPHardwareDataType | awk '/Serial Number/{print $4}')
+
+# Espace disque
+DISK_FREE=$(df -h / | awk 'NR==2{print $4}')
+DISK_TOTAL=$(df -h / | awk 'NR==2{print $2}')
+
+echo "OS: $OS_VERSION ($BUILD)"
+echo "Modèle: $MODEL"
+echo "Série: $SERIAL"
+echo "Espace libre: $DISK_FREE / $DISK_TOTAL"
+```
+
+**Script de vérification de conformité :**
+```bash
+#!/bin/bash
+# Vérifie la conformité macOS et retourne un résultat pour Jamf EA
+
+COMPLIANT=true
+ISSUES=""
+
+# Vérifier FileVault
+FV_STATUS=$(fdesetup status | grep -c "FileVault is On")
+if [ "$FV_STATUS" -eq 0 ]; then
+    COMPLIANT=false
+    ISSUES="$ISSUES FileVault non activé;"
+fi
+
+# Vérifier Gatekeeper
+GK_STATUS=$(spctl --status 2>&1 | grep -c "assessments enabled")
+if [ "$GK_STATUS" -eq 0 ]; then
+    COMPLIANT=false
+    ISSUES="$ISSUES Gatekeeper désactivé;"
+fi
+
+# Vérifier version macOS (minimum 14.0)
+OS_MAJOR=$(sw_vers -productVersion | cut -d. -f1)
+if [ "$OS_MAJOR" -lt 14 ]; then
+    COMPLIANT=false
+    ISSUES="$ISSUES macOS trop ancien;"
+fi
+
+# Retourner le résultat
+if [ "$COMPLIANT" = true ]; then
+    echo "<result>Compliant</result>"
+else
+    echo "<result>Non-Compliant: $ISSUES</result>"
+fi
+```
+
+### 2. Packaging macOS (20%)
+
+**Formats supportés par Jamf Pro :**
+```
+.pkg (préféré) :
+  - Format natif Apple
+  - Installé via /usr/sbin/installer
+  - Signature code : codesign -s "Developer ID Installer"
+  - Notarisation : xcrun notarytool submit
+
+.dmg :
+  - Disque virtuel montable
+  - Nécessite un script pour copier l'app
+  - Moins recommandé en MDM
+
+.zip :
+  - Rarement utilisé directement
+  - Peut contenir un .app ou des scripts
+```
+
+**Création de packages avec pkgbuild/productbuild :**
+```bash
+#!/bin/bash
+# Créer un .pkg d'une application
+
+APP_PATH="/path/to/MyApp.app"
+PKG_OUTPUT="/tmp/MyApp-1.0.pkg"
+APP_VERSION="1.0"
+BUNDLE_ID="com.company.myapp"
+
+# Méthode 1 : pkgbuild (package simple)
+pkgbuild \
+  --component "$APP_PATH" \
+  --install-location /Applications \
+  --version "$APP_VERSION" \
+  --identifier "$BUNDLE_ID" \
+  "$PKG_OUTPUT"
+
+echo "Package créé : $PKG_OUTPUT"
+
+# Méthode 2 : Scripts pré/post-installation
+pkgbuild \
+  --component "$APP_PATH" \
+  --install-location /Applications \
+  --scripts /path/to/scripts/ \  # dossier avec preinstall et postinstall
+  "$PKG_OUTPUT"
+```
+
+**Scripts preinstall et postinstall :**
+```bash
+#!/bin/bash
+# postinstall — exécuté après installation du pkg
+
+# Configurer les permissions
+chmod 755 /Applications/MyApp.app
+chown root:staff /Applications/MyApp.app
+
+# Créer un LaunchDaemon pour démarrage automatique
+cat > /Library/LaunchDaemons/com.company.myapp.plist << 'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.company.myapp</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Applications/MyApp.app/Contents/MacOS/MyApp</string>
+    <string>--daemon</string>
+  </array>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+</dict>
+</plist>
+EOF
+
+chmod 644 /Library/LaunchDaemons/com.company.myapp.plist
+launchctl load /Library/LaunchDaemons/com.company.myapp.plist
+
+exit 0
+```
+
+**Jamf Composer (outil Jamf pour le packaging) :**
+- Capture les modifications du système (snapshot avant/après installation)
+- Crée automatiquement un .pkg des différences
+- Intégré dans Jamf Pro pour upload direct
+
+### 3. Automatisation et API Jamf Pro (20%)
+
+**API Jamf Pro — Cas d'usage :**
+```bash
+#!/bin/bash
+# Exemple : Lister tous les Mac avec macOS < 14 via API
+
+JAMF_URL="https://your.jamfpro.com"
+API_USER="apiuser"
+API_PASS="apipassword"
+
+# Authentification (Jamf Pro 10.35+) - Bearer Token
+TOKEN_RESPONSE=$(curl -su "$API_USER:$API_PASS" \
+  -H "Content-Type: application/json" \
+  -X POST \
+  "$JAMF_URL/api/v1/auth/token")
+
+TOKEN=$(echo "$TOKEN_RESPONSE" | python3 -c "
+import json, sys
+data = json.load(sys.stdin)
+print(data['token'])
+")
+
+# Récupérer tous les computers
+COMPUTERS=$(curl -s \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Accept: application/json" \
+  "$JAMF_URL/api/v1/computers-preview?page=0&page-size=100")
+
+echo "$COMPUTERS" | python3 -c "
+import json, sys
+data = json.load(sys.stdin)
+for c in data.get('results', []):
+    print(c.get('udid', 'N/A'), c.get('name', 'N/A'))
+"
+
+# Invalider le token
+curl -su "$API_USER:$API_PASS" \
+  -X DELETE \
+  "$JAMF_URL/api/v1/auth/invalidate-token"
+```
+
+**AutoPkg — Automatisation du packaging :**
+```bash
+# Installation AutoPkg
+brew install autopkg
+
+# Ajouter un repo de recettes
+autopkg repo-add https://github.com/autopkg/recipes.git
+autopkg repo-add https://github.com/autopkg/homebysix-recipes.git
+
+# Lancer une recette (télécharge, empaquète, uploade vers Jamf Pro)
+autopkg run -v GoogleChrome.jamf
+
+# Recette combinée (browser + jamf)
+autopkg run Firefox.download
+autopkg run Firefox.pkg
+autopkg run Firefox.jamf
+
+# Vérification des nouvelles versions
+autopkg run --recipe-list /path/to/recipes.txt
+```
+
+### 4. Sécurité avancée macOS (15%)
+
+**Gestion FileVault via Jamf :**
+```
+Flux complet FileVault avec escrow Jamf Pro :
+
+1. Policy FileVault dans Jamf Pro :
+   Disk Encryption → FileVault 2
+   Type of Encryption : Individual Recovery Key
+   Prompt after login : 3 attempts
+
+2. Comportement :
+   - Policy s'exécute au login
+   - Pop-up demande à l'utilisateur de saisir son mot de passe
+   - FileVault s'active, clé générée
+   - Clé envoyée à Jamf Pro (escrow)
+   - Stockée dans : Computer Record → Security → FileVault 2 Recovery Key
+
+3. En cas d'oubli de mot de passe :
+   - Admin Jamf Pro → Computer → Security → Recovery Key → Copier
+   - Utiliser à l'écran de démarrage FileVault
+```
+
+**Gatekeeper et XProtect :**
+```bash
+# Vérifier statut Gatekeeper
+spctl --status
+# assessments enabled = Gatekeeper ON
+# assessments disabled = Gatekeeper OFF
+
+# Activer Gatekeeper via script Jamf
+spctl --master-enable
+
+# Vérifier signature d'une app
+codesign -vvv /Applications/MonApp.app
+spctl --assess -vvv /Applications/MonApp.app
+
+# XProtect et MRT (Malware Removal Tool)
+# Mis à jour automatiquement par Apple, indépendamment des MàJ macOS
+ls -la /Library/Apple/System/Library/CoreServices/
+# XProtect.bundle, XProtectPlistConfigData.bundle, MRT.app
+```
+
+### 5. macOS Monterey+ / Ventura / Sonoma spécificités (10%)
+
+**Nouveautés MDM importantes :**
+```
+macOS 13 Ventura :
+  - Settings redesign (System Preferences → System Settings)
+  - Rapid Security Response (RSR) : patches de sécurité urgents
+  - Lockdown Mode : protection maximale (désactive fonctionnalités)
+  - Background Task Management : contrôle des daemons
+
+macOS 14 Sonoma :
+  - MDM Management DDM (Declarative Device Management) : push natif
+  - Improved Gatekeeper : notarisation améliorée
+  - Private Wi-Fi address : identifiant MAC aléatoire par réseau
+
+DDM (Declarative Device Management) :
+  - Évolution du MDM classique (pull → push)
+  - L'appareil déclare son état au MDM
+  - MDM envoie des "declarations" (configuration)
+  - Plus réactif que le polling toutes les 30 min
+  - Jamf 10.42+ supporte DDM
+```
+
+### 6. Troubleshooting avancé (10%)
+
+**Logs Jamf Pro :**
+```bash
+# Logs de l'agent Jamf sur le Mac
+cat /var/log/jamf.log              # Log principal
+cat /var/log/jamf.log | grep ERROR # Filtrer les erreurs
+
+# Console.app → filtres utiles
+# Subsystem : com.jamfsoftware.jamf
+# Category : policy, inventory, management
+
+# Diagnostic complet
+sudo jamf checkJSSConnection -verbose
+sudo jamf policy -verbose
+sudo jamf recon -verbose
+
+# Réinitialiser l'agent Jamf
+sudo jamf removeMdmProfile         # Retirer profil MDM
+sudo jamf manage                   # Réappliquer
+```
+
+**Problèmes courants et solutions :**
+
+| Problème | Diagnostic | Solution |
+|----------|------------|---------|
+| Policy ne s'exécute pas | `jamf policy -verbose` | Vérifier Scope et Frequency |
+| App non installée | Vérifier logs/package | Rebuild le .pkg, vérifier signature |
+| Check-in échoue | `checkJSSConnection` | Vérifier réseau, cert APNs |
+| Inventaire incomplet | `jamf recon -verbose` | Extension Attribute en erreur |
+| Profil non appliqué | `sudo profiles list` | Vérifier Scope dans Jamf Pro |
+
+---
+
+## Questions types Jamf 170
+
+**Question 1**
+Un script Jamf Pro doit s'exécuter avec les droits de l'utilisateur connecté (pas root). Comment structurer ce script ?
+- A) Exécuter le script normalement, Jamf le lance toujours en contexte utilisateur
+- B) Utiliser `su - $CURRENT_USER -c "commande"` dans le script avec `$3` pour l'utilisateur
+- C) Configurer le script pour s'exécuter "After" dans la Policy
+- D) Utiliser un LaunchAgent au lieu d'une Policy
+
+**Réponse : B** — Les scripts Jamf Pro s'exécutent en root par défaut. Pour exécuter en contexte utilisateur, utiliser `su - $CURRENT_USER -c "commande"` où `$CURRENT_USER=$(stat -f "%Su" /dev/console)`.
+
+---
+
+**Question 2**
+Quelle est la différence entre `pkgbuild` et `productbuild` ?
+- A) `pkgbuild` crée des composants .pkg individuels ; `productbuild` crée des distributions avec plusieurs composants, une interface d'installation et des vérifications pré-installation
+- B) `pkgbuild` est obsolète sur macOS 14+
+- C) `productbuild` ne peut pas inclure de scripts
+- D) Les deux sont identiques, juste des alias différents
+
+**Réponse : A** — `pkgbuild` crée un .pkg composant simple. `productbuild` crée une distribution (product) qui peut regrouper plusieurs composants, avoir une interface graphique personnalisée, des vérifications de pré-installation (version OS, espace disque, etc.).
+
+---
+
+**Question 3**
+Dans un script Jamf Pro avec un paramètre `$4`, où est configurée la valeur de ce paramètre ?
+- A) Dans les préférences de l'ordinateur dans Jamf Pro
+- B) Dans le script lui-même en dur
+- C) Dans la Policy qui exécute le script, sous "Script Parameters"
+- D) Dans le fichier jamf.conf
+
+**Réponse : C** — Les paramètres $4 à $11 sont configurés dans la Policy qui appelle le script, dans la section "Scripts" → sélectionner le script → remplir les champs "Parameter 4" à "Parameter 11".
+
+---
+
+## Mini-lab pratique
+
+```
+Objectif : Créer un Extension Attribute qui retourne le statut de MFA pour 
+l'utilisateur connecté (via un service fictif, pour illustrer le principe)
+
+Script EA dans Jamf Pro :
+  Computers → Extension Attributes → + New
+  Name : MFA Status
+  Data Type : String
+  Input Type : Script
+  Script :
+    #!/bin/bash
+    CURRENT_USER=$(stat -f "%Su" /dev/console)
+    
+    # Vérifier si un fichier de marqueur existe (exemple simplifié)
+    MFA_MARKER="/Library/Preferences/com.company.mfa_enrolled"
+    
+    if [ -f "$MFA_MARKER" ]; then
+        MFA_DATE=$(cat "$MFA_MARKER")
+        echo "<result>Enrolled - $MFA_DATE</result>"
+    else
+        echo "<result>Not Enrolled</result>"
+    fi
+
+Test sur un Mac :
+  sudo jamf recon
+  → Vérifier dans Jamf Pro : Computer → Inventory → Extension Attributes
+  → "MFA Status" doit apparaître avec la valeur correcte
+
+Créer un Smart Group basé sur cet EA :
+  Smart Groups → + New
+  Criteria : MFA Status → is → "Not Enrolled"
+  → Utiliser ce groupe dans une Policy pour notifier les utilisateurs
+```
+
+---
+
+## Résumé
+
+| Domaine | Poids | Compétence clé |
+|---------|-------|----------------|
+| Scripting Bash | 25% | Variables Jamf, détection user, EA |
+| Packaging | 20% | pkgbuild, productbuild, scripts pré/post |
+| API et automatisation | 20% | Bearer token, AutoPkg |
+| Sécurité avancée | 15% | FileVault escrow, Gatekeeper |
+| macOS modernes | 10% | DDM, RSR, nouvelles features |
+| Troubleshooting | 10% | Logs Jamf, problèmes courants |
+
+La Jamf 170 est la certification qui distingue l'administrateur Jamf opérationnel du technicien de base. Elle valide des compétences quotidiennement utilisées en production et est très appréciée des employeurs cherchant des profils capables d'automatiser et d'industrialiser la gestion Apple.

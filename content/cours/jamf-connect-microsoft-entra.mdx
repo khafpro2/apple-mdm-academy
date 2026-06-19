@@ -1,0 +1,302 @@
+---
+title: "Jamf Connect avec Microsoft Entra ID"
+slug: "jamf-connect-microsoft-entra"
+---
+
+## Introduction
+
+L'intégration de Jamf Connect avec Microsoft Entra ID (Azure AD) est la configuration la plus répandue en entreprise. Elle permet aux utilisateurs de se connecter à leur Mac avec leurs identifiants Microsoft 365, avec MFA, et de bénéficier d'une synchronisation automatique des mots de passe.
+
+## Objectifs pédagogiques
+
+- Enregistrer et configurer l'application Jamf Connect dans Azure AD
+- Créer le fichier de configuration Jamf Connect (PLIST)
+- Déployer la configuration via Jamf Pro
+- Configurer le Login Window Jamf Connect
+- Tester et valider l'intégration
+
+## Étape 1 — Enregistrement dans Azure AD
+
+### Créer l'application Enterprise
+
+```
+Azure AD → App registrations → New registration
+
+Paramètres :
+  Name: Jamf Connect Production
+  Supported account types: Accounts in this organizational directory only
+  Redirect URI: https://127.0.0.1/jamfconnect
+
+Après création, noter :
+  ├── Application (client) ID : xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+  └── Directory (tenant) ID : yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy
+```
+
+### Configurer les permissions API
+
+```
+App registrations → [Jamf Connect] → API permissions → Add permission
+
+Microsoft Graph → Delegated permissions :
+  ├── openid
+  ├── profile
+  ├── email
+  ├── offline_access
+  └── User.Read
+
+→ Grant admin consent for [votre organisation]
+```
+
+### Créer un secret client (pour Verify uniquement)
+
+```
+Certificates & secrets → New client secret
+  Description: Jamf Connect Secret
+  Expires: 24 months
+  → COPIER LA VALEUR IMMÉDIATEMENT (visible une seule fois)
+```
+
+### Optionnel — Configurer les groupes pour le contrôle d'accès
+
+```
+App registrations → [Jamf Connect] → Manifest
+
+"groupMembershipClaims": "ApplicationGroup"
+
+→ Cela permet à Jamf Connect de recevoir les groupes Azure AD
+→ Utile pour accorder des droits admin local en fonction du groupe
+```
+
+## Étape 2 — Configuration Jamf Connect PLIST
+
+La configuration Jamf Connect se fait via un fichier PLIST déployé par Jamf Pro.
+
+### PLIST Jamf Connect Login
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!-- Identifiants Azure AD -->
+  <key>OIDCClientID</key>
+  <string>VOTRE_CLIENT_ID_ICI</string>
+  
+  <key>OIDCTenantID</key>
+  <string>VOTRE_TENANT_ID_ICI</string>
+  
+  <key>OIDCRedirectURI</key>
+  <string>https://127.0.0.1/jamfconnect</string>
+  
+  <key>OIDCDiscoveryURL</key>
+  <string>https://login.microsoftonline.com/VOTRE_TENANT_ID_ICI/v2.0/.well-known/openid-configuration</string>
+  
+  <!-- Comportement à la connexion -->
+  <key>CreateNewAccountsAtLogin</key>
+  <true/>
+  
+  <key>LocalFallbackEnabled</key>
+  <true/>
+  
+  <!-- Configuration de l'écran -->
+  <key>LoginLogo</key>
+  <string>/usr/local/share/jamfconnect/logo.png</string>
+  
+  <key>LoginLogoSize</key>
+  <integer>180</integer>
+  
+  <!-- Titre de la fenêtre -->
+  <key>PageTitle</key>
+  <string>Connexion Entreprise</string>
+  
+  <!-- Mapping des attributs -->
+  <key>OIDCUsernameAttribute</key>
+  <string>preferred_username</string>
+  
+  <!-- Admin local (membres du groupe Azure AD) -->
+  <key>OIDCAdminAttribute</key>
+  <string>groups</string>
+  
+  <key>OIDCAdmin</key>
+  <string>GUID_GROUPE_ADMIN_AZURE_AD</string>
+  
+  <!-- Synchronisation mot de passe -->
+  <key>Helpurl</key>
+  <string>https://support.votreentreprise.com</string>
+</dict>
+</plist>
+```
+
+### PLIST Jamf Connect Menu Bar App
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>OIDCClientID</key>
+  <string>VOTRE_CLIENT_ID_ICI</string>
+  
+  <key>OIDCTenantID</key>
+  <string>VOTRE_TENANT_ID_ICI</string>
+  
+  <key>OIDCRedirectURI</key>
+  <string>https://127.0.0.1/jamfconnect</string>
+  
+  <!-- Synchronisation automatique -->
+  <key>AutoCheckPassSync</key>
+  <true/>
+  
+  <key>AutoCheckPassSyncInterval</key>
+  <integer>3600</integer>
+  
+  <!-- Notifications -->
+  <key>NotifyOnPaswordSync</key>
+  <true/>
+  
+  <!-- Menu bar icon -->
+  <key>MenuIcon</key>
+  <string>default</string>
+</dict>
+</plist>
+```
+
+## Étape 3 — Déploiement via Jamf Pro
+
+### Déployer le package Jamf Connect
+
+```
+Jamf Pro → Computer Management → Packages → Upload
+
+→ Uploader le package Jamf Connect .pkg (téléchargé depuis Jamf)
+→ Créer une Policy :
+   Name: Install Jamf Connect
+   Trigger: Enrollment Complete
+   Scope: All Managed Computers
+   Actions: Packages → Install Jamf Connect
+```
+
+### Déployer la configuration PLIST via Configuration Profile
+
+```
+Jamf Pro → Computers → Configuration Profiles → New
+
+General:
+  Name: Jamf Connect Configuration
+  Category: Security
+  Level: Computer Level
+
+Application & Custom Settings → External Application → Upload PLIST
+  Preference Domain: com.jamf.connect.login
+  Upload votre PLIST Login
+  
+→ Ajouter un second payload :
+  Preference Domain: com.jamf.connect
+  Upload votre PLIST Menu Bar
+  
+Scope: All Managed Computers
+```
+
+### Déployer le logo entreprise
+
+```
+Jamf Pro → Policy :
+  Name: Deploy Jamf Connect Assets
+  Script:
+    #!/bin/bash
+    mkdir -p /usr/local/share/jamfconnect
+    # Copier le logo depuis le package ou un share réseau
+    cp /tmp/logo.png /usr/local/share/jamfconnect/logo.png
+    chmod 644 /usr/local/share/jamfconnect/logo.png
+```
+
+## Étape 4 — Tester l'intégration
+
+### Test complet
+
+1. Sur un Mac de test, redémarrez
+2. L'écran de connexion Jamf Connect devrait apparaître (pas le login macOS natif)
+3. Cliquez "Se connecter avec Microsoft"
+4. Authentifiez-vous avec un compte Azure AD de test + MFA
+5. Vérifiez : le compte macOS créé correspond au `preferred_username` Azure AD
+6. Ouvrez la Menu Bar App : vérifiez le statut "Synchronized"
+
+### Vérification de la synchronisation
+
+```bash
+# Sur le Mac — vérifier les préférences Jamf Connect
+defaults read com.jamf.connect
+
+# Vérifier les logs Jamf Connect
+log show --predicate 'subsystem == "com.jamf.connect"' --last 1h
+
+# Vérifier le compte créé
+dscl . -read /Users/$(whoami) | grep RealName
+```
+
+## Gestion des comptes admin locaux
+
+Jamf Connect peut attribuer automatiquement les droits admin local selon les groupes Azure AD :
+
+```xml
+<!-- Dans la PLIST Login -->
+<key>OIDCAdmin</key>
+<string>GUID_DU_GROUPE_AZURE_AD_ADMINS</string>
+
+<!-- Résultat :
+  Membres du groupe Azure AD → Compte macOS admin
+  Non membres → Compte macOS standard
+-->
+```
+
+## Fallback local (mode offline)
+
+Si Azure AD est inaccessible (avion, réseau indisponible) :
+
+```xml
+<key>LocalFallbackEnabled</key>
+<true/>
+
+<key>LocalFallbackTimeout</key>
+<integer>10</integer>
+```
+
+→ Après 10 secondes d'attente, un lien "Connexion locale" apparaît.
+→ L'utilisateur peut se connecter avec son mot de passe macOS local.
+→ La synchronisation reprend dès que le réseau est disponible.
+
+## Exemple concret — Déploiement 500 MacBook
+
+```
+Prérequis validés :
+  ✅ App Azure AD enregistrée
+  ✅ Licences Jamf Connect achetées
+  ✅ PLIST testés sur 5 Mac pilotes
+  ✅ Logo entreprise préparé
+
+Déploiement phase 1 (semaine 1) :
+  → 50 Mac IT et early adopters
+  → Monitoring : logs Jamf Connect, tickets support
+  
+Phase 2 (semaines 2-3) :
+  → 200 Mac par vague
+  → Support téléphonique renforcé le premier jour
+  
+Phase 3 (semaine 4) :
+  → 250 Mac restants
+  → Automatisé : Enrollment → Jamf Connect installé → Prêt
+```
+
+## Bonnes pratiques
+
+- **Documenter le Client ID et Tenant ID** dans un coffre-fort sécurisé
+- **Secret client** : rotation annuelle avant expiration
+- **Fallback local** : toujours activer pour éviter les blocages réseau
+- **Tester avec MFA** : certains flows MFA nécessitent un ajustement
+- **Communication utilisateurs** : prévenir du changement d'écran de connexion
+
+## Résumé
+
+L'intégration Jamf Connect + Microsoft Entra ID permet une authentification macOS unifiée avec l'identité Microsoft 365. La configuration repose sur 3 éléments : l'enregistrement de l'app dans Azure AD (Client ID + Tenant ID), le PLIST de configuration déployé via Jamf Pro, et le package Jamf Connect. Une fois en place, l'utilisateur n'a plus qu'un seul mot de passe pour son Mac et ses services Microsoft — expérience Zero Trust accomplie.

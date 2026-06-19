@@ -7,7 +7,6 @@ import Quiz from '@/components/cours/Quiz';
 import { type Lesson } from '@/lib/courses';
 import { type QuizQuestion } from '@/components/cours/Quiz';
 import { markCourseComplete, recordVisit } from '@/lib/progress';
-import { usePathname } from 'next/navigation';
 
 interface CourseInteractiveProps {
   courseSlug: string;
@@ -65,7 +64,7 @@ export default function CourseInteractive({
   lessons,
   quizQuestions,
 }: CourseInteractiveProps) {
-  const pathname = usePathname();
+
 
   useEffect(() => {
     recordVisit(courseSlug);

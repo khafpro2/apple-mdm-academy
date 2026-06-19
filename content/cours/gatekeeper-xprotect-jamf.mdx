@@ -1,0 +1,109 @@
+---
+title: "Gatekeeper et XProtect avec Jamf"
+slug: "gatekeeper-xprotect-jamf"
+---
+
+## Introduction
+
+**Gatekeeper** et **XProtect** sont les deux premières lignes de défense malware d'Apple — intégrées dans macOS, mises à jour automatiquement, et configurables via MDM. L'administrateur Jamf doit s'assurer qu'ils sont activés, non contournés, et que leurs données de signatures sont à jour.
+
+## Gatekeeper
+
+Gatekeeper vérifie l'origine et l'intégrité de chaque application avant exécution. Trois niveaux de politique :
+
+| Niveau | Description | Recommandation |
+|--------|-------------|----------------|
+| App Store uniquement | Uniquement App Store | Trop restrictif pour l'entreprise |
+| App Store + développeurs identifiés | Apps signées Apple Developer | ✅ Standard entreprise |
+| Partout | Toute app | ❌ Déconseillé |
+
+Configuration via profil MDM :
+```xml
+<key>PayloadType</key>
+<string>com.apple.systempolicy.control</string>
+<key>EnableAssessment</key>
+<true/>
+<key>AllowIdentifiedDevelopers</key>
+<true/>
+```
+
+### Vérification
+```bash
+spctl --status
+# → assessments enabled (correct)
+
+# Tester une app spécifique
+spctl --assess --verbose --type execute /Applications/MonApp.app
+
+# Si "rejected" : app non signée → utiliser --add pour whitelister
+sudo spctl --add /Applications/MonApp.app
+# (ou mieux : signer l'app en production)
+```
+
+### Whitelister une app interne (Team ID)
+```xml
+<key>PayloadType</key>
+<string>com.apple.systempolicy.managed</string>
+<key>Rules</key>
+<array>
+  <dict>
+    <key>Requirement</key>
+    <string>anchor apple generic and certificate leaf[subject.OU] = "XXXXXXXXXX"</string>
+    <key>Comment</key>
+    <string>Acme Corp internal apps</string>
+    <key>RuleType</key>
+    <string>TeamIdentifier</string>
+    <key>TeamIdentifier</key>
+    <string>XXXXXXXXXX</string>  <!-- votre Team ID Apple Developer -->
+  </dict>
+</array>
+```
+
+## XProtect
+
+XProtect est l'antivirus signature-based d'Apple, transparent pour l'utilisateur. Il scanne les fichiers :
+- Au téléchargement (Safari, Chrome, Firefox)
+- À l'ouverture
+- Périodiquement en arrière-plan
+
+### Vérifier la version
+```bash
+# Version XProtect
+system_profiler SPInstallHistoryDataType 2>/dev/null   | awk '/XProtectPlistConfigData/{found=1} found && /Version/{print $2; exit}'
+
+# Forcer une mise à jour
+sudo softwareupdate --background-critical
+```
+
+### Extension Attribute — version XProtect
+```bash
+#!/bin/bash
+VERSION=$(system_profiler SPInstallHistoryDataType 2>/dev/null   | awk '/XProtectPlistConfigData/{found=1} found && /Version/{print $2; exit}')
+echo "<result>${VERSION:-Unknown}</result>"
+```
+
+## MRT (Malware Removal Tool)
+
+MRT est l'outil de suppression de malware d'Apple. Il s'exécute silencieusement au démarrage.
+
+```bash
+# Version MRT
+defaults read /Library/Apple/System/Library/CoreServices/MRT.app/Contents/version.plist   CFBundleShortVersionString
+
+# Forcer l'exécution de MRT
+sudo /Library/Apple/System/Library/CoreServices/MRT.app/Contents/MacOS/MRT -a
+```
+
+## Smart Group — Sécurité non conforme
+
+```
+"Mac - Gatekeeper Désactivé"
+Critère : Gatekeeper Status  is  Disabled
+
+Policy de remédiation :
+  Script : sudo spctl --master-enable
+```
+
+## Résumé
+
+Gatekeeper et XProtect sont des contrôles de sécurité natifs Apple qui doivent rester activés et à jour sur tous les Mac gérés. La gestion MDM se limite à vérifier leur état et à configurer des exceptions contrôlées pour les applications internes via Team ID. Ne jamais désactiver Gatekeeper en production — utilisez les mécanismes de whitelist.

@@ -1,16 +1,16 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect } from 'react';
+
 import {
-  Trophy, Flame, BookOpen, Target, ChevronRight,
+  BookOpen, Target, ChevronRight,
   Clock, BarChart2, Zap, Award, RotateCcw, GraduationCap
 } from 'lucide-react';
 import { MODULES, getAllCourses, getCourseBySlug } from '@/lib/courses';
 import { useProgress } from '@/hooks/useProgress';
 import { getXPLevel, resetProgress } from '@/lib/progress';
 import ProgressRing from '@/components/ui/ProgressRing';
-import { LevelBadge } from '@/components/ui/Badges';
+
 import clsx from 'clsx';
 
 const MODULE_COLORS: Record<string, string> = {

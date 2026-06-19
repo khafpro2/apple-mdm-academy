@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ChevronRight, BookOpen, Clock } from 'lucide-react';
+import { ChevronRight, BookOpen } from 'lucide-react';
 import { Module } from '@/lib/courses';
 import { useProgress } from '@/hooks/useProgress';
 import ProgressRing from '@/components/ui/ProgressRing';

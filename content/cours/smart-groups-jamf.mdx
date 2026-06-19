@@ -1,0 +1,264 @@
+---
+title: "Smart Groups Jamf Pro"
+slug: "smart-groups-jamf"
+---
+
+## Introduction
+
+Les **Smart Groups** sont la fonctionnalité la plus puissante de Jamf Pro. Ce sont des groupes dynamiques dont l'appartenance est calculée automatiquement selon des critères que vous définissez. Un Mac entre dans un Smart Group dès qu'il correspond aux critères, en sort quand il ne correspond plus — sans intervention manuelle. Tout le ciblage des policies, profils et ressources Jamf repose sur les Smart Groups.
+
+## Objectifs
+
+- Maîtriser les opérateurs de critères (is, is not, like, greater than)
+- Créer des Smart Groups complexes avec AND/OR
+- Utiliser les Smart Groups pour le ciblage, la conformité et les rapports
+- Différencier Computer Groups et Mobile Device Groups
+- Imbriquer des Smart Groups (membre d'un groupe)
+
+## Critères disponibles
+
+Les Smart Groups interrogent l'inventaire Jamf en temps réel. Les catégories de critères :
+
+```
+Hardware
+├── Computer Name, Serial Number, Model, Model Identifier
+├── RAM, CPU Speed, CPU Type
+└── Battery Capacity, Storage Capacity
+
+Operating System
+├── Operating System Version (ex: "14.3.1")
+├── Operating System Build
+└── macOS Version (greather than, less than)
+
+Disk Encryption
+├── FileVault 2 Status (Encrypted / Not Encrypted / In Progress)
+└── FileVault 2 Recovery Key Validity
+
+Applications
+├── Application Title (nom de l'app)
+├── Application Version
+└── Application Identifier (Bundle ID)
+
+Configuration Profiles
+└── Configuration Profile Name
+
+Extensions Attributes (personnalisés)
+└── [vos attributs personnalisés]
+
+User and Location
+├── Username, Full Name, Email Address
+├── Department, Building, Room
+└── Position
+
+Management
+├── MDM Capability
+├── Managed (Yes/No)
+└── Supervised (Yes/No)
+
+Jamf Pro
+├── Last Check-in (ex: "more than 7 days ago")
+├── Last Inventory Update
+└── Enrolled via ADE (Yes/No)
+```
+
+## Opérateurs de comparaison
+
+| Opérateur | Usage |
+|-----------|-------|
+| `is` | Correspondance exacte |
+| `is not` | Exclusion exacte |
+| `like` | Contient (wildcard) |
+| `not like` | Ne contient pas |
+| `greater than` | Comparaison numérique/date |
+| `less than` | Comparaison numérique/date |
+| `member of` | Appartient à un autre groupe |
+| `not member of` | N'appartient pas à un autre groupe |
+
+## Créer un Smart Group
+
+```
+Computers → Smart Computer Groups → New
+
+Display Name : "Mac - macOS < 14 - Non Conformes"
+Description  : "Mac qui doivent être mis à jour vers macOS 14 minimum"
+
+Criteria :
+  Operating System Version    less than    14.0
+  AND
+  Managed                     is           Yes
+
+Save
+```
+
+## Smart Groups essentiels à créer dès le départ
+
+### Conformité et sécurité
+
+```
+"Mac - FileVault Non Chiffré"
+Critère : FileVault 2 Status    is not    All Partitions Encrypted
+
+"Mac - Sans Agent Jamf"  
+Critère : Managed               is         No
+
+"Mac - macOS Obsolète"
+Critère : Operating System Version  less than  14.0
+
+"Mac - Non Vus Depuis 7 jours"
+Critère : Last Check-in         more than   7 days ago
+
+"Mac - Applications Non Autorisées"
+Critère : Application Title     is          TorBrowser
+          OR
+          Application Title     is          uTorrent
+```
+
+### Organisation
+
+```
+"Mac - Finance"
+Critère : Department    is    Finance
+
+"Mac - MacBook Air M2"
+Critère : Model         is    MacBook Air (M2, 2022)
+
+"Mac - Développeurs"
+Critère : Department    is    Engineering
+          AND
+          Computer Name like  DEV-
+```
+
+### Apps et déploiement
+
+```
+"Mac - Sans Microsoft Office"
+Critère : Application Title  is not  Microsoft Word
+
+"Mac - Eligibles mise à jour Chrome"
+Critère : Application Title      is           Google Chrome
+          AND
+          Application Version    less than    121.0
+```
+
+## Smart Groups imbriqués (member of)
+
+```
+Groupe A : "Mac - Finance"
+  Critère : Department is Finance
+
+Groupe B : "Mac - Finance - Sans FileVault"
+  Critère : member of    "Mac - Finance"
+            AND
+            FileVault 2 Status  is not  All Partitions Encrypted
+```
+
+Cette approche permet des logiques complexes lisibles.
+
+## Extension Attributes — Critères personnalisés
+
+Jamf permet de créer des attributs d'inventaire personnalisés via des scripts :
+
+```bash
+#!/bin/bash
+# Extension Attribute : Version de l'agent CrowdStrike
+# À configurer dans : Computers → Extension Attributes → New
+
+CS_PATH="/Applications/Falcon.app/Contents/Resources/falconctl"
+if [ -f "$CS_PATH" ]; then
+    VERSION=$("$CS_PATH" stats | awk '/version:/{print $2}')
+    echo "<result>$VERSION</result>"
+else
+    echo "<result>Not Installed</result>"
+fi
+```
+
+```
+Computers → Extension Attributes → New
+Name : "CrowdStrike Version"
+Input Type : Script
+Script : [coller le script ci-dessus]
+```
+
+Puis créez un Smart Group :
+```
+"Mac - CrowdStrike Non Installé"
+Critère : CrowdStrike Version  is  Not Installed
+```
+
+## Utilisation dans les Policies et Profils
+
+```
+Policy : "Installer CrowdStrike"
+Scope → Targets : Smart Group "Mac - CrowdStrike Non Installé"
+
+→ La policy s'applique dynamiquement à tous les Mac sans CrowdStrike.
+→ Dès que CrowdStrike est installé et l'inventaire mis à jour,
+  le Mac sort du groupe et la policy ne s'applique plus.
+```
+
+## Mini-lab : Construire un tableau de bord de conformité
+
+**Étape 1** — Créez 4 Smart Groups de conformité :
+```
+1. "Conformité - FileVault OK"
+   Critère : FileVault 2 Status  is  All Partitions Encrypted
+
+2. "Conformité - macOS OK"  
+   Critère : Operating System Version  greater than  14.0
+
+3. "Conformité - Actifs (vus < 24h)"
+   Critère : Last Check-in  less than  1 day ago
+
+4. "Conformité - Tout OK"
+   Critère : member of  "Conformité - FileVault OK"
+              AND member of  "Conformité - macOS OK"
+              AND member of  "Conformité - Actifs (vus < 24h)"
+```
+
+**Étape 2** — Créez le groupe inverse "Non conformes" :
+```
+"Conformité - Problèmes"
+Critère : not member of  "Conformité - Tout OK"
+          AND Managed  is  Yes
+```
+
+**Étape 3** — Assignez une remédiation au groupe "Non conformes" :
+```
+Policy : "Remédiation - Forcer Recon et Alertes"
+Scope : Smart Group "Conformité - Problèmes"
+Trigger : Recurring Check-in
+Action : Update Inventory + User Message
+```
+
+**Étape 4** — Dashboard en temps réel :
+```
+Jamf Pro → Home → ajouter un widget "Smart Group Count"
+Ajoutez vos 4 Smart Groups → visualisez l'évolution
+```
+
+## Bonnes pratiques
+
+- **Nommez avec un préfixe** : "Mac - ", "iOS - ", "Conformité - ", "Dept - " pour trier facilement
+- **Smart Groups plutôt que Static** : les static groups demandent une maintenance manuelle
+- **Limitez les critères `like`** : plus lents que `is` (scan texte vs lookup exact)
+- **Testez le Smart Group avant de l'utiliser en scope** : affichez les membres et vérifiez que c'est cohérent
+- **Documentez chaque groupe** : utilisez le champ Description pour expliquer l'objectif
+- **Auditez régulièrement** : supprimez les Smart Groups inutilisés (ralentissent l'inventaire)
+
+## Erreurs fréquentes
+
+**Smart Group toujours vide alors que des Mac devraient correspondre**
+→ Forcez un recon : `sudo jamf recon` sur un Mac cible. L'inventaire est peut-être obsolète.
+
+**"AND" vs "OR" inversé**
+→ Jamf évalue les critères de haut en bas. Testez toujours après création.
+
+**Extension Attribute non mis à jour**
+→ L'EA se met à jour à chaque recon. Forcez : `sudo jamf recon`.
+
+**Smart Group trop large — impact sur les performances**
+→ Évitez les groupes avec `Application Title like "%"` (scan toutes les apps). Soyez précis.
+
+## Résumé
+
+Les Smart Groups sont le cerveau de Jamf Pro. Une bonne architecture de Smart Groups (conformité, organisation, apps, sécurité) permet de cibler précisément les policies, d'automatiser la remédiation et de générer des rapports de conformité en temps réel. Investissez du temps dans leur conception dès le départ — vous éviterez des heures de maintenance manuelle.

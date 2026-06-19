@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import {
   Terminal, FileCode, Shield, CheckSquare, ChevronRight,
-  Download, Search, Copy, Check, Filter, BookOpen, Layers
+  Download, Search, Copy, Check, BookOpen, Layers
 } from 'lucide-react';
 import clsx from 'clsx';
 import {

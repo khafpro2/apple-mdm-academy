@@ -1,0 +1,296 @@
+---
+title: "Gestion iPhone et iPad avec Microsoft Intune"
+slug: "gestion-iphone-ipad-intune"
+---
+
+## Introduction
+
+La gestion des iPhone et iPad avec Intune couvre deux cas d'usage majeurs : les **appareils d'entreprise** (Corporate Owned) enrôlés via ADE et entièrement gérés, et les **appareils personnels BYOD** (Bring Your Own Device) enrôlés via User Enrollment avec une séparation stricte vie professionnelle/personnelle.
+
+## Objectifs pédagogiques
+
+- Maîtriser les différents modes d'enrôlement iOS/iPadOS dans Intune
+- Configurer des profils de configuration iOS complets
+- Gérer les applications iOS (VPP, public store, LOB)
+- Mettre en place le mode Kiosque (Single App / Multi App)
+- Configurer et tester le Conditional Access pour iOS
+
+## Modes d'enrôlement iOS/iPadOS
+
+### Comparatif des modes
+
+| Mode | Supervisé | Gestion | Usage |
+|------|-----------|---------|-------|
+| ADE (Corporate) | ✅ Oui | Complète | Appareils entreprise |
+| Apple Configurator | ✅ Oui | Complète | Appareils sans ABM |
+| User Enrollment | ❌ Non | Partielle (professionnel seulement) | BYOD |
+| Device Enrollment | ❌ Non | Complète | Appareils avec Apple ID |
+
+### ADE — Appareils d'entreprise supervisés
+
+L'ADE avec Intune est le mode recommandé pour tous les appareils d'entreprise. Voir le cours [Enrôlement ADE avec Intune](/cours/enrolement-ade-intune) pour la configuration détaillée.
+
+### User Enrollment — BYOD
+
+L'User Enrollment (iOS 13+) crée une **partition managée** sur l'iPhone personnel de l'utilisateur :
+
+```
+iPhone personnel
+├── 📱 Partition personnelle (apps perso, photos, contacts)
+│   └── L'IT ne peut PAS y accéder, effacer ou voir le contenu
+└── 💼 Partition managée (apps pro, email, Teams)
+    └── L'IT PEUT gérer, déployer, wipe uniquement cette partie
+```
+
+**Configuration User Enrollment :**
+```
+Intune → Devices → iOS/iPadOS → Enrollment → User Enrollment Profiles
+→ Create profile → User Enrollment
+→ Assign to group BYOD
+→ L'utilisateur reçoit un lien ou QR code pour s'enrôler
+```
+
+## Profils de configuration iOS
+
+### Paramètres essentiels — Settings Catalog
+
+```
+Devices → iOS/iPadOS → Configuration Profiles → Create → Settings Catalog
+```
+
+**Restrictions clés entreprise :**
+
+```yaml
+# Sécurité
+Force Encrypted Backup: true
+Require Passcode on Device: true
+
+# Applications
+Allow App Installation: true (ou false pour Kiosque)
+Allow In-App Purchases: false
+Allow iTunes Store: false
+Rating Region: fr (France)
+
+# iCloud
+Allow iCloud Backup: false  # apps managées seulement
+Allow Managed Apps Cloud Sync: true
+
+# Réseau
+Allow AirDrop: false  # dans les environnements sensibles
+
+# Partage
+Allow Handoff: false
+Allow Universal Clipboard: false  # données sensibles
+```
+
+### Profil Wi-Fi entreprise (EAP-TLS)
+
+```xml
+<!-- Configuration Wi-Fi avec certificat client -->
+PayloadType: com.apple.wifi.managed
+SSID_STR: CorpWiFi
+EncryptionType: WPA2
+EAPClientConfiguration:
+  AcceptEAPTypes: [13]  # TLS
+  PayloadCertificateAnchorUUID: [UUID_CERT_RACINE]
+```
+
+### Profil Email Exchange
+
+```
+Settings Catalog → Exchange ActiveSync
+→ Account Name: Messagerie Entreprise
+→ Host: mail.votredomaine.com
+→ SSL: true
+→ S/MIME: optionnel
+→ User: $EMAIL (variable dynamique)
+```
+
+## Déploiement d'applications iOS
+
+### Apps VPP (Apple Business Manager)
+
+```
+Apps → iOS/iPadOS → Add → iOS store app
+→ Rechercher l'app
+→ Volume Purchase Program (VPP) : Yes
+→ Device licensing (recommandé) vs User licensing
+→ Assign: Required (installation silencieuse)
+```
+
+**Device licensing vs User licensing :**
+- **Device licensing** : La licence est attachée à l'appareil, pas à l'utilisateur. Idéal pour les appareils partagés.
+- **User licensing** : La licence est attachée au compte Microsoft de l'utilisateur. L'app suit l'utilisateur sur ses appareils.
+
+### Applications internes (LOB)
+
+```
+Apps → iOS/iPadOS → Add → Line-of-business app → .ipa
+→ Bundle ID requis
+→ Version minimale iOS
+→ Doit être signé avec un certificat Apple Distribution
+```
+
+### Microsoft 365 sur iOS
+
+```
+Apps → iOS/iPadOS → Add → Microsoft 365 Apps (iOS)
+→ Sélectionner: Outlook, Teams, Edge, Authenticator...
+→ Assign → Required
+```
+
+> **Tip** : Deployez Microsoft Authenticator en **Required** pour tous les utilisateurs iOS — c'est le prérequis pour l'authentification MFA sur mobile.
+
+## Mode Kiosque (Single App / Multi App)
+
+### Single App Mode
+
+Verrouille l'iPhone/iPad sur **une seule application** — idéal pour les bornes, tablettes de vente, équipements terrain.
+
+```
+Devices → iOS/iPadOS → Configuration Profiles → Create
+→ Template : Device Restrictions → Kiosk
+
+Single App Mode:
+  App Bundle ID: com.example.kioskapp
+  Touch ID/Face ID: Allow (ou Disable)
+  Volume buttons: Disable
+  Sleep/Wake button: Disable
+  Screen rotation: Disable
+  Screen dimming: Disable
+```
+
+### Multi App Mode
+
+Limite l'accès à un **ensemble d'apps autorisées** — idéal pour les iPads en self-service ou points de vente.
+
+```
+Autonomous Single App Mode (ASAM):
+  Allowed apps:
+    - com.microsoft.teams
+    - com.microsoft.outlook
+    - com.apple.mobilesafari (optionnel)
+  
+  Show notification center: false
+  Show control center: false
+  Allow document creation: depends
+```
+
+## Politiques de protection des applications (MAM)
+
+Les App Protection Policies (APP/MAM) ajoutent une couche de sécurité au niveau de l'**application**, indépendamment de l'enrôlement de l'appareil.
+
+**Utilité principale** : Protéger les données Microsoft 365 même sur les appareils BYOD non enrôlés.
+
+```
+Apps → App Protection Policies → Create policy → iOS/iPadOS
+
+Paramètres clés:
+  Data Transfer:
+    ├── Backup org data to iTunes/iCloud: Block
+    ├── Send org data to other apps: Policy managed apps only
+    ├── Receive data from other apps: Policy managed apps only
+    ├── Restrict cut, copy, paste: Policy managed apps with paste in
+    └── Save copies of org data: Block (SharePoint/OneDrive seulement)
+  
+  Access Requirements:
+    ├── PIN for access: Require (4 digits min)
+    ├── Biometrics: Allow
+    └── Recheck access requirements: 30 minutes
+  
+  Conditional Launch:
+    ├── Min app version: Outlook 4.x
+    ├── Min OS version: iOS 16
+    └── Jailbroken/rooted devices: Block access
+```
+
+## Conditional Access iOS
+
+Le Conditional Access bloque l'accès aux ressources Microsoft 365 si l'iPhone ne remplit pas certaines conditions.
+
+### Politique CA recommandée iOS entreprise
+
+```
+Azure AD → Security → Conditional Access → New policy
+
+Users: Tous les utilisateurs
+Cloud apps: Office 365, SharePoint...
+Conditions:
+  └── Device platforms: iOS
+
+Grant:
+  ├── Require device to be marked as compliant (Intune)
+  └── OR: Require approved client app (MAM sans enrôlement)
+```
+
+**Mode "Report-only"** : Testez toujours en Report-only avant d'activer — vous voyez qui serait bloqué sans bloquer réellement.
+
+## Exemple concret — Déploiement iPhone pour équipe commerciale
+
+**Scénario** : 50 commerciaux reçoivent un iPhone 16 Pro.
+
+```
+Phase 1 — ABM :
+  ✅ Les 50 iPhones achetés via Apple sont dans ABM
+  ✅ Assignés au token ADE Intune
+  ✅ Profil ADE "iPhone-Commercial" créé
+
+Phase 2 — Profils Intune :
+  ✅ Wi-Fi d'entreprise (EAP-TLS)
+  ✅ VPN (GlobalProtect en Always-On)
+  ✅ Restrictions (pas de iCloud backup, pas d'App Store perso)
+  ✅ Email Exchange
+
+Phase 3 — Applications (toutes en Required) :
+  ✅ Microsoft Outlook
+  ✅ Microsoft Teams
+  ✅ Microsoft Authenticator
+  ✅ Salesforce Mobile
+  ✅ Microsoft Edge
+
+Phase 4 — Conformité :
+  ✅ Politique : iOS 17+ requis, PIN 6 chiffres, passcode 90j
+  ✅ Conditional Access lié à la conformité
+
+Résultat : L'iPhone est livré directement au commercial.
+Il l'allume → ADE → configuré en 12 minutes → apps installées.
+```
+
+## Bonnes pratiques
+
+- **Séparer ADE iOS d'ADE macOS** : créer des profils distincts par type d'appareil
+- **Device licensing pour apps partagées** : tablettes en roulement entre équipes
+- **MAM sans enrôlement** pour les partenaires/stagiaires avec BYOD
+- **Conditional Access progressif** : Report-only → Block après validation
+- **Nommer les groupes clairement** : `SG-iOS-Corporate`, `SG-iOS-BYOD`, `SG-iPad-Kiosque`
+
+## Erreurs fréquentes
+
+| Erreur | Cause | Solution |
+|--------|-------|----------|
+| App s'installe pas silencieusement | Pas de licence VPP | Vérifier les licences dans ABM → Intune |
+| Utilisateur peut désinstaller les apps | App en "Available" au lieu de "Required" | Changer en Required |
+| MAM ne s'applique pas | App protection policy non assignée | Assigner la policy au groupe utilisateur |
+| Kiosque sort de l'app | ASAM non configuré | Activer Autonomous Single App Mode |
+| CA bloque tout le monde | Policy trop restrictive | Tester en Report-only d'abord |
+
+## Mini-lab pratique
+
+### Configurer App Protection Policy (sans enrôlement)
+
+1. Dans Intune, créez une App Protection Policy iOS pour Outlook :
+   - Data transfer : Policy managed apps only
+   - PIN : Required, 4 chiffres min
+   - Rooted devices : Block
+
+2. Assignez la policy au groupe pilote
+
+3. Sur votre iPhone (personnel), installez Outlook et connectez-vous avec un compte Microsoft 365
+
+4. Testez : essayez de copier un email vers Notes → vous devriez voir une alerte de blocage
+
+5. Vérifiez dans Intune : `Apps → Monitor → App protection status`
+
+## Résumé
+
+La gestion iOS/iPadOS avec Intune couvre l'ensemble des besoins entreprise : enrôlement ADE supervisé pour les appareils corporate, User Enrollment pour le BYOD, déploiement d'apps silencieux via VPP, mode kiosque pour les usages dédiés, et protection des données Microsoft 365 via MAM/APP. La combinaison ADE + Compliance Policies + Conditional Access + App Protection Policies constitue la stack de sécurité iOS complète.

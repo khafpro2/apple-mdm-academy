@@ -1,0 +1,172 @@
+---
+title: "Introduction à Jamf Pro"
+slug: "introduction-jamf-pro"
+---
+
+## Introduction
+
+**Jamf Pro** est la solution MDM Apple la plus déployée en entreprise — plus de 70 000 organisations dans le monde. Contrairement aux MDM généralistes, Jamf a été conçu exclusivement pour Apple : macOS, iOS, iPadOS, tvOS. Cette spécialisation se traduit par une profondeur fonctionnelle incomparable : API REST complète, scripting Bash natif, packaging personnalisé, Self Service, Smart Groups dynamiques.
+
+## Objectifs
+
+- Comprendre l'architecture Jamf Pro (Jamf Cloud vs on-premise)
+- Naviguer dans l'interface et identifier les sections clés
+- Configurer la connexion ABM/APNs
+- Comprendre le modèle de licences Jamf
+- Exécuter les premières commandes de gestion
+
+## Architecture Jamf Pro
+
+```
+┌─────────────────────────────────────────────────┐
+│                  Jamf Pro Server                │
+│  (Cloud: *.jamfcloud.com ou On-Prem: Linux/AWS)│
+├────────────┬──────────────┬─────────────────────┤
+│  Web UI    │  REST API    │  Classic API        │
+│  (HTTPS)   │  /api/v1/    │  /JSSResource/      │
+└────────────┴──────┬───────┴─────────────────────┘
+                    │ APNS (port 443)
+         ┌──────────┼──────────┐
+         ▼          ▼          ▼
+       macOS       iOS      iPadOS
+    (Agent: jamf) (MDM)    (MDM)
+```
+
+### Jamf Cloud vs On-Premise
+
+| Critère | Jamf Cloud | On-Premise |
+|---------|-----------|------------|
+| Infrastructure | Gérée par Jamf | Votre équipe |
+| Mises à jour | Automatiques | Manuelles |
+| Coût | Inclus dans licence | Serveur + maintenance |
+| SLA | 99.9% garanti | Votre responsabilité |
+| Personnalisation | Standard | Complète |
+| Taille recommandée | Tous | 5000+ appareils avec besoins spécifiques |
+
+### L'agent Jamf (macOS uniquement)
+
+Sur Mac, Jamf installe un binary `/usr/local/bin/jamf` qui :
+- Exécute les politiques (policies)
+- Remonte l'inventaire (recon)
+- Installe des packages
+- Exécute des scripts
+
+```bash
+# Commandes essentielles de l'agent
+jamf version          # version installée
+jamf checkjssconnection # test de connectivité avec Jamf Pro
+jamf recon            # mise à jour forcée de l'inventaire
+jamf policy           # exécution de toutes les politiques en attente
+jamf policy -id 42    # exécuter la politique ID 42 spécifiquement
+jamf manage           # ré-enrôlement MDM
+```
+
+## Navigation dans l'interface
+
+### Menu principal
+
+```
+Computers          → gestion des Mac
+Devices            → gestion iOS/iPadOS/tvOS
+Users              → comptes utilisateurs et groupes
+Configuration      → profils de configuration
+Policies           → politiques d'exécution
+Scripts            → bibliothèque de scripts Bash
+Packages           → bibliothèque de paquets (.pkg, .dmg)
+Smart Groups       → groupes dynamiques
+Inventory          → inventaire et rapports
+Self Service       → portail utilisateurs
+Settings           → configuration globale de Jamf Pro
+```
+
+### Settings essentiels à configurer dès l'installation
+
+```
+Settings → Device Enrollment       → token ABM
+Settings → Global Management → APNs → certificat push Apple  
+Settings → Computer Management → Computer Inventory → fréquence
+Settings → User Management → LDAP → annuaire AD/LDAP
+Settings → SSO → (optionnel) Okta, Entra ID
+Settings → Notifications → alertes email administrateurs
+```
+
+## Configurer APNs (Apple Push Notification Service)
+
+**Obligatoire** pour que Jamf puisse communiquer avec les appareils.
+
+```
+Settings → Global Management → Apple Push Notification Service → Edit
+
+1. Cliquez "Create new push certificate"
+2. Téléchargez la CSR générée par Jamf
+3. Allez sur https://identity.apple.com
+4. Connectez-vous avec votre Apple ID d'entreprise (pas un MAA)
+5. Uploadez la CSR → téléchargez le certificat APNs (.pem)
+6. Dans Jamf : uploadez le .pem → Save
+```
+
+> **Critique** : Le certificat APNs expire après **1 an**. Si il expire, Jamf ne peut plus envoyer de commandes aux appareils. Configurez une alerte 30 jours avant l'expiration. Renouvelez avec le **même Apple ID** (un Apple ID différent crée un nouveau certificat, incompatible avec les appareils déjà enrôlés).
+
+## Modèle de licences
+
+Jamf Pro est licencié **par appareil géré**. Les licences couvrent :
+- macOS : Mac computers license
+- iOS/iPadOS : Mobile device license
+- tvOS : Apple TV (inclus selon le contrat)
+
+Les licences sont flexibles : vous pouvez déplacer des appareils entre catégories. Jamf offre aussi **Jamf Business Plan** (Jamf Pro + Jamf Connect + Jamf Protect en bundle).
+
+## Premiers tests après installation
+
+```bash
+# Depuis un Mac enrôlé :
+
+# 1. Vérifier la connexion
+jamf checkjssconnection
+# → "The JSS is available."
+
+# 2. Forcer l'inventaire
+sudo jamf recon
+# → affiche les composants récoltés
+
+# 3. Vérifier les politiques
+sudo jamf policy
+# → "Checking for policies triggered by startup..."
+
+# 4. Vérifier l'enrollment
+sudo profiles show -all | grep -E "MDM|Organization|Supervised"
+```
+
+## Mini-lab : Explorer l'API Jamf Pro
+
+```bash
+# Obtenir un Bearer Token
+TOKEN=$(curl -s -X POST \
+  -u "admin:password" \
+  "https://votre-instance.jamfcloud.com/api/v1/auth/token" \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['token'])")
+
+# Lister les 5 premiers Mac
+curl -s \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Accept: application/json" \
+  "https://votre-instance.jamfcloud.com/api/v1/computers-preview?page-size=5" \
+  | python3 -m json.tool
+
+# Invalider le token (bonne pratique)
+curl -s -X DELETE \
+  -H "Authorization: Bearer $TOKEN" \
+  "https://votre-instance.jamfcloud.com/api/v1/auth/invalidate-token"
+```
+
+## Bonnes pratiques initiales
+
+- **Créez un compte API dédié** avec les droits minimaux nécessaires — jamais utiliser admin pour les scripts
+- **Activez l'authentification 2FA** sur tous les comptes admin Jamf
+- **Configurez un groupe d'audit** : Smart Group "All Managed Computers" pour avoir une vue complète
+- **Documentez vos IDs** : notez les IDs des politiques, Smart Groups et scripts critiques (utiles pour l'API)
+- **Testez en pre-production** : créez un site Jamf "Test" avant de déployer en production
+
+## Résumé
+
+Jamf Pro est une plateforme complète dont la maîtrise se construit progressivement : APNs et ABM d'abord, puis Smart Groups, Policies, Scripts, et API. L'investissement dans la compréhension de l'architecture (agent, APNS, API) facilite toutes les opérations avancées qui suivent.

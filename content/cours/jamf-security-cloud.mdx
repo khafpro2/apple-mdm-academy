@@ -1,0 +1,123 @@
+---
+title: "Jamf Security Cloud"
+slug: "jamf-security-cloud"
+---
+
+## Introduction
+
+**Jamf Security Cloud** (JSC) est la plateforme SaaS qui centralise Jamf Protect, Jamf Connect et les capacités de filtrage réseau. C'est le "cerveau" de la stratégie de sécurité Jamf — il agrège la télémétrie, gère les politiques réseau et fournit des insights de sécurité sur l'ensemble du parc.
+
+## Composants de Jamf Security Cloud
+
+```
+Jamf Security Cloud
+├── Threat Prevention (DNS filtering)
+│   └── Bloque les domaines malveillants, phishing, C2
+├── Mi Proxy (network relay)
+│   └── Inspection TLS sécurisée sans MITM sur les endpoints
+├── Jamf Private Access (Zero Trust Network Access)
+│   └── Remplacement du VPN traditionnel
+└── Protect Integration
+    └── Alertes et compliance centralisées
+```
+
+## DNS Filtering — Threat Prevention
+
+JSC agit comme un résolveur DNS cloud. Les requêtes DNS passent par JSC avant d'atteindre les serveurs autoritaires — les domaines malveillants sont bloqués à ce niveau.
+
+Catégories filtrables :
+```
+Sécurité        : malware, phishing, ransomware C2, botnets
+Conformité      : torrents, proxies anonymes, dark web  
+Productivité    : réseaux sociaux, streaming (optionnel)
+Personnalisé    : whitelist/blacklist de domaines
+```
+
+Configuration sur les Mac via profil MDM :
+```xml
+<key>PayloadType</key>
+<string>com.apple.dnsSettings.managed</string>
+<key>DNSSettings</key>
+<dict>
+  <key>DNSProtocol</key>
+  <string>HTTPS</string>
+  <key>ServerURL</key>
+  <string>https://votre-tenant.content.jamfsecurity.com/dns-query</string>
+</dict>
+```
+
+## Jamf Private Access (ZTNA)
+
+Zero Trust Network Access remplace le VPN traditionnel. Au lieu d'ouvrir un tunnel vers tout le réseau interne, l'utilisateur accède uniquement aux ressources autorisées pour lui, après vérification de l'identité et de la posture de sécurité.
+
+```
+Flux ZTNA :
+1. Utilisateur demande accès à une ressource interne
+2. JSC vérifie : identité (Entra ID/Okta) + posture (Jamf Protect score)
+3. Si validé : accès spécifique accordé à cette ressource uniquement
+4. Tunnel chiffré end-to-end (pas d'accès au reste du réseau)
+```
+
+Avantages vs VPN :
+| VPN | ZTNA (Jamf Private Access) |
+|-----|--------------------------|
+| Accès à tout le réseau | Accès aux ressources autorisées uniquement |
+| Périmètre réseau = sécurité | Identité + posture = sécurité |
+| Split tunneling risqué | Séparation native |
+| Pas de vérification de posture | Posture Jamf Protect vérifiée |
+
+## Tableaux de bord JSC
+
+```
+Jamf Security Cloud → Security Overview
+
+Metrics clés :
+  Threats blocked (last 7 days)    : 1,247 requêtes DNS bloquées
+  Devices at risk                  : 3 Mac avec alertes High+
+  Compliance score (average)       : 91%
+  
+Top threats :
+  1. Phishing (43%)
+  2. Malware C2 (28%)
+  3. Cryptocurrency mining (15%)
+  4. Adware (14%)
+```
+
+## Intégration avec Entra ID et Okta
+
+JSC s'intègre avec les fournisseurs d'identité pour contextualiser les décisions de sécurité :
+
+```
+Entra ID / Okta → JSC
+  → Qui est l'utilisateur ?
+  → Quels groupes/rôles ?
+  → Est-il en session active ?
+  
+Jamf Protect → JSC
+  → Le Mac est-il conforme ?
+  → Des menaces actives ?
+  
+Decision JSC :
+  Si user actif + Mac conforme → accès autorisé
+  Si Mac non conforme → accès bloqué + notification admin
+```
+
+## Mini-lab : Activer le DNS Filtering
+
+**Étape 1** — Dans Jamf Security Cloud → Tenant → DNS Settings : copiez l'URL du resolver.
+
+**Étape 2** — Créez un profil MDM dans Jamf Pro avec le payload DNS Settings ci-dessus.
+
+**Étape 3** — Testez depuis un Mac géré :
+```bash
+dig malware-test.com @votre-resolver.jamfsecurity.com
+# Réponse attendue : NXDOMAIN ou 0.0.0.0 (bloqué)
+
+# Test de navigation
+curl -I http://malware-test.eicar.org 2>&1 | head -5
+# Attendu : connexion refusée / DNS NXDOMAIN
+```
+
+## Résumé
+
+Jamf Security Cloud centralise la protection réseau (DNS filtering), l'accès Zero Trust et la télémétrie de sécurité. En combinaison avec Jamf Protect et Jamf Connect, il forme une stack de sécurité complète et native Apple — de l'endpoint à l'accès réseau.

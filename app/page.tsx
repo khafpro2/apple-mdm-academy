@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import {
   BookOpen, GraduationCap, ChevronRight, Clock,
-  Trophy, ArrowRight, Shield, Zap, BarChart2, Terminal
+  Trophy, ArrowRight, BarChart2, Terminal
 } from 'lucide-react';
 import { MODULES, STATS, getFeaturedCourses } from '@/lib/courses';
 import ModuleCard from '@/components/cours/ModuleCard';
@@ -152,7 +152,7 @@ export default function HomePage() {
               Une vraie plateforme de formation
             </h2>
             <p className="text-sm text-[#5A6478] max-w-xl mx-auto">
-              Pas juste de la documentation — une expérience d'apprentissage structurée avec suivi, ressources et certifications.
+              Pas juste de la documentation — une expérience d&apos;apprentissage structurée avec suivi, ressources et certifications.
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

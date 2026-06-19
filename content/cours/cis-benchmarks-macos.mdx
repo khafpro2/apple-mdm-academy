@@ -1,0 +1,178 @@
+---
+title: "CIS Benchmarks macOS"
+slug: "cis-benchmarks-macos"
+---
+
+## Introduction
+
+Le **CIS Benchmark macOS** est un référentiel de sécurité publié par le Center for Internet Security. Il liste plus de 100 contrôles de configuration macOS avec leur niveau de criticité, la commande de vérification, la remédiation et le raisonnement. C'est la référence utilisée lors des audits ISO 27001, SOC 2, et ANSSI.
+
+## Niveaux CIS
+
+- **Level 1** : Contrôles essentiels, impact minimal sur l'utilisation — à implémenter partout
+- **Level 2** : Contrôles avancés, peuvent impacter certains workflows — à évaluer selon le contexte
+
+## Contrôles critiques Level 1
+
+### Système
+```bash
+# 1.1 — Firmware password (Intel uniquement)
+firmwarepasswd -check
+
+# 1.2 — Démarrage depuis disque externe interdit
+sudo nvram -p | grep "boot-args"
+
+# 1.3 — SIP activé
+csrutil status  # → System Integrity Protection status: enabled
+
+# 1.4 — Apple Security Updates automatiques
+defaults read /Library/Preferences/com.apple.SoftwareUpdate   AutomaticallyInstallMacOSUpdates
+# → 1 = activé
+```
+
+### Réseau
+```bash
+# 2.1 — Bluetooth désactivé si non nécessaire
+defaults read /Library/Preferences/com.apple.Bluetooth.plist ControllerPowerState
+# → 0 = désactivé
+
+# 2.2 — Wi-Fi : ne pas se connecter automatiquement aux hotspots ouverts
+/usr/sbin/networksetup -getairportpower en0
+defaults read /Library/Preferences/SystemConfiguration/com.apple.airport.preferences JoinModeFallback
+# → "Prompt" (pas "Automatic")
+
+# 2.3 — Pare-feu activé
+/usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate
+# → "Firewall is enabled"
+
+# 2.4 — Mode furtif du pare-feu
+/usr/libexec/ApplicationFirewall/socketfilterfw --getstealthmode
+# → "Stealth mode enabled"
+
+# 2.5 — AirDrop désactivé
+defaults read com.apple.NetworkBrowser DisableAirDrop
+# → 1 = désactivé
+```
+
+### Authentification
+```bash
+# 3.1 — Mot de passe requis au réveil
+sysadminctl -screenLock status 2>&1
+# → "screenLock delay 0" (immédiat)
+
+# 3.2 — Gestion du verrouillage automatique
+defaults -currentHost read com.apple.screensaver idleTime
+# → valeur ≤ 300 (5 minutes)
+
+# 3.3 — Tentatives de connexion limitées
+pwpolicy -getaccountpolicies 2>/dev/null | grep -c "failedLoginCount"
+```
+
+### Chiffrement
+```bash
+# 4.1 — FileVault activé
+fdesetup status
+# → "FileVault is On."
+
+# 4.2 — Clé de récupération valide
+fdesetup hasinstitutionalrecoverykey
+```
+
+### Applications
+```bash
+# 5.1 — Gatekeeper activé
+spctl --status
+# → "assessments enabled"
+
+# 5.2 — Safari Safe Browsing
+defaults read com.apple.Safari WarnAboutFraudulentWebsites
+# → 1 = activé
+
+# 5.3 — Xcode tools (si pas nécessaire, pas installé)
+xcode-select -p 2>&1 | grep -v "xcode"
+```
+
+## Script d'audit CIS automatisé
+
+```bash
+#!/bin/bash
+# cis_audit_macos.sh - MDM Academy
+# Audit CIS Benchmark Level 1
+
+PASS=0; FAIL=0; MANUAL=0
+
+check() {
+    local ref="$1" desc="$2" cmd="$3" expected="$4"
+    result=$(eval "$cmd" 2>/dev/null)
+    if echo "$result" | grep -qE "$expected"; then
+        echo "✅ [$ref] $desc"
+        ((PASS++))
+    else
+        echo "❌ [$ref] $desc → $(echo $result | head -c 60)"
+        ((FAIL++))
+    fi
+}
+
+echo "=== CIS Benchmark macOS Level 1 ==="
+echo "Hostname : $(hostname)"
+echo "Date     : $(date)"
+echo ""
+
+check "1.3" "SIP activé" "csrutil status" "enabled"
+check "2.3" "Pare-feu activé" "/usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate" "enabled"
+check "2.4" "Mode furtif" "/usr/libexec/ApplicationFirewall/socketfilterfw --getstealthmode" "enabled"
+check "4.1" "FileVault" "fdesetup status" "FileVault is On"
+check "5.1" "Gatekeeper" "spctl --status" "enabled"
+
+# Vérification SSH
+SSH_STATUS=$(systemsetup -getremotelogin 2>/dev/null | awk '{print $NF}')
+[[ "$SSH_STATUS" == "Off" ]] && { echo "✅ [2.6] SSH désactivé"; ((PASS++)); }   || { echo "❌ [2.6] SSH activé"; ((FAIL++)); }
+
+echo ""
+echo "Score CIS : ✅ $PASS | ❌ $FAIL | Manuel requis : $MANUAL"
+TOTAL=$((PASS + FAIL))
+SCORE=$((PASS * 100 / TOTAL))
+echo "Score : $SCORE%"
+
+[ $SCORE -ge 90 ] && exit 0 || exit 1
+```
+
+## Extension Attribute CIS Score
+
+```bash
+#!/bin/bash
+# EA : Score CIS automatique pour Jamf Pro
+
+PASS=0; TOTAL=0
+
+check() {
+    local cmd="$1" expected="$2"
+    result=$(eval "$cmd" 2>/dev/null)
+    echo "$result" | grep -qE "$expected" && ((PASS++))
+    ((TOTAL++))
+}
+
+check "csrutil status" "enabled"
+check "fdesetup status" "FileVault is On"
+check "spctl --status" "enabled"
+check "/usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate" "enabled"
+
+SCORE=$((PASS * 100 / TOTAL))
+echo "<result>${SCORE}%</result>"
+```
+
+Smart Group basé sur le score :
+```
+"Mac - CIS Score < 90%"
+Critère : CIS Score  less than  90%
+```
+
+## Bonnes pratiques
+
+- **Documentez les exceptions** : certains contrôles (ex: SSH pour les équipes DevOps) ont des exceptions légitimes → documenter la justification
+- **Auditez trimestriellement** : re-run le script après chaque mise à jour macOS (les paramètres peuvent changer)
+- **Utilisez le niveau approprié** : Level 2 pour les postes à risque (RH, Finance, Direction), Level 1 pour le reste
+
+## Résumé
+
+Le CIS Benchmark macOS est la référence internationale pour la sécurisation des Mac en entreprise. Son implémentation via Jamf Pro (profils MDM + Extension Attributes + Smart Groups) produit une infrastructure de compliance continue et documentée, prête pour n'importe quel audit de sécurité.

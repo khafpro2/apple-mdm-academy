@@ -1,0 +1,217 @@
+---
+title: "Classes et utilisateurs dans Jamf School"
+slug: "classes-utilisateurs-jamf-school"
+---
+
+## Introduction
+
+La gestion des classes et utilisateurs est au cœur de l'organisation pédagogique dans Jamf School. Contrairement à Jamf Pro qui travaille avec des Smart Groups techniques, Jamf School utilise une logique éducative intuitive : classes, enseignants, élèves — avec une synchronisation automatique depuis Apple School Manager.
+
+## Objectifs pédagogiques
+
+- Créer et structurer les classes dans Jamf School
+- Importer et gérer les utilisateurs (élèves, enseignants, admins)
+- Synchroniser les données depuis Apple School Manager ou LDAP
+- Assigner des appareils et des apps aux bonnes classes
+- Gérer les transitions (nouvelles classes, nouveaux élèves)
+
+## Structure organisationnelle dans Jamf School
+
+```
+Organisation (Établissement)
+├── 🏫 École (niveau)
+│   ├── 📚 Classes
+│   │   ├── Classe 6ème A (20 élèves, 1 enseignant principal)
+│   │   ├── Classe 5ème B (22 élèves, 1 enseignant principal)
+│   │   └── ...
+│   └── 👩‍🏫 Enseignants
+│       ├── Prof Maths (intervient dans 6 classes)
+│       └── ...
+└── 👨‍💻 Administrateurs IT
+    └── Accès complet à toute l'organisation
+```
+
+## Création des utilisateurs
+
+### Import CSV (méthode manuelle)
+
+```
+Jamf School → Users → Import Users
+
+Format CSV attendu :
+prenom,nom,email,role,classe
+Jean,Martin,jean.martin@ecole.fr,student,6A
+Sophie,Bernard,sophie.bernard@ecole.fr,teacher,6A
+Thomas,Admin,thomas.admin@ecole.fr,administrator,
+
+Rôles disponibles :
+├── student : élève (accès limité)
+├── teacher : enseignant (accès Jamf Teacher + sa classe)
+├── teacher/administrator : responsable pédagogique
+└── administrator : admin IT (accès complet)
+```
+
+### Synchronisation depuis Apple School Manager
+
+```
+ASM → Classes → Synchronisation automatique vers Jamf School
+
+Configuration dans Jamf School :
+Settings → Apple School Manager → Sync Classes
+
+Données synchronisées :
+├── Noms des classes
+├── Liste des élèves par classe
+├── Enseignants assignés
+└── Managed Apple IDs
+
+→ Mise à jour quotidienne automatique
+→ Nouvelles inscriptions → apparaissent dans Jamf School
+→ Départs → compte désactivé automatiquement
+```
+
+### Synchronisation LDAP (Active Directory scolaire)
+
+```
+Jamf School → Organisation → LDAP
+
+Configuration :
+├── Server: ldap.votreecole.fr
+├── Port: 389 (ou 636 pour LDAPS)
+├── Base DN: DC=ecole,DC=fr
+├── Bind DN: CN=jamfschool,OU=ServiceAccounts,DC=ecole,DC=fr
+├── Bind Password: [mot de passe compte service]
+└── User attribute: sAMAccountName
+
+Test de connexion → Vérifier que les groupes AD apparaissent
+Mapping : groupe AD "Eleves-6A" → classe Jamf School "6ème A"
+```
+
+## Création et gestion des classes
+
+### Créer une classe manuellement
+
+```
+Jamf School → Classes → Add
+
+Paramètres :
+├── Name: 6ème A - Sciences
+├── Description: Cours de sciences 6A - 2025-2026
+├── Location: Salle 204
+├── Teacher: Mme Dupont (mme.dupont@ecole.fr)
+└── Students: [Sélectionner les 22 élèves]
+```
+
+### Assigner des appareils à une classe
+
+```
+Classes → [6ème A] → Devices → Add Devices
+
+Options :
+├── Tous les appareils d'un groupe existant
+├── Appareils individuels par numéro de série
+└── Recherche par nom d'appareil
+
+Résultat : 
+→ Les apps et profils de la classe s'appliquent aux appareils
+→ Les enseignants de la classe peuvent voir ces appareils dans Jamf Teacher
+```
+
+### Assigner des apps à une classe
+
+```
+Classes → [6ème A] → Apps → Add
+
+→ Sélectionner les apps de la classe (déjà dans Jamf School)
+→ Required : installation obligatoire
+→ Optional : disponible dans le portail libre-service élève
+
+Exemple classe Sciences 6ème :
+Required:
+├── GoodNotes 5
+├── Explain Everything
+├── iMovie (projets scientifiques)
+└── PhyPhox (capteurs)
+Optional:
+└── Khan Academy
+```
+
+## Gestion de la rentrée scolaire
+
+### Workflow annuel de rentrée
+
+```
+Août (avant rentrée) :
+
+1. Mettre à jour les listes dans ASM
+   └── Nouveaux élèves, changements de classe
+
+2. Synchroniser ASM → Jamf School
+   └── Vérifier que les nouvelles classes sont créées
+
+3. Réassigner les appareils aux nouvelles classes
+   └── iPad de 5ème A → maintenant en 4ème A
+   └── Nouveaux iPad reçus → assigner aux nouvelles classes
+
+4. Mettre à jour les apps (versions)
+   └── iOS mis à jour pendant l'été
+   └── Nouvelles apps pédagogiques ajoutées
+
+5. Tester 1 semaine avant la rentrée
+   └── Vérifier que tout fonctionne sur 5 iPad pilotes
+```
+
+### Script de réassignation en masse
+
+```bash
+#!/bin/bash
+# Réassigner les appareils après la rentrée
+# Via l'API Jamf School (REST API)
+
+API_URL="https://votreecole.jamfcloud.com/uapi"
+API_KEY="votre_api_key"
+
+# Récupérer tous les appareils d'une ancienne classe
+DEVICES=$(curl -s -H "X-api-key: $API_KEY"   "$API_URL/devices?classId=OLD_CLASS_ID" |   python3 -c "import sys,json; [print(d['id']) for d in json.load(sys.stdin)['data']]")
+
+# Assigner à la nouvelle classe
+for DEVICE_ID in $DEVICES; do
+  curl -s -X PUT -H "X-api-key: $API_KEY"     -H "Content-Type: application/json"     -d "{"classId": "NEW_CLASS_ID"}"     "$API_URL/devices/$DEVICE_ID"
+done
+```
+
+## Exemple concret — Collège de 400 élèves
+
+```
+Structure :
+├── 400 élèves répartis en 20 classes
+├── 35 enseignants
+├── 400 iPads (1 par élève)
+├── 30 iPad partagés en salle informatique (Shared iPad)
+
+Configuration Jamf School :
+1. Import ASM → 20 classes créées automatiquement
+2. 400 élèves importés avec leur Managed Apple ID
+3. 35 enseignants importés, assignés à leurs classes
+4. Apps communes : déployées à "Tous les appareils"
+5. Apps spécifiques : par niveau (6ème, 5ème, 4ème, 3ème)
+
+Usage quotidien :
+→ Enseignant ouvre Jamf Teacher → voit sa classe
+→ Démarre le cours → bloque sur l'app du jour
+→ IT : surveille depuis la console (0 intervention courante)
+→ Incident (iPad mort) → IT le remplace depuis le stock, 
+   réassigné à l'élève → tout se reconfigure automatiquement
+```
+
+## Bonnes pratiques
+
+- **Nommer clairement les classes** : "6ème A - 2025-2026" plutôt que "Classe 1"
+- **Un compte enseignant par personne** : même si l'enseignant intervient dans 10 classes
+- **Synchronisation ASM quotidienne** : capturer les changements d'inscription en temps réel
+- **Archiver les classes** en fin d'année plutôt que les supprimer (historique)
+- **Test de rentrée** : simuler 1 semaine avant avec des comptes de test
+
+## Résumé
+
+La gestion des classes et utilisateurs dans Jamf School reflète la réalité pédagogique d'un établissement scolaire. Avec la synchronisation Apple School Manager, les listes de classes et d'élèves se mettent à jour automatiquement. Les enseignants voient uniquement leurs classes dans Jamf Teacher. L'IT garde le contrôle global depuis la console. Cette séparation des rôles est la clé du succès d'un déploiement Jamf School à grande échelle.

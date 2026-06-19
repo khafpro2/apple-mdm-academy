@@ -1,0 +1,170 @@
+---
+title: "Enrôlement macOS avec Jamf Pro"
+slug: "enrolement-macos-jamf"
+---
+
+## Introduction
+
+L'enrôlement est l'acte par lequel un Mac rejoint Jamf Pro et devient un appareil géré. Il existe quatre méthodes d'enrôlement, chacune adaptée à un contexte différent. La maîtrise de ces méthodes et de leur diagnostic est une compétence fondamentale de l'administrateur Jamf.
+
+## Méthodes d'enrôlement
+
+### 1. ADE (Automated Device Enrollment) — Recommandé corporate
+Via ABM, le Mac s'enrôle automatiquement au premier démarrage. Nécessite que le serial soit dans ABM. Produit un Mac supervisé.
+
+### 2. User-Initiated Enrollment (UIE)
+L'utilisateur va sur une URL d'enrollment Jamf et installe manuellement le profil MDM. Pour le BYOD ou les appareils non-ABM.
+```
+URL : https://votreinstance.jamfcloud.com/enroll
+```
+
+### 3. Apple Configurator 2
+Connexion USB vers un Mac de "staging". Installe une image, supervise et enrôle. Pour les Mac hors ABM à superviser.
+
+### 4. Re-enrollment (jamf manage)
+Pour un Mac déjà géré qui a perdu son enrollment.
+```bash
+sudo jamf manage
+```
+
+## Le profil MDM et la supervision
+
+```bash
+# Vérifier le statut d'enrollment complet
+sudo profiles show -all 2>/dev/null | grep -A3 "com.apple.mdm"
+
+# Vérifier la supervision
+sudo profiles status -type enrollment
+# Clé : "Supervised: Yes" = supervisé via ADE
+#       "Supervised: No"  = user-initiated, moins de contrôle
+
+# Identifier l'organisation MDM
+system_profiler SPConfigurationProfileDataType | grep "Organization"
+```
+
+## Processus d'enrollment détaillé
+
+```
+Mac démarre
+    │
+    ▼ (si ADE)
+activate.apple.com:443
+    │ MDM Server URL + Enrollment Profile
+    ▼
+Jamf Pro reçoit l'appareil
+    │
+    ├── Installe l'agent Jamf (/usr/local/bin/jamf)
+    ├── Installe le profil MDM
+    ├── Installe les Configuration Profiles assignés
+    ├── Exécute les Policies avec trigger "Enrollment"
+    └── Remonte l'inventaire initial (recon)
+    │
+    ▼
+Appareil visible dans Jamf Pro → Computers
+```
+
+## Enrollment via DEP Notify (UX Zero-Touch)
+
+**DEPNotify** est un outil open-source qui affiche une fenêtre de progression pendant l'enrollment ADE. L'utilisateur voit l'avancement en temps réel au lieu d'un écran vide.
+
+```bash
+# Exemple de script Jamf deployé pendant l'enrollment
+#!/bin/bash
+# Deployment via DEPNotify
+
+NOTIFY="/var/tmp/depnotify.log"
+
+echo "Command: MainTitle: Configuration de votre Mac" >> "$NOTIFY"
+echo "Command: MainText: Bienvenue chez Acme Corp !" >> "$NOTIFY"
+echo "Command: DeterminateManual: 5" >> "$NOTIFY"
+
+echo "Status: Installation des outils de sécurité..." >> "$NOTIFY"
+echo "Command: DeterminateManualStep:" >> "$NOTIFY"
+# ... installer Jamf Protect, etc.
+
+echo "Status: Configuration du VPN..." >> "$NOTIFY"
+echo "Command: DeterminateManualStep:" >> "$NOTIFY"
+
+echo "Command: Quit: Configuration terminée !" >> "$NOTIFY"
+```
+
+## Diagnostiquer un enrollment raté
+
+```bash
+# Log MDM en temps réel pendant l'enrollment :
+log stream --predicate 'subsystem == "com.apple.ManagedClient"' --level debug
+
+# Ou consulter les logs post-enrollment :
+log show --last 2h \
+  --predicate 'subsystem == "com.apple.ManagedClient"' \
+  | grep -E "error|fail|enroll" | tail -30
+
+# Vérifier la connectivité réseau Jamf
+jamf checkjssconnection -retry 3
+
+# Vérifier les certificats MDM
+security find-certificate -a -c "Jamf" /Library/Keychains/System.keychain
+```
+
+### Codes d'erreur courants
+
+| Code | Signification | Solution |
+|------|--------------|----------|
+| `403 Forbidden` | Compte utilisateur non autorisé à s'enrôler | Vérifiez les droits LDAP/SSO |
+| `Connection refused` | Jamf Pro inaccessible | Vérifiez réseau, proxy, certificat Jamf |
+| `Profile installation failed` | Profil MDM rejeté | Vérifiez la validité du certificat APNs |
+| `Already enrolled` | Mac déjà dans un MDM | Retirez le profil existant avant |
+
+## Gestion des re-enrollments
+
+```bash
+# Forcer un ré-enrollment complet sans wipe :
+sudo profiles remove -all         # retire tous les profils
+sudo jamf manage                  # réinstalle l'enrollment Jamf
+
+# Vérifier après ré-enrollment :
+jamf checkjssconnection
+sudo jamf recon
+```
+
+## Mini-lab : Enrollment User-Initiated
+
+**Étape 1** — Sur votre Mac de test (non supervisé) :
+```bash
+# Vérifier qu'il n'est pas déjà enrôlé
+profiles status -type enrollment
+# Attendu : "No MDM enrollment"
+```
+
+**Étape 2** — Accédez à l'URL d'enrollment :
+```
+Safari → https://[votre-jamf].jamfcloud.com/enroll
+Entrez vos credentials LDAP ou Jamf
+Téléchargez et installez le profil MDM
+```
+
+**Étape 3** — Vérifiez l'enrollment :
+```bash
+profiles status -type enrollment
+# Attendu : "MDM enrollment: Yes (User Approved)"
+jamf checkjssconnection
+# Attendu : "The JSS is available."
+```
+
+**Étape 4** — Forcez un inventaire :
+```bash
+sudo jamf recon
+# Dans Jamf Pro : Computers → recherchez votre hostname
+```
+
+## Bonnes pratiques
+
+- **ADE pour tout appareil corporate** — ne jamais faire d'user-initiated pour un Mac d'entreprise
+- **Testez l'enrollment sur 3 appareils** de modèles différents avant déploiement en masse
+- **Configurez DEPNotify** ou un équivalent pour l'UX utilisateur
+- **Policy trigger "Enrollment"** : créez une policy qui s'exécute une seule fois à l'enrollment pour l'installation initiale (certificats, VPN, apps de base)
+- **Nommez le Mac automatiquement** dans le PreStage : `{{building}}-{{serial}}` ou depuis un script enrollment
+
+## Résumé
+
+L'enrôlement macOS est le point d'entrée de la gestion MDM. ADE est la méthode recommandée pour les appareils corporate ; elle produit des Mac supervisés avec le niveau de contrôle maximal. La maîtrise du diagnostic d'enrollment (logs, codes d'erreur, connectivité) est indispensable en environnement de production.

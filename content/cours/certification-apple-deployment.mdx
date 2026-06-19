@@ -1,0 +1,311 @@
+---
+title: "Certification Apple Deployment and Management"
+description: "Préparation complète à la certification Apple Deployment and Management — déploiement, MDM, ABM, ADE et gestion à grande échelle."
+module: "certifications"
+level: "avancé"
+duration: "120 min"
+prerequisites: ["apple-business-manager", "automated-device-enrollment", "certification-apple-device-support"]
+tags: ["Certification", "Apple", "Deployment", "MDM", "ABM", "ADE"]
+---
+
+## Introduction
+
+La certification **Apple Deployment and Management** est la certification intermédiaire dans le parcours Apple. Elle cible les administrateurs IT et les ingénieurs systèmes responsables du déploiement et de la gestion à grande échelle d'appareils Apple dans les organisations.
+
+Contrairement à Apple Device Support (support utilisateur), cette certification valide la capacité à **concevoir et déployer des infrastructures MDM** pour macOS, iOS et tvOS.
+
+---
+
+## Objectifs pédagogiques
+
+À la fin de ce cours, vous serez capable de :
+- Identifier les domaines et les pondérations de l'examen
+- Maîtriser les concepts avancés ABM/ADE/VPP
+- Comprendre la configuration MDM de niveau enterprise
+- Vous préparer avec des questions et scénarios réels
+- Planifier votre préparation efficacement
+
+---
+
+## Informations sur l'examen
+
+| Paramètre | Détail |
+|-----------|--------|
+| **Nom complet** | Apple Deployment and Management |
+| **Durée** | 120 minutes |
+| **Format** | QCM, scénarios, drag-and-drop |
+| **Questions** | ~60 questions |
+| **Score minimum** | 65% |
+| **Prix** | ~180 USD (Pearson VUE) |
+| **Validité** | 3 ans |
+| **Pré-requis** | Apple Device Support recommandé |
+
+---
+
+## Domaines évalués
+
+### Domaine 1 — Planning and Integration (25%)
+
+**Évaluation des besoins :**
+- Inventaire des appareils (IMEI, numéros de série, modèles)
+- Choix MDM : Jamf, Intune, Mosyle, Kandji, Workspace ONE
+- Critères de choix : taille, budget, intégration IdP, besoins spécifiques (éducation, retail...)
+
+**Infrastructure MDM :**
+- On-premise vs SaaS/Cloud
+- Certificat Push APNs : création, renouvellement annuel, conséquences d'expiration
+- Connexion ABM ↔ MDM : token VPP, token DEP
+
+**Intégration avec les systèmes existants :**
+- LDAP/Active Directory (pour l'authentification MDM)
+- SCEP (certificats automatiques)
+- Identity providers (Okta, Azure AD, Google Workspace)
+- SIEM et systèmes de monitoring
+
+### Domaine 2 — Apple Business Manager et Apple School Manager (25%)
+
+**ABM — Administration :**
+```
+Rôles ABM :
+  Administrator : accès complet, gestion des utilisateurs ABM
+  Manager : gestion des appareils et contenus (apps, livres)
+  People Manager : gestion des Managed Apple Accounts uniquement
+
+Flux d'achat appareils dans ABM :
+  Achat chez Apple/revendeur autorisé → apparaît dans ABM sous 72h
+  Ou : Apple Configurator 2 pour les appareils non ADE (feature: ajouter via iPhone)
+  → Assigner au MDM dans ABM
+  → Configurer le MDM pour l'enrôlement ADE
+```
+
+**Managed Apple Accounts :**
+- Création manuelle vs fédération IdP (Google, Azure AD)
+- Domaines vérifiés : processus de vérification DNS
+- Restrictions vs Apple ID personnels
+
+**Contenu — Apps & Books :**
+- VPP tokens : génération, liaison MDM, expiration
+- Licences : acheter en volume, assigner à utilisateurs ou appareils
+- Apps propriétaires : Custom Apps (B2B)
+- Revocation et réassignation de licences
+
+### Domaine 3 — MDM Configuration and Deployment (30%)
+
+**Enrôlement :**
+```
+ADE (Automated Device Enrollment) :
+  1. Appareil assigné à MDM dans ABM
+  2. Premier démarrage → Setup Assistant
+  3. Connexion Apple → MDM reconnaît le numéro de série
+  4. Enrôlement automatique → profils déployés
+  5. Supervision automatique
+
+Profil d'enrôlement manuel (User Enrollment) :
+  1. Utilisateur télécharge le profil MDM
+  2. L'installe → appareil enrôlé mais NON supervisé
+  3. L'utilisateur peut retirer l'enrollment
+
+Apple Configurator 2 :
+  - Enrôlement via câble USB ou Wi-Fi
+  - Blueprints : configuration reproductible
+  - Peut superviser et ajouter dans ABM
+```
+
+**Profils de configuration — Payloads avancés :**
+```
+Payloads courants à maîtriser pour l'examen :
+
+com.apple.security.pkcs12 → Certificat client PKCS12
+com.apple.wifi.managed → Wi-Fi enterprise
+com.apple.vpn.managed → VPN
+com.apple.security.scep → SCEP (certificats automatiques)
+com.apple.MCX → Managed Preferences (MCX)
+com.apple.loginwindow → Login Window (macOS)
+com.apple.applicationaccess → Restrictions iOS
+com.apple.systempreferences → System Preferences locks (macOS)
+com.apple.webcontent-filter → Content Filter
+```
+
+**Supervision et fonctionnalités avancées :**
+```
+Fonctionnalités nécessitant la supervision sur iOS :
+  - Silent App Install / Remove
+  - Kiosk Mode (Single App Mode / Autonomous Single App Mode)
+  - AirPlay / AirPrint restrictions étendues
+  - Block removal of system apps
+  - Force Wi-Fi (pas de désactivation Wi-Fi)
+  - Content Filter
+  - Remote Lock sans code PIN de récupération
+
+Sur macOS, la supervision ne restreint pas autant que iOS.
+Un Mac supervisé via ADE peut toujours être utilisé normalement.
+```
+
+**Apps — Distribution :**
+```
+M�thodes de distribution d'apps :
+  1. App Store public (avec licence ABM/VPP)
+  2. Custom App (via Apple Developer / B2B)
+  3. MDM In-House Enterprise App (via Apple Enterprise Program, rare)
+  4. Web Clip (lien web comme "app")
+
+Flux distribution via MDM :
+  MDM → Commande InstallApplication → Appareil → App Store (validé)
+  Ou : Package .pkg via MDM pour macOS apps
+```
+
+### Domaine 4 — Security and Privacy (15%)
+
+**Sécurité macOS :**
+- Secure Boot : Full vs Medium vs No Security
+- Startup Security Utility (Mac avec T2 / Apple Silicon)
+- SIP (System Integrity Protection) : actif par défaut, désactivation en Recovery uniquement
+- Privacy Preferences Policy Control (PPPC) : déploiement via MDM
+
+**Sécurité iOS :**
+- Effacement à distance (Remote Wipe) vs Wipe avec activation lock
+- Activation Lock Management via MDM : bypass, statut
+- Lost Mode : verrouillage avec message personnalisé
+- Account-Driven User Enrollment (ADUE) : BYOD professionnel
+
+**Certificats et PKI :**
+```
+Flux SCEP dans un environnement MDM :
+  1. MDM envoie la commande SCEP à l'appareil
+  2. Appareil génère une paire de clés (privée/publique)
+  3. CSR envoyé au serveur SCEP
+  4. CA signe le certificat
+  5. Certificat retourné à l'appareil
+  6. Utilisable pour Wi-Fi EAP-TLS, VPN, email S/MIME
+```
+
+### Domaine 5 — Troubleshooting and Maintenance (5%)
+
+- Outils de diagnostic MDM côté serveur
+- Consulter les logs d'enrôlement ADE
+- Renouvellement APNs : conséquences, procédure
+- Problèmes courants : appareil non reconnu en ADE, profil non appliqué
+
+---
+
+## Points critiques à retenir
+
+### Renouvellement du certificat APNs
+
+> **Piège classique de l'examen :** Si vous renouvelez le certificat APNs avec un compte Apple ID différent, ou si le certificat expire, **tous les appareils gérés perdent leur connexion MDM** et doivent être ré-enrôlés.
+
+Règle : Toujours renouveler l'APNs avec le **même Apple ID**, **avant** l'expiration.
+
+```
+Durée de validité APNs : 1 an
+Procédure de renouvellement :
+  1. MDM → Télécharger la CSR (Certificate Signing Request)
+  2. Apple Push Certificates Portal → Renouveler (PAS créer)
+  3. Signer avec la CSR → Télécharger le nouveau .pem
+  4. Importer dans le MDM
+  → Aucune interruption de service si fait AVANT expiration
+```
+
+### Token DEP et VPP
+
+```
+Token DEP (pour ADE) :
+  - Durée : 1 an
+  - Renouvellement : dans ABM → MDM Servers → télécharger nouveau token
+  - Conséquence si expiré : nouvel enrôlement bloqué (appareils déjà enrôlés OK)
+
+Token VPP (pour Apps & Books) :
+  - Durée : 1 an
+  - Renouvellement : dans ABM → Apps & Books → serveur MDM
+  - Conséquence si expiré : plus de distribution d'apps depuis MDM
+```
+
+### Supervised vs Non-Supervised
+
+```
+                    | Non-supervisé | Supervisé
+--------------------|---------------|----------
+Retraite MDM user  | Possible      | Bloqué (ADE)
+Restrictions iOS   | Limitées      | Complètes
+Silent App Install  | Non          | Oui
+Kiosk Mode         | Non          | Oui
+Activation Lock    | User only     | MDM peut bypasser
+```
+
+---
+
+## Questions types avancées
+
+**Question 1**
+Un administrateur crée un nouveau certificat APNs dans Apple Push Certificates Portal à la place de renouveler l'ancien. Quel sera l'impact ?
+- A) Aucun impact, les deux certificats sont identiques
+- B) Les nouveaux appareils ne pourront pas s'enrôler
+- C) Tous les appareils gérés existants perdront leur connexion MDM
+- D) Seuls les appareils iOS seront affectés, pas macOS
+
+**Réponse : C** — Un nouveau certificat APNs possède un Topic différent. Les appareils sont liés au Topic de leur certificat d'enrôlement. Ils perdent donc la communication MDM et doivent être ré-enrôlés.
+
+---
+
+**Question 2**
+Un technicien veut déployer une app iOS d'entreprise développée en interne sur 500 iPhone via ABM. Quelle est la méthode recommandée ?
+- A) Distribuer le fichier .ipa directement via MDM
+- B) Publier l'app comme Custom App dans App Store Connect et la distribuer via ABM
+- C) Utiliser Apple Configurator 2 pour chaque appareil
+- D) Envoyer un lien de téléchargement par email
+
+**Réponse : B** — Les Custom Apps (apps B2B) sont publiées dans App Store Connect avec restriction aux organisations ABM. Elles sont ensuite distribuées silencieusement via ABM/VPP et le MDM. C'est la méthode scalable et maintenue par Apple.
+
+---
+
+**Question 3**
+Quelle est la différence entre User Enrollment et Device Enrollment dans un contexte MDM iOS ?
+
+**Réponse :**
+- **Device Enrollment (MDM classique)** : L'organisation gère l'appareil entier. Peut voir toutes les apps, wiper l'appareil à distance. Utilisé pour les appareils d'entreprise.
+- **User Enrollment (BYOD)** : Séparation cryptographique entre données perso et pro. L'organisation ne peut pas voir les apps perso, ne peut pas wiper l'appareil entier (uniquement les données MDM). Utilisé pour les appareils personnels avec accès aux ressources enterprise.
+
+---
+
+## Stratégie de préparation
+
+### Planning 6 semaines
+
+```
+Semaine 1-2 : ABM et ADE
+  - Créer un compte ABM de test
+  - Configurer la liaison ABM ↔ MDM (même avec Jamf Free ou Mosyle Education)
+  - Pratiquer l'enrôlement ADE sur un appareil de test
+
+Semaine 3 : Profils et apps
+  - Créer des profils Wi-Fi, VPN, restrictions
+  - Distribuer une app via VPP
+  - Comprendre les payloads MDM
+
+Semaine 4 : Sécurité et certificats
+  - Configurer SCEP (si possible)
+  - Pratiquer FileVault avec récupération via MDM
+  - Tester Activation Lock bypass
+
+Semaine 5 : Troubleshooting
+  - Simuler des pannes (token expiré, profil non appliqué)
+  - Pratiquer les commandes de diagnostic
+
+Semaine 6 : Révision et examens blancs
+  - 3 examens blancs complets
+  - Révision des points faibles
+```
+
+---
+
+## Résumé
+
+| Domaine | Poids | Point critique |
+|---------|-------|----------------|
+| Planning et intégration | 25% | Critères de choix MDM, infrastructure |
+| ABM/ASM | 25% | Rôles, tokens, Managed Apple Accounts |
+| Configuration MDM | 30% | ADE, profils, supervision, apps |
+| Sécurité | 15% | APNs, SCEP, Activation Lock |
+| Troubleshooting | 5% | Renouvellement tokens, diagnostic |
+
+La certification Apple Deployment and Management est la porte d'entrée vers les rôles d'ingénieur MDM spécialisé Apple. Elle est souvent exigée par les partenaires Apple et les entreprises de taille moyenne à grande qui gèrent des flottes Apple conséquentes.

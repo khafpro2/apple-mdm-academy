@@ -1,0 +1,243 @@
+---
+title: "Automated Device Enrollment (ADE)"
+slug: "automated-device-enrollment"
+---
+
+## Introduction
+
+**Automated Device Enrollment** (ADE, anciennement DEP — Device Enrollment Program) est le mécanisme Apple qui lie physiquement un appareil à votre organisation dès sa sortie de boîte. Quand un utilisateur allume un Mac ou iPhone neuf acheté par votre entreprise, l'appareil contacte les serveurs Apple, reçoit un profil d'enrollment, et s'enrôle automatiquement dans votre MDM — sans intervention IT, sans câble, sans image système.
+
+> **Impact concret** : vous pouvez déployer 500 MacBook Pro depuis un entrepôt directement chez les utilisateurs. Chacun allume son Mac, se connecte au Wi-Fi, et 15 minutes plus tard le poste est configuré, sécurisé, avec les apps métier installées.
+
+## Objectifs
+
+- Comprendre l'architecture ADE et le rôle d'APNS
+- Configurer un Enrollment Profile dans Jamf Pro et Intune
+- Personnaliser l'assistant de configuration (Setup Assistant)
+- Superviser les appareils via ADE
+- Gérer les cas particuliers (BYOD, appareils existants, Apple Configurator 2)
+- Tester et déboguer un enrollment ADE
+
+## Contexte professionnel
+
+Avant ADE, déployer 100 Mac demandait : créer une image système, booter chaque Mac sur une clé USB, appliquer l'image (20-40 min par machine), configurer manuellement. Un technicien pouvait traiter 10 machines par jour. Avec ADE + MDM : zéro manipulation physique par l'IT, zero-touch deployment depuis le premier démarrage.
+
+ADE est aujourd'hui **obligatoire** pour les appareils supervisés (Supervised mode), qui débloquent les restrictions MDM avancées inaccessibles en enrollment standard.
+
+## Architecture technique ADE
+
+```
+Apple Manufacturing
+    │ Numéro de série → Apple Cloud
+    ▼
+Apple Business Manager ──── token ADE (p7m) ────► MDM Server
+    │                                              (Jamf/Intune)
+    │ Assign Device
+    ▼
+Appareil démarre
+    │ 1. Contacte activate.apple.com
+    │ 2. Apple vérifie le serial → trouve MDM Server
+    │ 3. MDM Server envoie l'Enrollment Profile
+    │ 4. L'appareil télécharge et installe le profil
+    │ 5. Setup Assistant configuré selon le profil
+    ▼
+MDM Enrollment complet + Supervision activée
+```
+
+### Composants clés
+
+**APNS (Apple Push Notification Service)** : canal de communication entre MDM et appareils. Chaque MDM doit avoir un certificat APNS valide (1 an, à renouveler).
+
+**Enrollment Profile** : fichier de configuration qui définit la relation MDM ↔ appareil. Il contient l'URL du MDM, le nom de l'organisation, et la configuration du Setup Assistant.
+
+**Supervision** : niveau de contrôle élevé activé uniquement via ADE (ou Apple Configurator 2). Débloque 50+ restrictions MDM supplémentaires.
+
+## Configurer l'Enrollment Profile dans Jamf Pro
+
+### Prérequis
+- Token ADE (.p7m) téléchargé depuis ABM
+- Certificat APNS valide dans Jamf Pro
+- Token VPP si vous déployez des apps
+
+### Étapes
+
+**1. Créer le profil**
+```
+Jamf Pro → Computers (ou Devices) → PreStage Enrollments → New
+```
+
+**2. Onglet General**
+```
+Display Name       : "MacBook - Zero Touch 2025"
+MDM Server URL     : https://votreinstance.jamfcloud.com/mdm/enroll
+Enrollment Site    : (votre site si multi-site)
+```
+
+**3. Onglet Enrollment**
+```
+☑ Require Authentication      → les utilisateurs doivent s'identifier (LDAP/SAML)
+☑ Enable Single App Mode       → (tablettes dédiées uniquement)
+☑ Skip Setup Assistant panes   → choisissez les étapes à masquer
+```
+
+**Étapes du Setup Assistant recommandées à masquer :**
+```
+☑ Accessibility          ☑ Siri
+☑ Appearance             ☑ Screen Time  
+☑ Location Services      ☑ Analytics
+☑ Privacy                ☑ Payment & Apple ID (si MAA)
+```
+
+**4. Onglet Account Settings**
+```
+☑ Create an additional local admin account
+Username : localadmin
+☑ Hide this account in the login window
+```
+
+**5. Onglet Purchasing**
+Liez votre token VPP pour déployer des apps dès l'enrollment.
+
+**6. Scope**
+Assignez les appareils ou groupes ABM à ce profil PreStage.
+
+### Assigner les appareils dans ABM
+```
+ABM → Appareils → sélectionnez les serials → Assigner à MDM Server
+→ choisissez Jamf Pro → Confirmer
+```
+
+Les appareils apparaissent dans Jamf Pro → PreStage Enrollments → dans les 15 minutes.
+
+## Configurer dans Microsoft Intune
+
+### Enrollment Program Token
+```
+Intune → Devices → iOS/iPadOS → Enrollment → Apple MDM Push Certificate
+         puis : Enrollment → Apple Configurator → Token d'Enrollment Apple
+```
+
+### Créer un Enrollment Profile Intune
+```
+Intune → Devices → macOS → Enrollment → Automated Device Enrollment
+→ Create Profile
+
+Paramètres clés :
+- User affinity : Enroll with User Affinity (si login requis)
+                 ou Without User Affinity (appareils partagés)
+- Supervised : Yes (toujours pour corporate)
+- Locked enrollment : Yes (empêche l'unenrollment utilisateur)
+- Sync with computers : Refuse all
+- Apply device name template : {{SERIALNUMBER}}
+```
+
+### Étapes Setup Assistant à masquer dans Intune
+Identique à Jamf — Intune permet de masquer les mêmes panes.
+
+## Supervision : pourquoi c'est critique
+
+Un appareil **supervisé** permet :
+
+| Fonctionnalité | Non supervisé | Supervisé |
+|----------------|:---:|:---:|
+| Restrictions d'apps | Limité | ✅ Complet |
+| Blocage App Store | ❌ | ✅ |
+| VPN Always-on | ❌ | ✅ |
+| Content Filter | ❌ | ✅ |
+| Lost Mode MDM | ❌ | ✅ |
+| Activation Lock disable | ❌ | ✅ |
+| Single App Mode | ❌ | ✅ |
+| Remote wipe immédiat | Partiel | ✅ |
+| Deny user enrollment removal | ❌ | ✅ |
+
+**Vérifier la supervision d'un Mac :**
+```bash
+profiles status -type enrollment
+# Affiche : MDM enrollment: Yes (User Approved)
+# Pour supervisé : Supervised: Yes
+```
+
+## Cas particuliers
+
+### Appareils non achetés via ABM (ajout manuel)
+Pour les Mac achetés en grande surface ou reconditionnés :
+1. **Apple Configurator 2** → connectez le Mac via USB → Préparer → Superviser
+2. Ajoutez-le à ABM manuellement (limite : pas d'ADE natif)
+3. Alternative : enrollment manuel via URL ou profil d'enrollment
+
+### BYOD (Bring Your Own Device)
+ADE n'est **pas applicable** au BYOD — vous ne contrôlez pas l'achat. Utilisez :
+- **User-initiated enrollment** (enrollment via portail web ou lien)
+- **Apple Configurator** pour les appareils personnels temporairement gérés
+
+### Réinitialiser un appareil pour ré-enrollment
+```bash
+# Sur Mac :
+sudo /usr/bin/profiles renew -type enrollment
+# ou effacement complet : System Settings → General → Transfer or Reset → Erase All Content
+```
+
+Dans Jamf Pro : **Computers → [appareil] → Management → Wipe**
+
+## Mini-lab : Simuler un enrollment ADE
+
+**Prérequis** : accès à un Jamf Pro d'essai (trial.jamfcloud.com) et ABM sandbox.
+
+**Étape 1** — Créer un PreStage Enrollment dans Jamf :
+```
+Computers → PreStage Enrollments → New
+General : "Test ADE Lab"
+Setup Assistant : masquez Appearance, Siri, Analytics
+Scope : (laissez vide pour le test)
+```
+
+**Étape 2** — Vérifier la configuration :
+```bash
+# Sur un Mac déjà enrôlé, vérifiez la syntaxe du profil :
+sudo profiles show -all 2>/dev/null | grep -E "MDM|Supervised|Organization"
+```
+
+**Étape 3** — Inspecter le profil d'enrollment :
+```bash
+# Télécharger et inspecter le profil MDM :
+curl -o /tmp/enroll.mobileconfig \
+  "https://votreinstance.jamfcloud.com/enroll" \
+  -H "Accept: application/x-apple-aspen-config"
+cat /tmp/enroll.mobileconfig | plutil -p -
+```
+
+**Étape 4** — Vérifier dans les logs système :
+```bash
+log show --last 1h --predicate 'subsystem == "com.apple.ManagedClient"' \
+  | grep -E "enrollment|MDM|ADE" | tail -20
+```
+
+## Bonnes pratiques
+
+- **Lockez l'enrollment** : empêchez les utilisateurs de retirer le profil MDM (`Locked enrollment: Yes`)
+- **Nommez automatiquement les appareils** : template `{{DEPT}}-{{SERIALNUMBER}}` ou `{{USERNAME}}-MAC`
+- **Créez un compte admin local caché** : backup si l'utilisateur change le mot de passe de son compte
+- **Testez avec 5 appareils** avant de scaler à l'ensemble du parc
+- **Gardez une trace des serials ABM** : export CSV mensuel depuis ABM
+- **Configurez un profil par département** si les configurations différent (Sales vs Engineering vs Retail)
+
+## Erreurs fréquentes
+
+**"MDM Server unreachable"** pendant le Setup Assistant
+→ Le Mac n'a pas accès à Internet ou l'URL MDM est incorrecte dans le PreStage.
+
+**L'appareil ne reconnaît pas son enrollment ADE**
+→ Le serial n'est pas assigné à votre MDM dans ABM. Vérifiez : ABM → Appareils → cherchez le serial.
+
+**"User not authorized"** pendant l'enrollment
+→ L'authentification LDAP est activée dans le PreStage mais l'utilisateur n'a pas les droits LDAP ou le compte LDAP n'existe pas.
+
+**Appareil enrôlé mais pas supervisé**
+→ L'appareil a été enrôlé avant d'être assigné à ABM. Solution : Wipe + recommencer, ou Apple Configurator 2 pour superviser.
+
+**Le PreStage scope ne prend pas en compte les nouveaux appareils**
+→ ABM sync peut prendre 15 min. Dans Jamf : Settings → Device Enrollment Program → Sync Now.
+
+## Résumé
+
+ADE est la fondation du Zero-Touch Deployment Apple. Il transforme l'ouverture d'un carton en une étape automatisée : l'appareil s'enrôle, se configure, reçoit ses apps, et est utilisable en moins de 20 minutes — sans que l'IT ait besoin d'être présent. La supervision activée via ADE débloque le niveau de contrôle maximal offert par le protocole MDM Apple.

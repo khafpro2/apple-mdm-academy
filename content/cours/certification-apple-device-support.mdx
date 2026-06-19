@@ -1,0 +1,327 @@
+---
+title: "Certification Apple Device Support (AD0-E128)"
+description: "Préparation complète à l'examen Apple Device Support — concepts, domaines évalués, questions types et stratégie d'examen."
+module: "certifications"
+level: "intermédiaire"
+duration: "120 min"
+prerequisites: ["ecosysteme-apple-entreprise", "securite-conformite-apple"]
+tags: ["Certification", "Apple", "Support", "macOS", "iOS"]
+---
+
+## Introduction
+
+L'**Apple Device Support** est la certification d'entrée dans l'écosystème de certifications Apple professionnelles. Elle valide que le candidat possède les connaissances nécessaires pour fournir un support technique de niveau 1 et 2 sur les appareils Apple (Mac, iPhone, iPad) dans un contexte professionnel.
+
+Elle est particulièrement adaptée aux techniciens de support IT, aux helpdesk et aux administrateurs systèmes débutants dans l'environnement Apple.
+
+---
+
+## Objectifs pédagogiques
+
+À la fin de ce cours, vous serez capable de :
+- Comprendre les domaines couverts par l'examen Apple Device Support
+- Identifier les thématiques prioritaires à maîtriser
+- Vous préparer méthodiquement avec des questions types
+- Adopter une stratégie d'examen efficace
+- Planifier votre parcours de certification Apple complet
+
+---
+
+## Informations sur l'examen
+
+| Paramètre | Détail |
+|-----------|--------|
+| **Code** | AD0-E128 |
+| **Durée** | 120 minutes |
+| **Format** | QCM + scenarios pratiques |
+| **Questions** | ~60 questions |
+| **Score minimum** | 65% |
+| **Langue** | Anglais (principalement) |
+| **Prix** | ~180 USD (via Pearson VUE) |
+| **Validité** | 3 ans |
+| **Pré-requis officiels** | Aucun, mais expérience recommandée |
+
+---
+
+## Domaines évalués
+
+### Domaine 1 — Apple Hardware & Operating Systems (25%)
+
+**macOS :**
+- Architecture : kernel Darwin, volumes APFS, SIP (System Integrity Protection)
+- Démarrage : Boot Camp, Recovery Mode, safe mode, modes de démarrage avancés
+- Gestion : Finder, Spotlight, Time Machine
+- Mise à jour : macOS Software Update, delta updates
+- Diagnostics : Apple Diagnostics, Console.app, Activity Monitor
+
+**iOS/iPadOS :**
+- Modes de récupération : Recovery Mode, DFU Mode
+- iCloud : Activation Lock, Find My, sauvegarde
+- App Store : distribution, achats, Family Sharing
+
+**Apple Silicon vs Intel :**
+```
+Apple Silicon (M-series) :
+  - Démarrage : maintien bouton d'alimentation → Options
+  - Recovery : built-in, pas besoin de Mac externe
+  - Secure Enclave intégré au SoC
+  - Rosetta 2 pour apps Intel
+
+Intel Mac :
+  - Démarrage : Cmd+R (Recovery), Cmd+Option+R (Internet Recovery)
+  - Modes : Safe Mode (Shift), Verbose Mode (Cmd+V)
+  - T2 chip (certains modèles)
+```
+
+### Domaine 2 — Networking (20%)
+
+- Protocoles : TCP/IP, DHCP, DNS, LDAP, SMB, AFP
+- Wi-Fi : WPA2/WPA3, Enterprise (802.1X), captive portal
+- VPN : IKEv2, L2TP, Cisco AnyConnect, GlobalProtect
+- Résolution de problèmes réseau :
+  - `networksetup`, `ping`, `traceroute`, `nslookup`, `netstat`
+  - Diagnostics Wi-Fi : Wireless Diagnostics (Option+clic sur icône Wi-Fi)
+
+### Domaine 3 — Mobile Device Management (25%)
+
+- Concepts MDM : profils, payloads, DEP/ADE, VPP/ABM
+- Apple Business Manager : rôles, appareils, Apple School Manager
+- Enrôlement : ADE (Zero-Touch), profil utilisateur, Apple Configurator 2
+- Profils de configuration : restrictions, Wi-Fi, VPN, email, certificats
+- Supervision : fonctionnalités supplémentaires (kiosk mode, restrictions étendues)
+
+### Domaine 4 — Security (20%)
+
+- FileVault 2 : chiffrement, clé de récupération, escrow
+- Gatekeeper : niveaux de politique, quarantine, notarization
+- XProtect et MRT (Malware Removal Tool)
+- Activation Lock et MDM Bypass
+- SIP (System Integrity Protection) : désactivation en Recovery
+- Secure Boot (Mac avec Apple Silicon et T2)
+
+### Domaine 5 — Troubleshooting (10%)
+
+- Méthodologie de résolution : collecte info → isolation → test → solution
+- Outils : Console.app, sysdiagnose, DiagnosticReporter
+- Réinstallation macOS : via Recovery, via bootable USB
+- Problèmes courants : kernel panic, spinning beachball, apps qui crashent
+
+---
+
+## Points clés à maîtriser absolument
+
+### 1. Apple Silicon Boot Modes
+```
+Normal : bouton alimentation jusqu'au logo
+Recovery : bouton alimentation maintenu → Options → Utilitaires
+Safe Mode : bouton alimentation → Options → Shift+Continue dans la sélection
+DFU : via Mac auxiliaire avec Apple Configurator 2
+```
+
+### 2. APFS et volumes
+```
+Container APFS = espace physique du disque
+Volumes APFS dans un container = partages du même espace (ex: Macintosh HD + Macintosh HD - Data)
+Snapshot = copie instantanée (utilisé par Time Machine, les mises à jour macOS)
+```
+
+### 3. MDM et supervision
+```
+Unsupervised device :
+  - Restrictions limitées
+  - Utilisateur peut retirer les profils MDM
+  - Pas de kiosk mode, pas de Silent App Install sur iOS
+
+Supervised device :
+  - Restrictions étendues
+  - MDM lock (utilisateur ne peut pas retirer l'enrollment)
+  - Silent App Install (iOS)
+  - Lost Mode amélioré
+  - Nécessite ADE ou Apple Configurator 2
+```
+
+### 4. Clés de récupération FileVault
+```
+Personal Recovery Key (PRK) :
+  - Générée lors de l'activation FileVault
+  - Doit être sauvegardée par l'utilisateur
+  - Peut être mise en escrow via MDM
+
+Institutional Recovery Key (IRK) :
+  - Créée par l'IT
+  - Permet le déchiffrement depuis l'IT
+  - Déployée via profil MDM
+
+iCloud Recovery :
+  - Pour usage personnel (non recommandé en entreprise)
+```
+
+---
+
+## Questions types
+
+**Question 1**
+Un utilisateur rapporte que son Mac Apple Silicon démarre sur un écran de cadenas. Quelle est la cause la plus probable ?
+- A) Le disque dur est défaillant
+- B) SIP est désactivé
+- C) FileVault est activé et le mot de passe de démarrage est requis
+- D) Le Mac est en mode Recovery
+
+**Réponse : C** — L'écran de cadenas au démarrage sur un Mac avec FileVault activé indique que le chiffrement est en place et que le mot de passe de démarrage est requis.
+
+---
+
+**Question 2**
+Un technicien souhaite déployer des applications iOS en silence sur des appareils BYOD. Est-ce possible ?
+- A) Oui, via ABM et ADE
+- B) Oui, si l'utilisateur installe le profil MDM
+- C) Non, l'installation silencieuse d'apps nécessite la supervision
+- D) Oui, via Apple Configurator 2
+
+**Réponse : C** — L'installation silencieuse d'applications sur iOS nécessite que l'appareil soit supervisé. Les appareils BYOD enrôlés via profil MDM ne sont pas supervisés.
+
+---
+
+**Question 3**
+Quelle commande Terminal permet de vider le cache DNS sur macOS Ventura et versions ultérieures ?
+- A) `sudo dscacheutil -flushcache && sudo killall -HUP mDNSResponder`
+- B) `sudo ipconfig /flushdns`
+- C) `sudo networksetup -setdnsservers Wi-Fi empty`
+- D) `sudo killall mDNSResponder`
+
+**Réponse : A** — La commande complète est `sudo dscacheutil -flushcache && sudo killall -HUP mDNSResponder` (les deux parties sont nécessaires).
+
+---
+
+**Question 4**
+Un utilisateur a oublié son mot de passe macOS. L'appareil est géré par MDM et FileVault est activé. Quelle est la procédure correcte ?
+- A) Réinstaller macOS depuis Recovery
+- B) Utiliser la clé de récupération institutionnelle depuis le MDM
+- C) Désactiver SIP et contourner le mot de passe
+- D) Utiliser le mode DFU pour réinitialiser
+
+**Réponse : B** — Si l'appareil est géré par MDM avec une clé de récupération institutionnelle, utiliser la clé IRK pour déverrouiller FileVault puis réinitialiser le mot de passe.
+
+---
+
+**Question 5**
+Quel est l'avantage principal de l'ADE (Automated Device Enrollment) par rapport à l'enrôlement via profil manuel ?
+- A) L'ADE est gratuit, l'enrôlement manuel est payant
+- B) L'ADE permet l'enrôlement Zero-Touch supervisé, verrouillé au MDM
+- C) L'ADE fonctionne uniquement sur Mac, pas sur iOS
+- D) L'ADE supprime le besoin d'Apple Business Manager
+
+**Réponse : B** — L'ADE est la méthode d'enrôlement Zero-Touch qui lie l'appareil physiquement au MDM dès l'activation, avec supervision automatique et enrollment lock.
+
+---
+
+## Stratégie de préparation
+
+### Planning recommandé (4 semaines)
+
+```
+Semaine 1 : Hardware et OS (Domaine 1 et 2)
+  - Revoir les modes de démarrage Mac (Intel et Apple Silicon)
+  - Pratiquer les diagnostics réseau en CLI
+  - Tester APFS, Time Machine, Recovery Mode sur un Mac de test
+
+Semaine 2 : MDM et Sécurité (Domaines 3 et 4)
+  - Revoir ABM, ADE, profils MDM
+  - Pratiquer FileVault (activation, clé de récupération)
+  - Comprendre supervision vs non-supervision
+
+Semaine 3 : Troubleshooting et révision (Domaine 5)
+  - Pratiquer la méthodologie de résolution
+  - Réviser les commandes Terminal clés
+  - S'exercer sur des scénarios de panne
+
+Semaine 4 : Examens blancs
+  - Faire 3-4 examens blancs complets
+  - Analyser les erreurs
+  - Réviser les points faibles
+```
+
+### Ressources officielles Apple
+
+- **Apple Platform Deployment Guide** : https://support.apple.com/guide/deployment/
+- **Apple Training** : training.apple.com
+- **Apple Technician Guide** (appareils spécifiques) : via Apple GSX (partenaires)
+- **WWDC sessions** : developer.apple.com/wwdc (gratuit)
+
+---
+
+## Commandes Terminal essentielles pour l'examen
+
+```bash
+# Informations système
+system_profiler SPHardwareDataType       # Infos matériel
+system_profiler SPSoftwareDataType       # Infos OS
+sw_vers                                   # Version macOS
+
+# Réseau
+networksetup -listallnetworkservices      # Lister interfaces réseau
+networksetup -getinfo Wi-Fi              # Infos Wi-Fi
+ping -c 4 8.8.8.8                        # Test connectivité
+nslookup google.com                      # Résolution DNS
+traceroute google.com                    # Traçage de route
+
+# Processus
+ps aux | grep [processus]                 # Lister processus
+kill -9 [PID]                            # Forcer arrêt processus
+
+# Disques
+diskutil list                            # Lister disques
+diskutil info disk0s1                    # Infos partition
+diskutil repairVolume /                  # Réparer volume
+
+# MDM
+sudo profiles list -all                  # Lister profils MDM
+sudo profiles renew -type enrollment     # Forcer sync MDM
+sudo profiles remove -all                # Retirer tous les profils (non supervisé)
+
+# Sécurité
+fdesetup status                          # Statut FileVault
+csrutil status                           # Statut SIP
+spctl --status                           # Statut Gatekeeper
+```
+
+---
+
+## Mini-lab pratique
+
+```
+Scénario : Un utilisateur signale que son Mac ne démarre plus normalement.
+Il arrive à un écran avec un point d'interrogation clignotant.
+
+Investigation :
+1. Identifier la cause : disque de démarrage non trouvé
+2. Démarrer en Recovery Mode :
+   - Apple Silicon : maintien bouton d'alimentation
+   - Intel : Cmd+R au démarrage
+
+3. Ouvrir Disk Utility :
+   - Vérifier que le disque est visible
+   - Lancer First Aid sur le volume
+
+4. Si First Aid échoue :
+   - Sauvegarder les données si possible (Target Disk Mode sur Intel)
+   - Réinstaller macOS : Options → Réinstaller macOS
+
+5. Si le disque est absent de Disk Utility :
+   - Panne matérielle → remplacement SSD (si possible) ou réparation
+```
+
+---
+
+## Résumé
+
+| Domaine | Poids | Points clés |
+|---------|-------|-------------|
+| Hardware et OS | 25% | Modes démarrage, APFS, Recovery |
+| Networking | 20% | 802.1X, VPN, commandes CLI |
+| MDM | 25% | ADE, supervision, profils |
+| Sécurité | 20% | FileVault, Gatekeeper, SIP |
+| Troubleshooting | 10% | Méthodologie, sysdiagnose |
+| **Score minimum** | **65%** | ~39/60 questions |
+
+L'Apple Device Support est une excellente première certification pour tout technicien IT travaillant avec des appareils Apple. Sa préparation renforce des bases solides qui seront utiles pour toutes les certifications suivantes (Apple Deployment and Management, Jamf 100, MD-102).

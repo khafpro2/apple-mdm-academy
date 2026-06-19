@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { Search, Filter, Clock, ChevronDown, ChevronRight, BookOpen } from 'lucide-react';
 import { MODULES, getAllCourses, Level, Status, Tool } from '@/lib/courses';
-import { LevelBadge, StatusBadge, ToolBadge } from '@/components/ui/Badges';
+import { LevelBadge, StatusBadge } from '@/components/ui/Badges';
 import clsx from 'clsx';
 
 const ALL_LEVELS: Level[] = ['Débutant', 'Intermédiaire', 'Avancé', 'Expert'];
@@ -45,6 +45,7 @@ export default function ParcoursPage() {
   const toggleModule = (id: string) => {
     setExpandedModules((prev) => {
       const n = new Set(prev);
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
       n.has(id) ? n.delete(id) : n.add(id);
       return n;
     });

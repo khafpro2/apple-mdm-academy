@@ -1,0 +1,198 @@
+---
+title: "Zero Trust avec Jamf Connect"
+slug: "zero-trust-jamf-connect"
+---
+
+## Introduction
+
+Jamf Connect positionne macOS dans une architecture Zero Trust en remplaçant la confiance implicite basée sur le réseau (VPN, AD on-premise) par une confiance explicite basée sur l'identité (Azure AD, MFA, conformité de l'appareil). Chaque accès est vérifié, indépendamment de la localisation de l'utilisateur.
+
+## Objectifs pédagogiques
+
+- Comprendre les principes Zero Trust appliqués à macOS
+- Comprendre comment Jamf Connect + Conditional Access implémentent Zero Trust
+- Configurer les politiques de conformité Mac dans le cadre Zero Trust
+- Intégrer Jamf Pro (conformité) + Jamf Connect (identité) + Azure AD (autorisation)
+- Mesurer et démontrer le niveau Zero Trust de votre environnement macOS
+
+## Les principes Zero Trust
+
+Zero Trust repose sur 3 principes fondamentaux :
+
+```
+1. Vérifier explicitement
+   → Chaque accès est authentifié (Azure AD + MFA)
+   → Pas de confiance implicite basée sur le réseau
+
+2. Utiliser le moindre privilège
+   → Accès minimaux selon le rôle
+   → Élévation de privilèges uniquement si nécessaire
+
+3. Présumer la compromission
+   → Monitoring continu
+   → Réponse automatique aux anomalies
+```
+
+## Jamf Connect dans l'architecture Zero Trust
+
+```
+Architecture Zero Trust macOS :
+
+┌─────────────────────────────────────────────────────┐
+│                  Microsoft Entra ID                  │
+│  Identity Provider — Source of Truth                 │
+└──────────┬──────────────────┬───────────────────────┘
+           │                  │
+           ▼                  ▼
+┌──────────────────┐  ┌───────────────────┐
+│  Jamf Connect    │  │  Conditional       │
+│  (Identité Mac)  │  │  Access            │
+│                  │  │  (Contrôle accès)  │
+│  → Authentif.    │  │                    │
+│  → Sync MDP      │  │  → Si conforme     │
+│  → SSO           │  │  → Si MFA OK       │
+└────────┬─────────┘  └────────┬──────────┘
+         │                     │
+         ▼                     ▼
+┌──────────────────────────────────────────┐
+│              Mac géré par Jamf Pro       │
+│  → Conformité vérifiée                   │
+│  → Configuration déployée                │
+│  → Monitoring continu                    │
+└──────────────────────────────────────────┘
+         │
+         ▼
+┌──────────────────────────────────────────┐
+│          Ressources d'entreprise         │
+│  Microsoft 365, SharePoint, Apps métier  │
+│  → Accès accordé SI :                    │
+│    ✅ Identité Azure AD vérifiée         │
+│    ✅ MFA complété                       │
+│    ✅ Appareil conforme (Intune/Jamf)    │
+│    ✅ Location/IP acceptable             │
+└──────────────────────────────────────────┘
+```
+
+## Conformité Mac dans Conditional Access
+
+### Intégration Jamf Pro + Azure AD
+
+Pour que Conditional Access puisse évaluer la conformité d'un Mac géré par Jamf Pro :
+
+```
+1. Jamf Pro → Settings → Azure AD Integration → Configure
+2. Entrer les credentials Azure AD
+3. Activer "Device Compliance Reporting"
+4. Jamf Pro rapporte la conformité des Mac à Azure AD
+
+Dans Azure AD :
+5. Devices → Compliance state → le Mac apparaît comme "Compliant" ou "Noncompliant"
+```
+
+### Politique Conditional Access macOS Zero Trust
+
+```
+Azure AD → Security → Conditional Access → New policy
+
+Name: ZeroTrust-macOS-Microsoft365
+
+Users: Tous (exclure les comptes de service)
+Cloud apps: Microsoft 365 (toutes)
+Conditions:
+  ├── Device platforms: macOS
+  └── Client apps: Browser + Apps modernes
+
+Grant:
+  ├── ✅ Require Multifactor Authentication
+  ├── ✅ Require device to be marked as compliant
+  └── Require all selected controls
+
+Session:
+  ├── Sign-in frequency: Every 24 hours (pas "Persistent browser")
+  └── Continuous access evaluation: Enable
+```
+
+## Elevation Temporaire (LAPS macOS)
+
+Zero Trust exige le moindre privilège — les utilisateurs ne doivent pas être admins permanents. Jamf Connect supporte l'élévation temporaire (via Privilege Guard ou des intégrations tierces).
+
+```
+Scénario : L'utilisateur a besoin d'installer une app ponctuellement
+
+Avec LAPS (Local Administrator Password Solution) :
+1. Utilisateur demande l'élévation temporaire via Self Service Jamf
+2. Demande approuvée par manager (workflow Teams/Slack)
+3. Jamf Pro accorde les droits admin pour 30 minutes
+4. App installée
+5. Droits admin automatiquement retirés après 30 minutes
+6. Log de l'action conservé dans Jamf Pro
+```
+
+## Monitoring et détection des anomalies
+
+### Jamf Protect + Zero Trust
+
+Jamf Protect (cours dédié) complète l'architecture Zero Trust :
+
+```
+Jamf Protect monitore en temps réel :
+├── Tentatives de connexion suspectes
+├── Élévation de privilèges non autorisée
+├── Persistance de malware
+├── Exfiltration de données
+└── Déviation des baselines CIS
+
+Alertes → SIEM (Microsoft Sentinel) → Equipe SOC → Réponse
+```
+
+### Score de sécurité Zero Trust macOS
+
+Évaluez votre maturité Zero Trust macOS :
+
+| Critère | Non implémenté | Partiel | Complet |
+|---------|---------------|---------|---------|
+| Jamf Connect (identité) | 0 | 1 | 2 |
+| MFA Azure AD | 0 | 1 | 2 |
+| Conformité Jamf Pro | 0 | 1 | 2 |
+| Conditional Access | 0 | 1 | 2 |
+| Jamf Protect (EDR) | 0 | 1 | 2 |
+| LAPS (moindre privilège) | 0 | 1 | 2 |
+| **Score max** | | | **12** |
+
+## Exemple concret — Migration Zero Trust pour 300 Mac
+
+**Avant (Trust réseau, VPN global)** :
+```
+✅ VPN connecté → accès complet aux ressources
+❌ Pas de MFA
+❌ Pas de conformité vérifiée
+❌ Comptes admin locaux partout
+```
+
+**Après (Zero Trust avec Jamf Connect)** :
+```
+Phase 1 (M1-2) : Jamf Connect déployé (identité cloud)
+Phase 2 (M2-3) : MFA Azure AD activé
+Phase 3 (M3-4) : Conformité Jamf Pro → Azure AD
+Phase 4 (M4-5) : Conditional Access activé (report-only → block)
+Phase 5 (M5-6) : Jamf Protect EDR déployé
+Phase 6 (M6)   : LAPS — suppression des comptes admin permanents
+
+Résultat :
+→ Score Zero Trust : 12/12
+→ 0 ticket "accès refusé" injustifié (grâce aux phases progressives)
+→ 2 incidents de sécurité détectés par Jamf Protect
+→ Conformité RGPD et ISO 27001 renforcée
+```
+
+## Bonnes pratiques Zero Trust macOS
+
+- **Progressif** : ne jamais activer le blocage Conditional Access sans phase report-only
+- **Exclusions d'urgence** : toujours prévoir des comptes de break-glass exclus du CA
+- **Documenter** chaque politique avec sa justification de sécurité
+- **Former les utilisateurs** : Zero Trust génère plus de friction au début — expliquer pourquoi
+- **Mesurer** : score de sécurité mensuel pour montrer la progression
+
+## Résumé
+
+Jamf Connect est la pièce centrale de l'architecture Zero Trust macOS. En connectant l'identité macOS à Azure AD, il permet à Conditional Access de vérifier que chaque accès vient d'un utilisateur authentifié (MFA), sur un appareil conforme (Jamf Pro), avec le niveau de privilège minimal requis. Le résultat : une sécurité macOS moderne, sans VPN global, qui fonctionne depuis n'importe où dans le monde.

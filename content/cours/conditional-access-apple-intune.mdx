@@ -1,0 +1,298 @@
+---
+title: "Accès conditionnel pour appareils Apple avec Intune"
+description: "Configurer l'accès conditionnel Entra ID pour sécuriser l'accès Microsoft 365 depuis les Mac et iPhone gérés par Intune."
+module: "microsoft-intune-apple"
+level: "avancé"
+duration: "90 min"
+prerequisites: ["compliance-policies-intune-apple", "enrolement-ade-intune"]
+tags: ["Intune", "Entra ID", "Accès conditionnel", "Zero Trust", "MFA"]
+---
+
+## Introduction
+
+L'accès conditionnel (Conditional Access) est le moteur de décision Zero Trust dans l'écosystème Microsoft. Il intercepte chaque tentative d'accès à une ressource Microsoft 365 et évalue une série de conditions avant d'autoriser ou de bloquer l'accès.
+
+Pour les appareils Apple gérés par Intune, l'accès conditionnel permet d'imposer que **seuls les Mac et iPhone conformes et gérés accèdent aux données d'entreprise** — et ce, indépendamment de l'identité de l'utilisateur.
+
+---
+
+## Objectifs pédagogiques
+
+À la fin de ce cours, vous serez capable de :
+- Comprendre le flux de décision de l'accès conditionnel
+- Créer des politiques d'accès conditionnel ciblant les appareils Apple
+- Configurer les conditions (plateforme, conformité, MFA)
+- Gérer les exclusions et exceptions
+- Dépanner les blocages d'accès
+
+---
+
+## Contexte professionnel
+
+Situation courante : Un employé utilise son iPhone personnel pour accéder à ses emails professionnels via Outlook. Sans accès conditionnel, l'accès est autorisé si les credentials sont corrects. Avec accès conditionnel :
+
+- Si l'iPhone n'est pas enrôlé dans Intune → **Bloqué**
+- Si l'iPhone est enrôlé mais non conforme → **Bloqué**
+- Si l'iPhone est conforme ET l'utilisateur a fait son MFA → **Autorisé**
+
+C'est la différence entre "authentification = accès" et "authentification + conformité appareil + contexte = accès".
+
+---
+
+## Notions clés
+
+### Composants d'une politique d'accès conditionnel
+
+```
+Politique CA = SI [Conditions] ALORS [Contrôles d'accès]
+
+Conditions :
+  - Utilisateurs / Groupes ciblés
+  - Applications cloud ciblées (Exchange, SharePoint, Teams...)
+  - Plateforme de l'appareil (macOS, iOS, Android...)
+  - Statut de conformité (Compliant / Registered)
+  - Localisation (IP, pays)
+  - Risque utilisateur / Session (Entra ID Protection)
+  - Client app (browser, app moderne, Exchange ActiveSync...)
+
+Contrôles d'accès :
+  - Bloquer l'accès
+  - Accorder l'accès + exiger :
+    - MFA
+    - Appareil conforme (Intune)
+    - Appareil joint à Entra (Hybrid ou Entra Join)
+    - Application cliente approuvée
+    - Politique de protection des apps
+```
+
+### Signaux utilisés pour les appareils Apple
+
+| Signal | Source | Description |
+|--------|--------|-------------|
+| Plateforme | User-agent HTTP | macOS vs iOS |
+| Conformité | Intune → Entra ID | Politique Intune respectée |
+| Enregistrement | Entra ID | Appareil connu d'Entra |
+| Risque | Entra ID Protection | Comportement anormal |
+
+---
+
+## Procédure : Politique CA pour Mac gérés
+
+### Scénario visé
+Exiger que les Mac accédant à Microsoft 365 soient enrôlés dans Intune ET conformes. Exiger en plus le MFA pour les accès hors réseau de l'entreprise.
+
+### Étape 1 — Pré-requis
+
+Avant de créer la politique CA :
+1. ✅ Appareils Mac enrôlés dans Intune (ADE ou profil d'enrôlement)
+2. ✅ Politique de conformité macOS créée et assignée
+3. ✅ Au moins un Mac en statut "Conforme" (pour ne pas vous bloquer vous-même)
+4. ✅ Votre compte Admin exclu de la politique (sécurité de rupture)
+
+### Étape 2 — Créer la politique
+
+1. **Entra ID Portal** : https://entra.microsoft.com
+2. Naviguer : **Protection → Conditional Access → Policies**
+3. Cliquer **+ New policy**
+4. **Nom :** `CA-macOS-Require-Compliant-Device`
+
+### Étape 3 — Configurer les Assignments
+
+**Users :**
+- Include : `All users` (ou groupe spécifique)
+- Exclude : 
+  - Votre compte break-glass admin
+  - Comptes de service (si nécessaire)
+
+**Target resources :**
+- Include : `All cloud apps`
+  *(ou cibler spécifiquement : Exchange Online, SharePoint Online, Microsoft Teams)*
+
+**Conditions → Device platforms :**
+- Configure : **Yes**
+- Include : `macOS`
+
+**Conditions → Client apps :**
+- Configure : **Yes**
+- Browser : **Yes**
+- Mobile apps and desktop clients : **Yes**
+- Exchange ActiveSync clients : **No** (géré séparément)
+- Other clients : **No**
+
+### Étape 4 — Configurer les Access controls
+
+**Grant :**
+- Sélectionner **Grant access**
+- Cocher **Require device to be marked as compliant**
+- Cocher **Require multifactor authentication**
+- For multiple controls : **Require all the selected controls**
+
+### Étape 5 — Mode Report-only OBLIGATOIRE
+
+**Enable policy : Report-only**
+
+> ⚠️ Ne jamais activer directement en "On". Le mode Report-only permet de voir quels utilisateurs seraient bloqués SANS les bloquer réellement.
+
+1. Laisser en Report-only pendant **7-14 jours**
+2. Consulter : **Monitoring → Sign-in logs → Conditional Access** pour voir les impacts
+3. Corriger les cas problématiques avant activation
+
+---
+
+## Procédure : Politique CA pour iPhone/iPad
+
+```
+Nom : CA-iOS-Require-Compliant-Device
+
+Assignments :
+  Users : Tous les utilisateurs (sauf break-glass)
+  Target resources : All cloud apps
+  Conditions :
+    Device platforms : iOS
+
+Access controls (Grant) :
+  ✓ Require device to be marked as compliant
+  ✓ Require approved client app
+  For multiple controls : Require one of the selected controls
+```
+
+**Pourquoi "Require one" au lieu de "Require all" ?**
+Sur iOS, l'accès via le navigateur Safari ne peut pas satisfaire "Approved client app" (qui vise Outlook, Edge, etc.). En mettant "Require one", l'utilisateur peut accéder soit avec un appareil conforme, soit via une app approuvée (Outlook).
+
+---
+
+## Exemple concret : Déploiement en 3 phases
+
+### Phase 1 — Audit (semaines 1-2)
+- Créer toutes les politiques CA en mode **Report-only**
+- Analyser les Sign-in logs pour identifier les utilisateurs/appareils impactés
+- Identifier les comptes de service qui accèdent à des apps cloud (à exclure)
+
+```
+Entra ID → Monitoring → Sign-in logs
+Filtrer : Conditional Access → Report-only : Would fail
+→ Exporter la liste des utilisateurs concernés
+```
+
+### Phase 2 — Pilote (semaines 3-4)
+- Limiter la politique à un groupe pilote : `GRP-CA-Pilot`
+- Activer la politique en mode **On** pour ce groupe
+- Support IT dédié pendant 2 semaines
+- Résoudre les problèmes remontés
+
+### Phase 3 — Généralisation (semaine 5+)
+- Étendre progressivement (par département)
+- Monitorer les Sign-in logs quotidiennement
+- Maintenir le break-glass account exclu
+
+---
+
+## Bonnes pratiques
+
+**Compte break-glass obligatoire**
+Toujours exclure un compte break-glass (ex : `breakglass@domain.com`) de TOUTES les politiques CA. Ce compte, avec MFA hardware key, permet de récupérer l'accès en cas de problème.
+
+**Nommage cohérent des politiques**
+```
+Format : CA-[Platform]-[Action]-[Scope]
+Exemples :
+  CA-macOS-Require-Compliant-Device
+  CA-iOS-Block-Exchange-ActiveSync
+  CA-All-Require-MFA-External
+  CA-All-Block-Legacy-Auth
+```
+
+**Ne jamais cibler "All cloud apps" sans exclusions**
+Toujours exclure au moins Microsoft Intune et Microsoft Intune Enrollment, sinon les appareils ne peuvent plus s'enrôler.
+
+**Bloquer l'authentification héritée en priorité**
+Les protocoles IMAP, POP3, SMTP AUTH, Exchange ActiveSync v1 ne supportent pas le MFA. Les bloquer est la première politique CA à déployer.
+
+```
+Nom : CA-All-Block-Legacy-Auth
+Conditions → Client apps : Other clients
+Grant : Block access
+Enable : On (déploiement immédiat, peu de risque de casser des workflows modernes)
+```
+
+---
+
+## Erreurs fréquentes
+
+**Erreur 1 : Administrateur bloqué**
+- Cause : Admin non exclu de la politique
+- Fix : Utiliser le compte break-glass → exclure l'admin dans la politique
+
+**Erreur 2 : Politiques en conflit**
+- Cause : Deux politiques CA avec des conditions qui se contredisent
+- Fix : Utiliser l'outil **What If** dans Entra CA pour simuler l'accès d'un utilisateur spécifique
+
+```
+Entra ID → Conditional Access → What If
+→ Sélectionner l'utilisateur, l'app, la plateforme
+→ Voir quelle politique s'applique et pourquoi
+```
+
+**Erreur 3 : Appareils BYOD bloqués sans communication préalable**
+- Cause : Politique CA activée sans préparation des utilisateurs BYOD
+- Fix : Exclure les BYOD dans un premier temps (groupe "Appareils non gérés"), puis les orienter vers l'enrôlement
+
+**Erreur 4 : Apps mobiles bloquées mais pas le web**
+- Cause : Politique ciblant uniquement "Mobile apps and desktop clients"
+- Fix : Vérifier que "Browser" est aussi inclus dans les conditions
+
+---
+
+## Mini-lab pratique
+
+**Objectif :** Configurer une politique CA Report-only et analyser son impact.
+
+```
+Pré-requis :
+  - Accès Global Admin ou Conditional Access Administrator
+  - Au moins un utilisateur de test avec Mac enrôlé
+
+Étapes :
+
+1. Créer la politique CA :
+   Entra ID → Conditional Access → + New policy
+   Nom : LAB-CA-macOS-Compliance-Test
+   Users : Votre utilisateur de test uniquement
+   Apps : Microsoft Teams uniquement (scope limité)
+   Conditions → Device platforms : macOS
+   Grant : Require device to be marked as compliant
+   Enable : Report-only
+
+2. Tester l'accès :
+   Sur votre Mac de test, ouvrir Teams dans le navigateur
+   → Teams doit s'ouvrir normalement (Report-only ne bloque pas)
+
+3. Analyser les Sign-in logs :
+   Entra ID → Monitoring → Sign-in logs
+   Filtrer par votre utilisateur de test
+   Cliquer sur une entrée → Conditional Access tab
+   → Voir : LAB-CA-macOS-Compliance-Test : Report-only : 
+     "Would grant" si conforme / "Would fail" si non conforme
+
+4. Vérifier ce que verrait un utilisateur bloqué :
+   Dans les logs, trouver une entrée "Would fail"
+   → Identifier la raison (appareil non conforme, non enrôlé...)
+
+5. Documenter les résultats et les recommandations
+```
+
+---
+
+## Résumé
+
+| Concept | Détail |
+|---------|--------|
+| Rôle CA | Moteur de décision Zero Trust entre utilisateur et ressource |
+| Signal appareil | Conformité Intune transmise à Entra ID |
+| Condition plateforme | macOS / iOS séparés pour contrôle fin |
+| Mode Report-only | Obligatoire avant activation, simule sans bloquer |
+| Break-glass | Compte admin exclu de toutes les politiques |
+| Outil de debug | What If dans Entra CA + Sign-in logs |
+| Bonne pratique | Bloquer l'auth héritée en premier, puis exiger conformité |
+
+L'accès conditionnel transforme votre MDM en vrai contrôle d'accès Zero Trust. La conformité Intune n'est utile que si elle est connectée à l'accès conditionnel — sans cette connexion, un appareil non conforme reste un appareil qui accède quand même.

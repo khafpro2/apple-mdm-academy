@@ -1,0 +1,213 @@
+---
+title: "Sécurité Android avec Microsoft Intune"
+slug: "securite-android-intune"
+---
+
+## Introduction
+
+La sécurité Android Enterprise avec Intune va au-delà des simples politiques de conformité. Elle englobe la protection contre les menaces mobiles, le chiffrement, la gestion des certificats, la protection des applications, et l'intégration avec Microsoft Defender for Endpoint.
+
+## Objectifs pédagogiques
+
+- Déployer Microsoft Defender for Endpoint sur Android via Intune
+- Configurer la protection contre les menaces mobiles (MTD)
+- Mettre en place des App Protection Policies (MAM) pour Android
+- Gérer les certificats et VPN sur Android Enterprise
+- Auditer et répondre aux incidents de sécurité Android
+
+## Microsoft Defender for Endpoint sur Android
+
+Microsoft Defender for Endpoint (MDE) est l'EDR mobile de Microsoft. Sur Android, il offre :
+- **Anti-phishing** : bloque les sites malveillants dans tous les navigateurs
+- **Anti-malware** : détection d'apps malveillantes
+- **Jailbreak/Root detection** : détecte les appareils compromis
+- **Network protection** : connexions réseau suspectes
+
+### Déploiement MDE Android
+
+```
+Apps → Android → Add → Managed Google Play
+→ Rechercher "Microsoft Defender: Antivirus"
+→ Approve → Assign as Required
+
+App Configuration Policy → MDE Android:
+  ├── Antiphishing: Enable
+  ├── VPN protection: Enable
+  └── Privacy report: Enable (ou Disable selon politique)
+```
+
+### Intégration Compliance + MDE
+
+```
+Compliance Policy → Device Health:
+  Require the device to be at or under machine risk score:
+    └── Secured / Low / Medium / High
+
+Quand MDE détecte une menace :
+→ L'appareil reçoit un score de risque élevé
+→ Compliance Policy détecte le non-respect
+→ Conditional Access bloque l'accès
+→ L'utilisateur reçoit une notification
+→ Une fois la menace résolue : conformité restaurée automatiquement
+```
+
+## App Protection Policies (MAM) — Android
+
+Les MAM Policies protègent les données Microsoft 365 dans les apps, indépendamment de l'enrôlement.
+
+### Politique MAM Android niveau entreprise
+
+```
+Apps → App Protection Policies → Create → Android
+
+Targeted apps:
+  ├── Outlook
+  ├── Teams
+  ├── Edge
+  ├── OneDrive
+  ├── SharePoint
+  └── Word, Excel, PowerPoint
+
+Data protection:
+  Backup org data to Android backup services: Block
+  Send org data to other apps: Policy managed apps only
+  Save copies of org data:
+    └── SharePoint only / OneDrive only
+  Receive data from other apps: Policy managed apps only
+  Restrict cut, copy, paste between other apps: Policy managed apps
+  Screen capture and Google Assistant: Block
+
+Access requirements:
+  PIN for access: Require
+  PIN type: Numeric
+  Minimum PIN length: 6
+  Allow fingerprint/biometric: Yes
+  Override PIN with work account credentials: No
+  Recheck access requirements after: 30 minutes
+  
+Conditional launch:
+  Max PIN attempts: 5 (then wipe)
+  Offline grace period: 720 hours (30 days)
+  Jailbroken/rooted devices: Block (wipe)
+  Min OS version: 10 (warn) / 9 (block)
+  Min app version: Outlook 4.2306 (warn)
+  Min SDK version: 28 (block)
+  Device threat level: Secured (avec MDE)
+```
+
+## Chiffrement Android Enterprise
+
+Android 9+ chiffre automatiquement le stockage interne. Via Intune :
+
+```
+Compliance Policy:
+  └── Require encryption of data storage on device: Require
+
+Configuration Profile:
+  └── Encrypted storage: Require (forcer si pas déjà actif)
+```
+
+**Work Profile** : Le Work Profile dispose d'un chiffrement **séparé** du reste de l'appareil — les données pro sont chiffrées avec des clés distinctes des données personnelles.
+
+## Gestion des certificats
+
+### SCEP (Simple Certificate Enrollment Protocol)
+
+Pour l'authentification sans mot de passe (Wi-Fi EAP-TLS, VPN) :
+
+```
+Devices → Android → Configuration Profiles → Create
+→ SCEP Certificate
+
+Settings:
+  Certificate type: Device
+  Subject name format: CN={{DeviceId}}
+  Subject alternative name: User principal name → {{UserPrincipalName}}
+  Certificate validity period: 1 year
+  SCEP Server URLs: https://votre-ndes-server/certsrv/mscep/mscep.dll
+  
+→ Ce certificat est utilisé par le profil Wi-Fi ou VPN
+```
+
+### Profil Wi-Fi avec EAP-TLS
+
+```
+Devices → Android → Configuration Profiles → Create → Wi-Fi
+  SSID: CorpWiFi-Secure
+  Network type: Enterprise
+  EAP type: TLS
+  Client certificate: [Votre profil SCEP]
+  Root certificate: [Votre profil Trusted Certificate]
+```
+
+## VPN Always-On Android Enterprise
+
+```
+Devices → Android → Configuration Profiles → Create → VPN
+
+Settings:
+  Connection name: VPN Entreprise
+  VPN type: Microsoft Tunnel (ou Cisco AnyConnect, etc.)
+  Always-on VPN: Enable
+  Lock VPN: Enable (empêche l'utilisateur de désactiver)
+  
+Work Profile uniquement :
+  └── VPN appliqué uniquement au trafic Work Profile
+  └── Trafic personnel non routé via VPN
+```
+
+## Réponse aux incidents Android
+
+### Scénario — Appareil perdu
+
+```
+Devices → [Appareil] → Actions
+
+Options :
+  1. Remote lock : verrouille immédiatement l'appareil
+  2. Reset passcode : force un nouveau PIN
+  3. Wipe : réinitialisation complète (Fully Managed)
+  4. Remove Company Data : supprime uniquement Work Profile (BYOD)
+  5. Locate device : géolocalisation (si activé dans le profil)
+```
+
+### Scénario — Malware détecté par MDE
+
+```
+Alerte MDE dans Microsoft 365 Defender :
+→ Appareil identifié : Samsung Galaxy de Jean Dupont
+→ Menace : Trojan.AndroidOS.Boogr.gsh détecté
+
+Réponse IT :
+1. Intune → [Appareil] → Sync (forcer la mise à jour du statut)
+2. Vérifier le score de risque MDE : Élevé
+3. Conditional Access a déjà bloqué l'accès (automatique)
+4. Contacter l'utilisateur
+5. Demander à l'utilisateur d'ouvrir MDE → Scan manuel
+6. Si non résolu : Intune → Remote Lock → puis Wipe
+7. Réenrôlement après confirmation résolution
+```
+
+## Bonnes pratiques sécurité Android
+
+- **MDE sur tous les appareils** d'entreprise Android — pas optionnel
+- **MAM sans enrôlement** pour les partenaires et BYOD non enrôlés (protection des apps M365)
+- **Never allow unknown sources** : bloquer dans les profils de configuration
+- **Alertes de conformité** : configurer des alertes Intune pour les appareils non conformes depuis >24h
+- **Google Play Protect** : toujours requis dans les politiques de conformité
+- **Audit trimestriel** : revoir les appareils rooted ou avec score de risque élevé
+
+## Mini-lab
+
+### Tester la protection MAM
+
+1. Installez Outlook sur un Android non enrôlé (ou Work Profile de test)
+2. Dans Intune, créez une App Protection Policy Android pour Outlook
+3. Activez : Restrict cut/copy/paste, Block screen capture
+4. Connectez-vous à votre compte Microsoft dans Outlook
+5. Testez : essayez de faire une capture d'écran dans Outlook
+6. Vérifiez dans `Apps → Monitor → App protection status` que l'appareil apparaît
+
+## Résumé
+
+La sécurité Android avec Intune repose sur 4 piliers : Microsoft Defender for Endpoint (détection des menaces), App Protection Policies (protection des données dans les apps), politiques de conformité (critères minimaux), et Conditional Access (blocage des accès si non conforme). Cette combinaison offre une protection en profondeur qui couvre les appareils enrôlés ET les appareils BYOD non enrôlés via MAM.

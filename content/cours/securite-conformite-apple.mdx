@@ -1,0 +1,212 @@
+---
+title: "Sécurité et conformité Apple"
+slug: "securite-conformite-apple"
+---
+
+## Introduction
+
+Apple intègre la sécurité à plusieurs niveaux : matériel (Secure Enclave, T2/Apple Silicon), système (SIP, Gatekeeper, XProtect), et réseau (OCSP, certificate pinning). Comprendre ces couches permet à l'administrateur MDM de configurer des politiques de conformité réalistes et de répondre aux audits de sécurité (ISO 27001, SOC 2, HDS, RGPD).
+
+## Objectifs
+
+- Maîtriser l'architecture de sécurité Apple (matériel → OS → réseau)
+- Configurer des politiques de conformité via MDM
+- Appliquer le CIS Benchmark macOS
+- Automatiser les rapports de conformité
+- Comprendre Secure Enclave, SIP, Gatekeeper, XProtect, Notarization
+
+## Architecture de sécurité en couches
+
+### Couche 1 — Matériel
+
+**Secure Enclave** : processeur ARM dédié, isolé du CPU principal. Stocke les clés privées FileVault, Touch ID/Face ID, Apple Pay. Même avec un accès root au système, le Secure Enclave reste inaccessible.
+
+**Apple Silicon (M1+)** : boot sécurisé cryptographiquement vérifié à chaque démarrage. La chaîne de confiance commence dans le silicium lui-même — impossible à falsifier sans détruire la puce.
+
+**T2 (Intel Mac 2018-2021)** : équivalent du Secure Enclave pour les Mac Intel. Gère aussi le chiffrement du SSD (AES-256 en temps réel, transparent).
+
+### Couche 2 — Système d'exploitation
+
+**System Integrity Protection (SIP)**
+```bash
+# Vérifier le statut
+csrutil status
+# Output attendu en production : System Integrity Protection status: enabled.
+```
+SIP empêche toute modification des répertoires système (`/System`, `/usr`, `/bin`, `/sbin`) même par root. Ne jamais désactiver en production.
+
+**Gatekeeper**
+```bash
+# Vérifier la configuration
+spctl --status
+# Output : assessments enabled (= sécurité maximale)
+
+# Vérifier une app spécifique
+spctl --assess --verbose /Applications/MonApp.app
+```
+Gatekeeper vérifie la signature de code et la notarisation avant d'autoriser l'exécution. Trois niveaux : App Store uniquement / App Store + développeurs identifiés (défaut) / Partout (déconseillé).
+
+**XProtect**
+Base de signatures de malwares maintenue par Apple, mise à jour silencieusement. XProtect scanne les fichiers téléchargés avant ouverture.
+```bash
+# Version XProtect installée
+system_profiler SPInstallHistoryDataType 2>/dev/null | \
+  awk '/XProtectPlistConfigData/{found=1} found && /Version/{print $2; exit}'
+```
+
+**Notarization**
+Depuis macOS 10.15, Apple vérifie (notarise) chaque app avant distribution. Si une app notarisée est détectée malveillante après coup, Apple peut révoquer la notarisation — l'app ne s'exécute plus sur aucun Mac.
+
+### Couche 3 — Réseau et identité
+
+**Certificate Pinning** : les apps Apple vérifient que les certificats serveurs correspondent exactement aux certificats attendus. Protège contre les attaques MITM même avec un proxy d'inspection SSL.
+
+**OCSP (Online Certificate Status Protocol)** : vérification en temps réel de la validité des certificats d'apps. Macosss vérifie l'état à chaque lancement d'app.
+
+## Politiques de conformité MDM
+
+### Conformité de base recommandée
+
+Via un profil de configuration MDM (Jamf ou Intune) :
+
+```xml
+<!-- Exemple : politique mot de passe macOS -->
+<key>PayloadType</key>
+<string>com.apple.mobiledevicemanagement.passcode</string>
+
+<key>minLength</key>
+<integer>8</integer>
+<key>minComplexChars</key>
+<integer>1</integer>
+<key>maxPINAgeInDays</key>
+<integer>90</integer>
+<key>maxFailedAttempts</key>
+<integer>10</integer>
+<key>minutesUntilFailedLoginReset</key>
+<integer>5</integer>
+```
+
+### CIS Benchmark macOS — Contrôles prioritaires
+
+Le CIS (Center for Internet Security) publie un benchmark macOS mis à jour annuellement. Voici les contrôles les plus critiques :
+
+| Contrôle | Description | Vérification bash |
+|----------|-------------|------------------|
+| 2.1.1 | FileVault activé | `fdesetup status` |
+| 2.6.1 | Gatekeeper activé | `spctl --status` |
+| 1.1 | SIP activé | `csrutil status` |
+| 6.1.1 | Mot de passe requis au réveil | `sysadminctl -screenLock status` |
+| 2.3.1 | Remote Apple Events désactivé | `systemsetup -getremoteappleevents` |
+| 2.3.2 | Remote Login (SSH) désactivé | `systemsetup -getremotelogin` |
+| 2.4.1 | Firewall activé | `/usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate` |
+
+### Script d'audit de conformité
+
+```bash
+#!/bin/bash
+# CIS macOS Quick Audit
+# MDM Academy
+
+PASS=0; FAIL=0
+
+check() {
+    local ctrl="$1" desc="$2" cmd="$3" expected="$4"
+    result=$(eval "$cmd" 2>/dev/null)
+    if echo "$result" | grep -q "$expected"; then
+        echo "✅ [$ctrl] $desc"
+        ((PASS++))
+    else
+        echo "❌ [$ctrl] $desc → $result"
+        ((FAIL++))
+    fi
+}
+
+check "2.1.1" "FileVault" "fdesetup status" "FileVault is On"
+check "2.6.1" "Gatekeeper" "spctl --status" "assessments enabled"
+check "1.1"   "SIP"        "csrutil status" "enabled"
+check "2.4.1" "Firewall"   "/usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate" "enabled"
+
+# Vérifier SSH
+SSH_STATUS=$(systemsetup -getremotelogin 2>/dev/null)
+if echo "$SSH_STATUS" | grep -q "Off"; then
+    echo "✅ [2.3.2] SSH désactivé"
+    ((PASS++))
+else
+    echo "❌ [2.3.2] SSH activé — à désactiver en production"
+    ((FAIL++))
+fi
+
+echo ""
+echo "Résultat : ✅ $PASS contrôles conformes | ❌ $FAIL non conformes"
+[ "$FAIL" -gt 0 ] && exit 1 || exit 0
+```
+
+## Reporting de conformité
+
+### Jamf Pro — Rapports de conformité
+```
+Jamf Pro → Computers → Search Computers
+Critères : FileVault Status "is not" Encrypted → liste des Mac non chiffrés
+```
+
+Créez un Smart Group "Non-Compliant Macs" :
+```
+Critère 1 : FileVault 2 Status "is not" All Partitions Encrypted
+OU
+Critère 2 : Gatekeeper Status "is not" App Store and identified developers
+```
+
+Assignez une politique de remédiation à ce groupe.
+
+### Intune — Compliance Policies
+```
+Intune → Devices → macOS → Compliance policies → Create
+Paramètres clés :
+- System Integrity Protection : Require
+- FileVault : Require  
+- Firewall : Require
+- Password : min 8 chars, 1 complex char, expire 90 days
+```
+
+Actions si non conforme :
+- Immédiat : notification email à l'utilisateur
+- 7 jours : marquage "not compliant" dans AAD
+- 14 jours : blocage Conditional Access (plus d'accès Microsoft 365)
+
+## Mini-lab : Audit de conformité complet
+
+**Étape 1** — Exécutez le script d'audit sur votre Mac :
+```bash
+curl -fsSL https://raw.githubusercontent.com/... | bash
+# (ou copiez le script ci-dessus dans /tmp/audit.sh && chmod +x /tmp/audit.sh && /tmp/audit.sh)
+```
+
+**Étape 2** — Identifiez les non-conformités et corrigez :
+```bash
+# Activer le Firewall
+sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on
+
+# Désactiver SSH (si pas nécessaire)
+sudo systemsetup -setremotelogin off
+
+# Vérifier FileVault
+sudo fdesetup status
+# Si "FileVault is Off" : activer via System Settings → Privacy & Security → FileVault
+```
+
+**Étape 3** — Re-run l'audit → tous les contrôles verts.
+
+**Étape 4** — Dans Jamf Pro : créez un Smart Group pour chaque non-conformité et configurez des alertes email automatiques.
+
+## Bonnes pratiques
+
+- **Ne désactivez jamais SIP** en production, même pour des apps legacy
+- **Activez FileVault dès le déploiement** via le PreStage (jamais en rattrapage)
+- **Auditez mensuellement** avec un Smart Group Jamf ou une Compliance Policy Intune
+- **Documentez les exceptions** : certaines apps nécessitent des exceptions Gatekeeper — documentez-les et limitez-les
+- **Gardez XProtect à jour** : Apple pousse les updates automatiquement, ne les bloquez pas
+- **Testez vos profils de sécurité** sur un appareil de test avant déploiement production
+
+## Résumé
+
+La sécurité Apple est multicouche, de la puce au réseau. L'administrateur MDM configure la couche politique (Gatekeeper, FileVault, pare-feu, mot de passe) via des profils de configuration. Les couches matérielles (Secure Enclave) et système (SIP, XProtect) sont gérées par Apple et ne doivent pas être contournées. Le CIS Benchmark macOS fournit une référence reconnue par les auditeurs de sécurité.

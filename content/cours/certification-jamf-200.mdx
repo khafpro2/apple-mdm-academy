@@ -1,0 +1,408 @@
+---
+title: "Jamf 200 — Jamf Certified Associate"
+description: "Préparation à la certification Jamf 200 : architecture avancée, haute disponibilité, LDAP, PKI, gestion multi-sites et sécurité enterprise."
+module: "certifications"
+level: "expert"
+duration: "120 min"
+prerequisites: ["certification-jamf-170", "api-jamf-pro", "securite-apple-jamf"]
+tags: ["Certification", "Jamf 200", "Architecture", "LDAP", "PKI", "Enterprise"]
+---
+
+## Introduction
+
+La certification **Jamf 200** (Jamf Certified Associate) est la certification professionnelle de référence dans l'écosystème Jamf. Elle cible les ingénieurs MDM et les architectes systèmes qui conçoivent, déploient et administrent des infrastructures Jamf Pro à grande échelle.
+
+Elle se distingue des Jamf 100 et 170 par sa focus sur l'**architecture enterprise** : haute disponibilité, intégration LDAP/IdP, PKI, sécurité multi-couches, et gestion de flottes de plusieurs milliers d'appareils.
+
+---
+
+## Objectifs pédagogiques
+
+À la fin de ce cours, vous serez capable de :
+- Concevoir une architecture Jamf Pro pour une organisation de grande taille
+- Configurer l'intégration LDAP et SSO avec un IdP
+- Mettre en place une PKI intégrée avec Jamf Pro (SCEP)
+- Comprendre la haute disponibilité et la reprise sur incident
+- Préparer les scénarios avancés de l'examen
+
+---
+
+## Informations sur l'examen
+
+| Paramètre | Détail |
+|-----------|--------|
+| **Durée** | 90 minutes |
+| **Format** | QCM, scénarios, questions à réponses courtes |
+| **Questions** | 60 questions |
+| **Score minimum** | 80% (plus exigeant que Jamf 100/170) |
+| **Prix** | ~250 USD |
+| **Pré-requis recommandés** | Jamf 170 + 1-2 ans d'expérience Jamf Pro production |
+| **Validité** | 2 ans |
+
+---
+
+## Domaines évalués
+
+### 1. Architecture Jamf Pro (25%)
+
+**Composants de l'infrastructure :**
+```
+Architecture standard Jamf Pro :
+
+                    Internet
+                       │
+              [Load Balancer / WAF]
+                   ┌───┴───┐
+            [Jamf Pro 1] [Jamf Pro 2]  ← Haute Disponibilité
+                   └───┬───┘
+                  [MySQL / Aurora]      ← Base de données partagée
+                       │
+         ┌─────────────┼─────────────┐
+    [Distribution  [SMTP]       [LDAP/AD]
+     Point(s)]
+
+Alternatives :
+  - Jamf Cloud (SaaS) : Jamf gère l'infrastructure
+  - Jamf Pro on-premise : vous gérez tout
+  - Hybride : Jamf Pro cloud + Distribution Points on-premise
+```
+
+**Sizing et dimensionnement :**
+```
+Recommendations Jamf Pro (rough guidelines) :
+
+< 500 appareils   : Single server, 4 vCPU, 8 GB RAM, MySQL 8.0
+500-2000          : Single server, 8 vCPU, 16 GB RAM
+2000-5000         : 2 serveurs + Load Balancer, DB dédiée
+5000-10000        : Cluster multi-serveurs, Aurora MySQL
+> 10000           : Architecture multi-sites, Jamf Cloud recommandé
+
+Jamf Cloud (managed) :
+  - Automatiquement scalable
+  - Jamf gère les mises à jour, backups, HA
+  - Idéal pour > 1000 appareils ou manque de ressources infra
+```
+
+**Distribution Points :**
+```
+Types de Distribution Points :
+
+Cloud Distribution Point (CDP) :
+  - Hébergé dans le cloud (AWS S3, Azure Blob, etc.)
+  - Pas de serveur à gérer
+  - Latence réseau variable
+
+File Share Distribution Point :
+  - Serveur HTTP/HTTPS ou SMB
+  - Géré par l'équipe IT
+  - Contrôle total sur le contenu et la bande passante
+
+Peer-to-Peer :
+  - Jamf utilise l'API de distribution macOS
+  - Appareils se partagent les packages entre eux (sur le même réseau)
+  - Réduit la charge sur le Distribution Point central
+
+Recommandation : Cloud DP (AWS CloudFront) + Peer-to-Peer activé
+```
+
+### 2. Intégration LDAP et SSO (25%)
+
+**Configuration LDAP dans Jamf Pro :**
+```
+Jamf Pro Settings → User Management → LDAP Servers → + New
+
+Type : Active Directory
+Server : ldap.company.com:389 (ou 636 pour LDAPS)
+Service account : CN=jamf-ldap,OU=ServiceAccounts,DC=company,DC=com
+Password : [mot de passe du compte de service]
+
+Mappings utilisateurs :
+  User mappings (Object class) : user
+  User ID : sAMAccountName ou userPrincipalName
+  Full Name : cn
+  Email : mail
+  Department : department
+
+Group mappings :
+  Group object class : group
+  Group membership : member
+```
+
+**Authentification LDAP pour les utilisateurs Jamf Pro :**
+```
+Deux usages LDAP dans Jamf Pro :
+
+1. Administrateurs Jamf Pro (login au console) :
+   Jamf Pro Settings → System Settings → Jamf Pro User Accounts & Groups
+   → Source : LDAP
+   → Groupe AD "GRP-Jamf-Admins" → Privilege Set : Administrator
+
+2. Inventaire utilisateurs (rattacher Mac à utilisateur) :
+   Jamf Pro recherche l'utilisateur connecté dans LDAP
+   → Enrichit l'inventaire avec : email, département, téléphone
+   → Permet les scopes par utilisateur/département
+```
+
+**SSO avec Okta/Azure AD :**
+```
+Jamf Pro Settings → System Settings → Single Sign-On → Enable SSO
+
+IdP compatible : SAML 2.0 (Okta, Azure AD, Ping, ADFS...)
+
+Configuration Okta :
+  1. Dans Okta : Applications → + Add → SAML 2.0
+  2. Single Sign On URL : https://your.jamfpro.com/saml/SSO
+  3. Audience URI : https://your.jamfpro.com/saml/metadata
+  4. Attribute statements :
+     email → user.email
+     username → user.login
+  5. Exporter les métadonnées SAML Okta → importer dans Jamf Pro
+
+Configuration Jamf Pro :
+  Entity ID : https://your.jamfpro.com/saml/metadata
+  IdP Metadata URL : [URL des métadonnées Okta]
+  ou importer le fichier XML de métadonnées
+  
+  User Mapping : 
+    Jamf Pro User Source : LDAP
+    Attribute to match : email ou username
+```
+
+### 3. PKI et Certificats (20%)
+
+**SCEP avec Jamf Pro comme proxy :**
+```
+Flux SCEP via Jamf Pro (Built-in CA) :
+
+1. Jamf Pro intègre une CA (Certificate Authority) interne
+2. Déploiement d'un profil SCEP sur le Mac/iPhone
+3. L'appareil envoie une CSR au Jamf Pro SCEP service
+4. Jamf Pro CA signe le certificat
+5. Certificat déployé sur l'appareil
+
+Utilisation : Wi-Fi EAP-TLS, VPN, email S/MIME
+
+Jamf Pro Settings → PKI Certificates → Management Certificate Template
+  → Type : Built-in CA (simple) ou Third-party CA (Enterprise PKI)
+```
+
+**SCEP avec CA tierce (Microsoft ADCS) :**
+```
+Architecture SCEP avec Active Directory Certificate Services :
+
+Appareil → Jamf SCEP Proxy → ADCS NDES → ADCS CA
+
+Configuration Jamf Pro :
+  PKI → SCEP → New → External CA
+  URL : https://ndes.company.com/certsrv/mscep/mscep.dll
+  Subject : O=Company,CN=$COMPUTERNAME (ou $USERNAME)
+  Key type : RSA 2048
+  Validity : 1 year
+
+Profil de configuration (Wi-Fi EAP-TLS avec SCEP) :
+  Certificate payload : SCEP → [sélectionner le template]
+  Wi-Fi payload : EAP type → EAP-TLS → Certificate → [SCEP cert]
+```
+
+**Renouvellement automatique des certificats :**
+```
+Le profil SCEP peut être configuré pour se renouveler automatiquement.
+Jamf Pro évalue la date d'expiration du certificat à chaque check-in.
+Si < X jours restants → déclenche automatiquement le renouvellement SCEP.
+
+Recommandation : configurer le renouvellement à 30 jours avant expiration.
+```
+
+### 4. Haute disponibilité et reprise après incident (15%)
+
+**Setup HA Jamf Pro :**
+```
+Pré-requis HA :
+  - 2+ serveurs Jamf Pro identiques
+  - Load Balancer (F5, HAProxy, AWS ALB)
+  - Base de données partagée (MySQL externe ou Aurora)
+  - Stockage partagé pour les fichiers (NFS ou S3)
+
+Configuration Load Balancer :
+  - Health check : GET /healthCheck.html → 200 OK
+  - Session persistence : Cookie (nécessaire pour Jamf Pro)
+  - Port : 443 (HTTPS)
+  - SSL termination : sur le LB ou end-to-end
+
+Session stickiness (important pour Jamf Pro) :
+  Les sessions utilisateur doivent rester sur le même serveur.
+  Configurer la persistence de session sur le LB.
+```
+
+**Sauvegardes et restauration :**
+```
+Éléments à sauvegarder :
+
+1. Base de données MySQL (critique) :
+   mysqldump -u jamf -p jamfdb > backup_$(date +%Y%m%d).sql
+   Fréquence recommandée : quotidienne
+   Rétention : 30 jours minimum
+
+2. Distribution Point content :
+   Packages, scripts, profils uploadés manuellement
+   Synchronisation vers S3 ou backup serveur DP
+
+3. Fichiers de configuration Jamf Pro :
+   /usr/local/jamf/bin/ (binaires)
+   /var/root/Library/ (configuration Keystore, etc.)
+   Fichier server.xml (Tomcat config)
+
+4. Certificats SSL :
+   Certificat TLS du serveur Jamf Pro
+   Keystore Jamf (contient le certificat APNs et CA interne)
+
+Restauration d'urgence :
+  1. Nouveau serveur avec même OS/version Jamf Pro
+  2. Restaurer la DB MySQL
+  3. Restaurer les fichiers de config
+  4. Pointer le DNS vers le nouveau serveur
+  → Objectif : RTO < 4h pour un environnement Jamf bien documenté
+```
+
+### 5. Sécurité et conformité enterprise (10%)
+
+**Rôles et permissions Jamf Pro :**
+```
+Jamf Pro User Accounts → Privilege Sets :
+
+Administrator : accès complet (réservé à l'équipe MDM core)
+Auditor : lecture seule (pour les équipes sécurité, audit)
+Custom : configurer granulièrement les permissions
+
+Exemple de rôle "Helpdesk" :
+  ✓ View computers
+  ✓ Read Mobile Devices
+  ✓ Send Remote Lock
+  ✓ Read Policies
+  ✗ Create/Edit/Delete Policies
+  ✗ Access to LDAP Configuration
+  ✗ Access to PKI settings
+```
+
+**API et sécurité :**
+```
+Bonnes pratiques sécurité API Jamf Pro :
+
+1. Utiliser les comptes API dédiés (pas des comptes admin personnels)
+   → Jamf Pro Settings → API Roles and Clients (Jamf Pro 10.43+)
+   → Scope : permissions minimales requises par le workflow
+
+2. Bearer Token (remplace Basic Auth) :
+   POST /api/v1/auth/token → token valide 30 min
+   Invalider après usage : DELETE /api/v1/auth/invalidate-token
+
+3. Rotation régulière des credentials API
+
+4. Logs API dans Jamf Pro :
+   Settings → Jamf Pro Information → API → Enable logs
+```
+
+### 6. Scénarios multi-sites (5%)
+
+**Gestion multi-sites dans Jamf Pro (Sites) :**
+```
+Utilisation des Sites Jamf Pro :
+  → Permettre à plusieurs entités (filiales, clients MSP) de partager
+    un même Jamf Pro tout en isolant leurs données
+
+Configuration :
+  Jamf Pro Settings → Sites → + New
+  Nom : "Site France", "Site UK", "Client Acme"
+  
+  Assigner aux utilisateurs :
+    Compte Jamf Pro → Privileges → Sites : [Site France uniquement]
+    → Cet admin ne voit que les appareils/policies de France
+
+  Assigner aux appareils :
+    PreStage Enrollment → Site : [Site France]
+    → Les Mac qui utilisent ce PreStage seront assignés à Site France
+    → Ils n'apparaissent que pour les admins avec accès à ce Site
+```
+
+---
+
+## Questions types Jamf 200
+
+**Question 1**
+Un administrateur Jamf Pro reçoit une alerte : le certificat APNs expire dans 5 jours. Il n'a pas accès au compte Apple ID original utilisé pour créer ce certificat. Quelle est la conséquence si le certificat expire ?
+- A) Les appareils iOS perdront la communication MDM mais les Mac ne seront pas affectés
+- B) Tous les appareils gérés perdront la communication MDM et devront être ré-enrôlés
+- C) Jamf Pro générera automatiquement un nouveau certificat APNs
+- D) Seuls les nouveaux enrôlements seront bloqués
+
+**Réponse : B** — Le certificat APNs est la liaison entre Jamf Pro et le service push d'Apple. Son expiration coupe toute communication MDM. Tous les appareils (iOS et macOS) doivent être ré-enrôlés avec le nouveau certificat. La récupération de l'Apple ID original est urgente.
+
+---
+
+**Question 2**
+Dans quelle situation est-il recommandé d'utiliser un Cloud Distribution Point plutôt qu'un File Share Distribution Point ?
+- A) Quand les appareils sont principalement sur le réseau local
+- B) Quand les appareils sont distribués géographiquement ou travaillent à distance
+- C) Quand les packages font plus de 1 GB
+- D) Quand Jamf Pro est hébergé on-premise
+
+**Réponse : B** — Le Cloud DP (ex: AWS CloudFront) distribue le contenu via un CDN global, idéal pour des appareils distants ou nomades. Un File Share DP sur le réseau local est performant en interne mais inaccessible depuis Internet sans VPN.
+
+---
+
+**Question 3**
+Comment configurer Jamf Pro pour que les administrateurs utilisent leur compte Active Directory pour se connecter à la console Jamf Pro ?
+- A) Modifier le fichier ldap.conf sur le serveur Jamf Pro
+- B) Configurer un serveur LDAP dans Jamf Pro, puis créer un compte utilisateur Jamf Pro avec "Source : LDAP"
+- C) Activer le SSO Jamf Pro avec Kerberos
+- D) Créer un service account dans AD avec les droits admin Jamf Pro
+
+**Réponse : B** — La configuration LDAP dans Jamf Pro permet l'authentification des admins via AD. Les comptes Jamf Pro créés avec "Source : LDAP" s'authentifient contre le LDAP configuré.
+
+---
+
+## Mini-lab pratique
+
+```
+Scénario : Configurer l'intégration LDAP dans un environnement de test
+
+Pré-requis :
+  - Jamf Pro Trial (disponible sur jamf.com)
+  - Accès à un AD de test ou utiliser Microsoft 365 + Azure AD
+
+Avec Azure AD / Entra ID :
+  1. Dans Jamf Pro : Settings → User Management → LDAP Servers
+  2. Type : Azure AD / LDAP (ou configurer via SSO SAML)
+  
+  Note : Azure AD ne supporte pas LDAP natif (non-Azure)
+  → Utiliser SSO SAML avec Azure AD comme IdP
+  → Configurer dans : Settings → Single Sign-On → Azure AD
+
+  Test avec AD on-premise de test :
+  1. LDAP Server : [IP du DC] Port 389
+  2. Service Account : CN=jamf-svc,CN=Users,DC=test,DC=local
+  3. Search Base : DC=test,DC=local
+  4. Test de connexion : bouton "Test" dans Jamf Pro
+  5. Tester la recherche : entrer un nom d'utilisateur AD
+
+  Vérification :
+  → Créer un utilisateur Jamf Pro avec source LDAP
+  → Se connecter avec les credentials AD
+  → Confirmer l'accès selon les permissions configurées
+```
+
+---
+
+## Résumé
+
+| Domaine | Poids | Expertise requise |
+|---------|-------|------------------|
+| Architecture | 25% | Sizing, DP, HA, Cloud vs on-premise |
+| LDAP / SSO | 25% | AD, SAML 2.0, mapping attributs |
+| PKI / SCEP | 20% | CA interne, ADCS, renouvellement auto |
+| Haute disponibilité | 15% | Load Balancer, DB, sauvegardes |
+| Sécurité enterprise | 10% | Rôles granulaires, API security |
+| Multi-sites | 5% | Sites Jamf Pro, isolation |
+| **Score minimum** | **80%** | Plus exigeant que Jamf 100/170 |
+
+La Jamf 200 est la certification qui ouvre les portes aux rôles d'architecte MDM senior et de consultant Jamf. Avec la Jamf 200, vous avez la légitimité pour concevoir des infrastructures Jamf Pro pour des milliers d'appareils et pour former d'autres administrateurs.

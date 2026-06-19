@@ -1,0 +1,168 @@
+---
+title: "Managed Apple Accounts"
+slug: "managed-apple-accounts"
+---
+
+## Introduction
+
+Les **Managed Apple Accounts** (MAA) sont des comptes Apple créés et contrôlés par votre organisation via Apple Business Manager. Contrairement aux Apple ID personnels, ils appartiennent à l'entreprise, peuvent être réinitialisés, supprimés ou recréés sans intervention de l'utilisateur — et ne donnent jamais accès aux achats personnels ni à iCloud personnel.
+
+> **Différence fondamentale** : un Apple ID standard appartient à la personne. Un Managed Apple Account appartient à l'organisation. Si un collaborateur quitte l'entreprise, l'IT peut récupérer le compte, effacer les données et le réassigner.
+
+## Objectifs
+
+- Comprendre la structure et les droits des Managed Apple Accounts
+- Créer des comptes individuellement et en masse via SCIM ou CSV
+- Configurer la fédération avec Microsoft Entra ID ou Google Workspace
+- Gérer le cycle de vie des comptes (création, modification, désactivation)
+- Comprendre les restrictions iCloud gérées
+
+## Contexte professionnel
+
+Dans un parc Apple géré, chaque utilisateur a besoin d'un compte Apple pour accéder à certaines fonctionnalités : App Store géré, iCloud Drive d'entreprise, Apple Business Essentials, FaceTime, iMessage d'entreprise. Sans MAA, soit les utilisateurs utilisent leur Apple ID personnel (risque de fuite de données), soit les fonctionnalités sont désactivées (perte de productivité).
+
+Les secteurs les plus concernés : éducation (Jamf School + MAA pour les élèves), santé (iPad partagés), entreprise avec BYOD contrôlé.
+
+## Structure d'un Managed Apple Account
+
+```
+format : prénom.nom@domaine.com
+         ou : identifiant@votredomaine.com
+
+Exemples :
+  john.doe@acme.com           → compte standard
+  admin.it@acme.com           → compte administrateur
+  ipad-salle-a@acme.com       → compte pour appareil partagé
+  etudiant.dupont@ecole.fr    → compte élève (Jamf School)
+```
+
+### Domaines vérifiés
+
+ABM exige la vérification des domaines email avant de créer des MAA. Deux méthodes :
+
+**1. Enregistrement DNS (recommandé)**
+Ajoutez un enregistrement TXT dans votre zone DNS :
+```
+_apple-domain-verification.votredomaine.com  TXT  "apple-domain-verify=XXXXXXXXXXXX"
+```
+La propagation DNS prend 15 minutes à 48 heures.
+
+**2. Fichier sur le serveur web**
+Placez un fichier à l'URL :
+```
+https://votredomaine.com/.well-known/apple-domain-verification/XXXXXXXXX
+```
+
+## Création de comptes
+
+### Création manuelle (un à la fois)
+1. ABM → **Personnes → Ajouter**
+2. Remplissez prénom, nom, email (= identifiant MAA)
+3. Choisissez le rôle : Administrateur, Gestionnaire de personnes, Gestionnaire de contenus, Gestionnaire d'appareils, ou Standard
+4. Le compte reçoit un email d'invitation avec un mot de passe temporaire
+
+### Import CSV en masse
+
+Préparez un fichier CSV avec ces colonnes obligatoires :
+```csv
+First Name,Last Name,Email Address,Additional Email,Status
+Jean,Dupont,jean.dupont@acme.com,,Active
+Marie,Martin,marie.martin@acme.com,,Active
+Pierre,Durand,pierre.durand@acme.com,p.durand@perso.com,Active
+```
+
+Dans ABM : **Personnes → Importer des personnes → Choisir le fichier CSV**
+
+Limites : 10 000 comptes par import, traitement asynchrone (quelques minutes pour des milliers de comptes).
+
+### Fédération d'identité (SCIM)
+
+La fédération permet de créer et synchroniser automatiquement les MAA depuis votre annuaire d'entreprise.
+
+**Avec Microsoft Entra ID (Azure AD) :**
+1. ABM → **Paramètres → Fédération d'identité → Configurer**
+2. Copiez l'URL SCIM et le token générés par ABM
+3. Dans Entra ID : **Applications d'entreprise → Apple School Manager / Business Manager**
+4. Configurez le provisioning SCIM avec l'URL et le token
+5. Mappez les attributs : `displayName` → `Nom complet`, `mail` → `Email ABM`
+6. Activez la synchronisation
+
+**Avec Google Workspace :**
+1. Même process mais via Google Workspace Admin Console → **Applications tierces → Apple**
+
+> **Avantage clé SCIM** : quand un utilisateur est désactivé dans Entra ID (départ de l'entreprise), son MAA est automatiquement désactivé dans ABM en quelques minutes.
+
+## Rôles et permissions
+
+| Rôle | Créer comptes | Acheter apps | Gérer appareils | Accès admin |
+|------|:---:|:---:|:---:|:---:|
+| Administrateur | ✅ | ✅ | ✅ | ✅ |
+| Gestionnaire de personnes | ✅ | ❌ | ❌ | ❌ |
+| Gestionnaire de contenus | ❌ | ✅ | ❌ | ❌ |
+| Gestionnaire d'appareils | ❌ | ❌ | ✅ | ❌ |
+| Standard | ❌ | ❌ | ❌ | ❌ |
+
+## Restrictions iCloud avec MAA
+
+Les MAA ont un iCloud **séparé et géré**. Par défaut :
+- **iCloud Drive** : activé mais cloisonné (données d'entreprise uniquement)
+- **iCloud Backup** : activé (sauvegarde des données gérées)
+- **Photos iCloud** : désactivé par défaut
+- **Keychain iCloud** : mots de passe d'entreprise synchronisés, pas les persos
+- **Find My** : désactivé sur les appareils supervisés
+
+Via un profil MDM, vous pouvez affiner ces restrictions par compte MAA.
+
+## Mini-lab : Créer 5 comptes via CSV et vérifier
+
+**Prérequis** : accès ABM avec rôle Administrateur ou Gestionnaire de personnes.
+
+**Étape 1** — Créez ce fichier `test_maa.csv` :
+```csv
+First Name,Last Name,Email Address,Status
+Test,IT01,it01@votredomaine.com,Active
+Test,IT02,it02@votredomaine.com,Active
+Test,Dev01,dev01@votredomaine.com,Active
+Test,Dev02,dev02@votredomaine.com,Active
+Test,Compta01,compta01@votredomaine.com,Active
+```
+
+**Étape 2** — Importez dans ABM :
+```
+ABM → Personnes → ... → Importer des personnes → Sélectionner test_maa.csv
+```
+
+**Étape 3** — Vérifiez via l'API ABM (optionnel) :
+```bash
+# Avec un token ABM (Settings > MDM Servers > votre serveur > API Key)
+curl -s "https://mdmenrollment.apple.com/session" \
+  -H "X-ADM-Auth-Session: VOTRE_TOKEN" | jq .
+```
+
+**Étape 4** — Nettoyage : supprimez les 5 comptes de test.
+
+## Bonnes pratiques
+
+- **Convention de nommage cohérente** : `prenom.nom@domaine.com` partout, pas de variantes
+- **Fédération SCIM plutôt que CSV** : synchronisation automatique, moins d'erreurs humaines
+- **Compte de service dédié** : créez un MAA `mdm-service@domaine.com` non nominatif pour les intégrations API
+- **Double domaine** : vérifiez votre domaine principal ET les alias (`@acme.fr` ET `@acme.com`)
+- **Audit régulier** : exportez la liste des comptes mensuellement, désactivez les inactifs
+
+## Erreurs fréquentes
+
+**"Domaine non vérifié"** lors de l'import CSV
+→ Vérifiez que l'enregistrement DNS est bien propagé : `dig TXT _apple-domain-verification.votredomaine.com`
+
+**L'utilisateur ne reçoit pas l'email d'invitation**
+→ Vérifiez les SPF/DKIM de votre domaine, l'email ABM vient de `appleid@id.apple.com`
+
+**Erreur SCIM "400 Bad Request"**
+→ Vérifiez le mapping des attributs. ABM attend `userName` (pas `email`) comme identifiant unique.
+
+**Un compte MAA est "bloqué"**
+→ L'utilisateur a entré un mauvais mot de passe trop souvent. Dans ABM : Personnes → sélectionnez le compte → Réinitialiser le mot de passe.
+
+## Résumé
+
+Les Managed Apple Accounts sont le socle de l'identité Apple en entreprise. Ils séparent clairement les données personnelles et professionnelles, permettent à l'IT de garder le contrôle complet du cycle de vie des comptes, et s'intègrent nativement avec les annuaires d'entreprise via SCIM. La fédération avec Entra ID ou Google Workspace est la configuration recommandée pour toute organisation de plus de 50 personnes.

@@ -1,0 +1,125 @@
+---
+title: "FileVault — Gestion avec Jamf Pro"
+slug: "filevault-gestion-jamf"
+---
+
+## Introduction
+
+FileVault 2 est le chiffrement complet de disque d'Apple, basé sur XTS-AES-128. Sur Apple Silicon, le chiffrement est natif et transparent. La gestion via Jamf Pro permet d'activer FileVault automatiquement, d'escrow (déposer) la clé de récupération, et de générer des rapports de conformité.
+
+## Activation via Configuration Profile
+
+```xml
+<key>PayloadType</key>
+<string>com.apple.MCX.FileVault2</string>
+
+<key>Enable</key>
+<string>On</string>
+
+<!-- Forcer à la prochaine connexion (-1 = immédiat) -->
+<key>DeferForceAtUserLoginMaxBypassAttempts</key>
+<integer>-1</integer>
+
+<!-- Clé de récupération vers Jamf -->
+<key>UseRecoveryKey</key>
+<true/>
+<key>PayloadCertificateUUID</key>
+<string>UUID-DU-CERTIFICAT-ESCROW</string>
+```
+
+## Escrow de la clé de récupération
+
+Jamf Pro peut stocker les clés FileVault de façon sécurisée :
+
+```
+Jamf Pro → Settings → Computer Management → Security → FileVault 2
+
+☑ Institutional Recovery Key
+Certificat : uploadez le certificat .pem de récupération
+
+OU
+
+☑ Personal Recovery Key
+Clé personnelle stockée dans Jamf Pro de façon chiffrée
+```
+
+Accéder à la clé d'un Mac spécifique :
+```
+Computers → [appareil] → Inventory → Security → FileVault 2
+
+Cliquez "Get Recovery Key" → la clé s'affiche
+(log de l'accès pour l'audit)
+```
+
+## Vérification via script
+
+```bash
+#!/bin/bash
+# Audit FileVault complet
+
+SERIAL=$(system_profiler SPHardwareDataType | awk '/Serial Number/{print $NF}')
+FV_STATUS=$(fdesetup status)
+FV_ENABLED=$(echo "$FV_STATUS" | grep -c "FileVault is On")
+HAS_IRK=$(fdesetup hasinstitutionalrecoverykey 2>/dev/null)
+USERS_LIST=$(fdesetup list 2>/dev/null)
+
+echo "=== FileVault Audit ==="
+echo "Serial   : $SERIAL"
+echo "Status   : $FV_STATUS"
+echo "Clé inst : $HAS_IRK"
+echo "Utilisateurs FV2 :"
+echo "$USERS_LIST"
+
+# Extension Attribute compatible
+if [ "$FV_ENABLED" -eq 1 ]; then
+    echo "<result>Encrypted</result>"
+else
+    echo "<result>Not Encrypted</result>"
+fi
+```
+
+## Réinitialiser une clé de récupération
+
+Si la clé a été compromise ou perdue :
+```bash
+# 1. Récupérer la clé actuelle depuis Jamf Pro
+RECOVERY_KEY="XXXX-XXXX-XXXX-XXXX-XXXX-XXXX"
+
+# 2. Générer une nouvelle clé
+sudo fdesetup changerecovery -personal   -inputplist << 'PLIST'
+<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0">
+<dict>
+  <key>Password</key>
+  <string>MOT_DE_PASSE_ADMIN</string>
+  <key>RecoveryKey</key>
+  <string>XXXX-XXXX-XXXX-XXXX-XXXX-XXXX</string>
+</dict>
+</plist>
+PLIST
+
+# 3. La nouvelle clé sera automatiquement escrowée par Jamf Pro
+# au prochain check-in si le profil FileVault est configuré
+```
+
+## Smart Group FileVault non conforme
+
+```
+Critères :
+  FileVault 2 Status  is not  All Partitions Encrypted
+
+Policy de remédiation :
+  → Notification à l'utilisateur
+  → Profil FileVault déployé
+  → Délai 48h avant escalade
+```
+
+## Bonnes pratiques
+
+- **Activez dès le PreStage ADE** — ne laissez jamais un Mac neuf sans FileVault
+- **Toujours escrow** : sans clé de récupération dans Jamf, un Mac oublié = données perdues
+- **Auditez mensuellement** : Smart Group "FileVault non conforme" + rapport CSV pour la direction
+
+## Résumé
+
+FileVault est la couche de protection fondamentale des données sur Mac. Sa gestion via Jamf Pro (profil d'activation + escrow de clé + reporting) est l'une des premières politiques à implémenter dans tout environnement Apple géré.

@@ -1,0 +1,370 @@
+---
+title: "Profils de configuration Intune pour Apple"
+description: "Créer et déployer des profils de configuration macOS et iOS dans Microsoft Intune : restrictions, VPN, Wi-Fi, certificats, et plus."
+module: "microsoft-intune-apple"
+level: "intermédiaire"
+duration: "80 min"
+prerequisites: ["enrolement-ade-intune", "gestion-macos-intune"]
+tags: ["Intune", "Configuration Profile", "macOS", "iOS", "MDM"]
+---
+
+## Introduction
+
+Les profils de configuration dans Microsoft Intune sont l'équivalent des Configuration Profiles Apple — ils permettent de pousser des paramètres système sur les appareils gérés. Contrairement à Jamf qui utilise nativement les profils Apple (.mobileconfig), Intune dispose d'une interface graphique qui génère ces profils automatiquement pour la plupart des cas d'usage courants.
+
+Pour les cas avancés non couverts par l'interface Intune, il est possible d'importer directement des fichiers `.mobileconfig` ou des payloads plist personnalisés.
+
+---
+
+## Objectifs pédagogiques
+
+À la fin de ce cours, vous serez capable de :
+- Comprendre les types de profils disponibles dans Intune pour macOS et iOS
+- Créer des profils Wi-Fi, VPN, restrictions, et certificats
+- Importer des profils personnalisés (.mobileconfig)
+- Gérer les conflits entre profils
+- Debugger les problèmes d'application de profils
+
+---
+
+## Contexte professionnel
+
+Une entreprise de 500 personnes migre de Jamf vers Microsoft Intune (ou utilise les deux en parallèle). L'administrateur MDM doit reproduire les profils existants dans Intune et s'assurer que tous les Mac et iPhone gardent leurs paramètres réseau, VPN et sécurité sans intervention utilisateur.
+
+---
+
+## Notions clés
+
+### Types de profils dans Intune
+
+**Profils avec interface graphique (Templates) :**
+
+| Template | Utilisation |
+|----------|-------------|
+| Certificates | SCEP, PKCS, certificats racines |
+| Custom | Import de fichiers .mobileconfig |
+| Email | Comptes email Exchange |
+| Endpoint protection | FileVault, Gatekeeper, Firewall |
+| Extensions | System Extensions, Kernel Extensions |
+| Notifications | Gestion des notifications par app |
+| Privacy preferences | Full Disk Access (PPPC) |
+| VPN | Cisco AnyConnect, GlobalProtect, IKEv2... |
+| Wi-Fi | Réseaux Wi-Fi enterprise (EAP, certificats) |
+| Wired network | Ethernet 802.1X |
+
+**Profils Settings Catalog (moderne, plus complet) :**
+Le Settings Catalog est la nouvelle interface Intune qui expose directement les MDM keys Apple. Il couvre beaucoup plus de paramètres que les templates.
+
+---
+
+## Procédure : Profil Wi-Fi Enterprise
+
+### Contexte
+Configurer automatiquement la connexion Wi-Fi WPA2-Enterprise (802.1X) avec certificat utilisateur sur tous les Mac.
+
+### Étape 1 — Pré-requis : Déployer le certificat racine
+
+1. Intune → Devices → Configuration → + Create → macOS
+2. Type : **Trusted certificate**
+3. Nom : `Cert-Root-CA-Enterprise`
+4. Certificate file : Importer votre certificat racine CA en .cer ou .pem
+5. Assignment : Groupe Mac gérés
+6. **Créer et déployer AVANT le profil Wi-Fi** (le profil Wi-Fi référence ce certificat)
+
+### Étape 2 — Créer le profil Wi-Fi
+
+```
+Type : Templates → Wi-Fi
+Nom : WiFi-Enterprise-WPA2
+
+Configuration :
+  Wi-Fi type : Enterprise
+  Wi-Fi name (SSID) : CorpNetwork
+  Connect automatically : Yes
+  Hidden network : No (ou Yes si SSID masqué)
+
+  Security type : WPA/WPA2-Enterprise
+  EAP type : EAP-TLS (avec certificat)
+  
+  Server trust :
+    Certificate server names : radius.company.com
+    Root certificates for server validation : [sélectionner Cert-Root-CA-Enterprise]
+  
+  Client authentication :
+    Authentication method : Certificate
+    Client certificate : SCEP certificate (si SCEP déployé)
+    Ou : Derived credential
+```
+
+### Étape 3 — Assigner
+
+Assignment → Required → Groupe Mac gérés
+
+---
+
+## Procédure : Profil VPN
+
+### Exemple : VPN IKEv2 natif macOS
+
+```
+Type : Templates → VPN
+Nom : VPN-IKEv2-Corporate
+
+Connection type : IKEv2
+Connection name : VPN Entreprise
+Server address : vpn.company.com
+
+Authentication method : Certificate
+Server certificate issuer common name : vpn.company.com
+Server certificate common name : vpn.company.com
+
+Client authentication :
+  Certificate : Sélectionner le certificat client déployé via SCEP
+
+IKE Security Association Parameters :
+  Encryption Algorithm : AES-256
+  Integrity Algorithm : SHA2-256
+  Diffie-Hellman Group : 14
+  Lifetime : 28800
+
+Child Security Association Parameters :
+  Encryption Algorithm : AES-256
+  Integrity Algorithm : SHA2-256
+  Lifetime : 1800
+
+On-Demand VPN : Yes
+  On-Demand rules :
+    Action : Connect if needed
+    DNS search domain matches : *.company.com
+    → Connexion automatique pour les ressources internes uniquement
+```
+
+---
+
+## Procédure : Profil de restrictions iOS
+
+```
+Type : Settings Catalog (iOS)
+Nom : iOS-Restrictions-Enterprise
+
+Catégories et paramètres :
+
+Allow App Clips : False
+Allow AirDrop : False (risque de fuite de données)
+Allow iCloud Keychain : False (sécurité entreprise)
+Allow Screen Recording : False
+Allow Siri While Device Locked : False
+Allow USB Restricted Mode : True (protection accès physique)
+Allow Managed Apps to Store Data in iCloud : False
+Force Fraud Warning : True (Safari)
+Force Limit Ad Tracking : True
+Allow Adding VPN Configurations : False (forcer uniquement VPN MDM)
+Allow Bluetooth Modification : False
+Force Encrypted Backup : True
+Allow Factory Reset : False (supervisé uniquement)
+Allow Erase All Content and Settings : False (supervisé uniquement)
+```
+
+---
+
+## Procédure : Profil custom (.mobileconfig)
+
+Pour les paramètres non disponibles dans l'interface Intune, créer un profil personnalisé.
+
+**Exemple : Désactiver l'ouverture de session invité sur macOS**
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" 
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>PayloadContent</key>
+  <array>
+    <dict>
+      <key>PayloadType</key>
+      <string>com.apple.MCX</string>
+      <key>PayloadVersion</key>
+      <integer>1</integer>
+      <key>PayloadIdentifier</key>
+      <string>com.company.guestaccount</string>
+      <key>PayloadUUID</key>
+      <string>GENERATE-UUID-HERE</string>
+      <key>PayloadDisplayName</key>
+      <string>Disable Guest Account</string>
+      <key>GuestEnabled</key>
+      <false/>
+      <key>DisableGuestSharing</key>
+      <true/>
+    </dict>
+  </array>
+  <key>PayloadDisplayName</key>
+  <string>Disable Guest Account</string>
+  <key>PayloadIdentifier</key>
+  <string>com.company.guestaccount.profile</string>
+  <key>PayloadType</key>
+  <string>Configuration</string>
+  <key>PayloadUUID</key>
+  <string>GENERATE-UUID-HERE-2</string>
+  <key>PayloadVersion</key>
+  <integer>1</integer>
+</dict>
+</plist>
+```
+
+**Importer dans Intune :**
+1. Devices → Configuration → + Create → macOS
+2. Type : **Custom**
+3. Nom : `Custom-Disable-GuestAccount`
+4. Deployment channel : **Device channel** (pour les paramètres système)
+5. Configuration profile file : importer le fichier .mobileconfig
+6. Assigner et déployer
+
+---
+
+## Exemple concret : Stratégie de profils complète
+
+Pour un Mac géré par Intune dans une entreprise, la stratégie de profils typique comprend :
+
+```
+Profils déployés (ordre recommandé) :
+
+1. Cert-Root-CA          → Certificat racine de l'entreprise
+2. Cert-SCEP-User        → Certificat client utilisateur (SCEP)
+3. Cert-SCEP-Device      → Certificat client appareil (SCEP)
+4. WiFi-Corp-WPA2-EAP    → Wi-Fi entreprise
+5. VPN-IKEv2-OnDemand    → VPN automatique ressources internes
+6. MDE-System-Extensions → Extensions système Defender
+7. MDE-PPPC-Privacy      → Full Disk Access Defender
+8. MDE-Network-Filter    → Filtrage réseau Defender
+9. MDE-Configuration     → Config Defender (JSON)
+10. FileVault-Enable     → Chiffrement disque
+11. Firewall-Enable      → Pare-feu système
+12. Restrictions-macOS   → Paramètres de sécurité
+13. Custom-Guest-Disable → Désactiver compte invité
+14. Notifications-Apps   → Configuration notifs par app
+```
+
+**Conseil d'organisation :** Toujours nommer les profils avec un préfixe clair (`Cert-`, `WiFi-`, `VPN-`, `MDE-`, `Custom-`) pour filtrer facilement dans la liste Intune.
+
+---
+
+## Bonnes pratiques
+
+**1. Settings Catalog plutôt que Templates**
+Le Settings Catalog est plus récent, plus complet et sera le futur d'Intune. Pour les nouveaux déploiements, privilégier Settings Catalog sauf pour Wi-Fi et VPN (qui nécessitent encore les Templates).
+
+**2. Device Channel vs User Channel**
+- **Device channel** : paramètres appliqués avant connexion utilisateur (FileVault, Wi-Fi, VPN)
+- **User channel** : paramètres par utilisateur (email, préférences personnelles)
+
+Toujours utiliser Device Channel pour les paramètres de sécurité critiques.
+
+**3. Tester sur groupe pilote**
+Créer un profil en test, l'assigner à 5-10 Mac, vérifier le résultat dans Intune et sur le Mac, puis étendre.
+
+**4. Vérifier les conflits**
+Si deux profils configurent le même paramètre, Intune signale un conflit. Résolution : un seul profil par type de paramètre.
+
+**5. UUID uniques dans les profils custom**
+Chaque profil .mobileconfig et chaque payload interne doit avoir un UUID unique. Générer avec :
+```bash
+python3 -c "import uuid; print(uuid.uuid4())"
+```
+
+---
+
+## Erreurs fréquentes
+
+**Erreur 1 : Profil en statut "Error" dans Intune**
+- Cause fréquente : UUID dupliqué dans un profil custom
+- Fix : Générer de nouveaux UUID et re-importer
+
+**Erreur 2 : Wi-Fi Enterprise ne se connecte pas**
+- Cause : Certificat racine non déployé avant le profil Wi-Fi, ou certificat SCEP non encore reçu
+- Fix : Vérifier l'ordre de déploiement et l'état des profils certificats dans Intune
+
+**Erreur 3 : Profil VPN présent mais connexion échoue**
+- Cause : Nom commun du certificat serveur ne correspond pas à `Server certificate common name` dans le profil
+- Fix : Vérifier avec `openssl s_client -connect vpn.company.com:443` → inspecter le CN du certificat
+
+**Erreur 4 : Profil custom ignoré**
+- Cause : Payload type incorrect ou XML malformé
+- Fix : Valider le XML avec `plutil -lint profil.mobileconfig` → corriger les erreurs
+
+---
+
+## Debugging : Vérifier les profils sur le Mac
+
+```bash
+# Lister tous les profils installés
+sudo profiles list -all
+
+# Vérifier un profil spécifique
+sudo profiles show -all | grep -A 20 "WiFi-Corp"
+
+# Vérifier l'état de sync Intune
+sudo profiles renew -type enrollment
+
+# Logs de gestion MDM
+log show --predicate 'subsystem == "com.apple.ManagedClient"' \
+  --last 1h | grep -i "error\|warning"
+```
+
+---
+
+## Mini-lab pratique
+
+```
+Objectif : Créer et déployer un profil Wi-Fi de test
+
+Pré-requis :
+  - Accès à un réseau Wi-Fi WPA2-Personal (plus simple que Enterprise)
+  - Mac de test enrôlé dans Intune
+
+Étapes :
+
+1. Créer le profil Wi-Fi :
+   Intune → Devices → Configuration → + Create → macOS
+   Type : Wi-Fi
+   Nom : LAB-WiFi-Test
+   Wi-Fi type : Basic
+   SSID : [votre SSID de test]
+   Security type : WPA/WPA2-Personal
+   Pre-shared key : [votre clé Wi-Fi]
+   Connect automatically : Yes
+
+2. Assigner au Mac de test :
+   Assignment → Included groups → sélectionner votre groupe test
+
+3. Forcer le sync sur le Mac :
+   sudo profiles renew -type enrollment
+
+4. Vérifier l'application du profil :
+   System Settings → Wi-Fi → vérifier que votre réseau est visible
+   sudo profiles list -all | grep LAB-WiFi
+
+5. Tester la déconnexion et reconnexion automatique :
+   Déconnecter le Wi-Fi manuellement
+   → L'appareil doit se reconnecter automatiquement
+
+6. Supprimer le profil de test après validation :
+   Intune → Devices → Configuration → LAB-WiFi-Test → Delete
+   → Vérifier que le réseau Wi-Fi automatique disparaît du Mac
+```
+
+---
+
+## Résumé
+
+| Aspect | Détail |
+|--------|--------|
+| Types de profils | Templates (Wi-Fi, VPN, certs) + Settings Catalog + Custom |
+| Profils custom | Import .mobileconfig pour paramètres non disponibles |
+| Device vs User channel | Device = avant login, User = par utilisateur |
+| UUID | Unique par profil et par payload — jamais dupliquer |
+| Ordre déploiement | Certificats → Wi-Fi/VPN → Sécurité → Restrictions |
+| Debug Mac | `sudo profiles list -all` + `profiles renew` |
+| Conflits | Un seul profil par paramètre, Intune signale les conflits |
+
+Les profils de configuration Intune sont l'outil principal de personnalisation des appareils Apple dans un environnement Microsoft. Leur maîtrise est indispensable pour délivrer une expérience utilisateur professionnelle tout en maintenant la sécurité de l'organisation.

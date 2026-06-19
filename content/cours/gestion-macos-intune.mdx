@@ -1,0 +1,315 @@
+---
+title: "Gestion macOS avec Microsoft Intune"
+slug: "gestion-macos-intune"
+---
+
+## Introduction
+
+Microsoft Intune offre une gestion complète de macOS depuis la version 10.15. Pour les organisations déjà investies dans l'écosystème Microsoft, Intune permet d'unifier la gestion Windows, macOS, iOS et Android dans une seule console — sans déployer un MDM Apple-spécifique comme Jamf Pro.
+
+## Objectifs pédagogiques
+
+- Configurer les profils de configuration macOS dans Intune
+- Déployer des politiques de conformité macOS
+- Gérer FileVault via Intune (escrow de clé)
+- Déployer des applications macOS (.pkg, .dmg, apps store)
+- Monitorer la conformité des Mac dans le portail Intune
+
+## Capacités de gestion macOS dans Intune
+
+### Ce qu'Intune peut faire sur macOS
+
+| Fonctionnalité | Intune macOS |
+|----------------|-------------|
+| Enrôlement ADE | ✅ |
+| Configuration Profiles | ✅ (Custom PLIST ou templates) |
+| FileVault management | ✅ (escrow + rotation) |
+| Compliance Policies | ✅ |
+| Software updates | ✅ (DDM depuis Intune 2023) |
+| Script deployment (Shell) | ✅ |
+| App deployment (.pkg/.dmg) | ✅ |
+| Conditional Access | ✅ |
+| Inventory/Reporting | ✅ |
+| Remote wipe | ✅ |
+| Self-Service portal | ⚠️ Limité (vs Jamf Self Service) |
+| Patch management tiers | ⚠️ Moins granulaire que Jamf |
+
+### Limites vs Jamf Pro
+
+Intune est excellent pour les organisations Microsoft-first, mais présente quelques limitations :
+- Moins de granularité sur le patch management des apps tierces
+- Pas de Self Service aussi riche que Jamf
+- Scripting moins flexible (timeout 15 min max)
+- Inventaire hardware moins détaillé
+
+## Configuration Profiles macOS
+
+### Templates disponibles dans Intune
+
+```
+Devices → macOS → Configuration Profiles → Create → Templates
+```
+
+| Template | Utilisation |
+|----------|------------|
+| Device Restrictions | App Store, Siri, Screen Time |
+| SCEP Certificate | Certificats client pour Wi-Fi/VPN |
+| Trusted Certificate | Certificats racine CA |
+| Wi-Fi | Configuration réseau entreprise |
+| VPN | Cisco AnyConnect, GlobalProtect, etc. |
+| Email | Exchange/Office 365 mail |
+| Custom | PLIST personnalisé (toutes options) |
+
+### Exemple — Profil FileVault obligatoire
+
+```
+Devices → macOS → Configuration Profiles → Create → Settings Catalog
+→ Chercher "FileVault"
+→ Enable FileVault : True
+→ Personal Recovery Key : Enable
+→ Escrow Location : Intune
+→ Number of times user can bypass : 0 (forcer l'activation)
+```
+
+### Profil Custom PLIST
+
+Pour les paramètres non exposés dans l'interface, utilisez un profil custom :
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!-- Désactiver AirDrop -->
+  <key>PayloadType</key>
+  <string>com.apple.applicationaccess</string>
+  <key>allowAirDrop</key>
+  <false/>
+  <!-- Forcer la mise à jour automatique des données de sécurité -->
+  <key>AutomaticDownload</key>
+  <true/>
+  <key>ConfigDataInstall</key>
+  <true/>
+</dict>
+</plist>
+```
+
+## Politiques de conformité macOS
+
+Les politiques de conformité définissent les critères qu'un Mac doit respecter pour être considéré comme "conforme". Un Mac non conforme peut se voir bloquer l'accès aux ressources Microsoft 365 via Conditional Access.
+
+### Créer une politique de conformité
+
+```
+Devices → macOS → Compliance Policies → Create Policy → macOS
+```
+
+**Paramètres recommandés entreprise :**
+
+```
+System Security:
+  ├── Password Required: Yes
+  ├── Password minimum length: 8
+  ├── Password expiration: 90 days
+  ├── Previous passwords to prevent reuse: 5
+  └── Minutes before password required: 5
+
+Device Health:
+  ├── Require FileVault: Yes
+  ├── Require System Integrity Protection: Yes
+  └── Require Gatekeeper: Mac App Store and identified developers
+
+OS Version:
+  ├── Minimum OS Version: 14.0
+  └── Maximum OS Build Version: (laisser vide sauf besoin spécifique)
+
+Device Properties:
+  └── OS Type: macOS
+```
+
+### Actions en cas de non-conformité
+
+```
+Non-compliance actions:
+  ├── Mark device non compliant: Immediately
+  ├── Send email to user: After 1 day
+  └── Retire device: After 30 days (optionnel)
+```
+
+## Gestion FileVault via Intune
+
+FileVault chiffre le disque dur du Mac avec XTS-AES-128. Intune peut forcer l'activation et récupérer les clés de récupération.
+
+### Configuration
+
+1. **Profil FileVault** (Settings Catalog) :
+```
+FileVault → Enable FileVault → True
+Personal Recovery Key Escrow → Enable
+Rotation of Personal Recovery Key → After use
+```
+
+2. **Voir la clé de récupération** (en cas de besoin IT) :
+```
+Devices → [Mac concerné] → Recovery Keys → Get FileVault recovery key
+```
+
+3. **Vérifier l'état FileVault sur tous les Mac** :
+```
+Reports → Endpoint Security → FileVault → Status
+```
+
+## Déploiement d'applications macOS
+
+### Applications disponibles
+
+| Type | Exemples | Format |
+|------|---------|--------|
+| Microsoft 365 apps | Word, Excel, Teams | Via Microsoft connector |
+| Apps Store | Keynote, Numbers | VPP/ABM |
+| PKG apps | Chrome, Firefox, Zoom | .pkg uploadé dans Intune |
+| DMG apps | Creative Cloud | .dmg via Intune wrapper |
+| LOB apps | Applications maison | .pkg signé |
+
+### Déployer Microsoft 365 Apps
+
+```
+Apps → macOS → Add → Microsoft 365 Apps (macOS)
+→ Sélectionner les apps (Word, Excel, PowerPoint, Teams...)
+→ Assign → Required → Groupe cibles
+```
+
+### Déployer un .PKG custom
+
+```
+Apps → macOS → Add → Line-of-business app → .pkg
+→ Uploader le fichier .pkg signé
+→ Renseigner Bundle ID (ex: com.google.Chrome)
+→ Version minimale macOS
+→ Assign
+```
+
+> **Prérequis** : Le fichier .pkg doit être **signé avec un Developer ID Installer** Apple. Les packages non signés sont bloqués par Gatekeeper.
+
+## Scripts Shell dans Intune
+
+Intune permet de déployer des scripts Shell pour automatiser des configurations :
+
+```
+Devices → macOS → Shell Scripts → Add
+```
+
+**Exemple — Script de configuration post-enrôlement :**
+
+```bash
+#!/bin/bash
+# Post-enrollment configuration script
+# Intune Shell Script — macOS
+
+# Set hostname from serial number
+SERIAL=$(system_profiler SPHardwareDataType | awk '/Serial Number/{print $NF}')
+scutil --set HostName "MAC-${SERIAL}"
+scutil --set ComputerName "MAC-${SERIAL}"
+scutil --set LocalHostName "MAC-${SERIAL}"
+
+# Enable SSH for IT (restrict to IT subnet)
+systemsetup -setremotelogin on
+echo "sshd: 10.0.1.0/24" >> /etc/hosts.allow
+echo "sshd: ALL" >> /etc/hosts.deny
+
+# Set energy saver settings
+pmset -a disksleep 0
+pmset -c displaysleep 15
+pmset -a sleep 0
+
+echo "Post-enrollment script completed"
+exit 0
+```
+
+**Paramètres du script dans Intune :**
+- Run script as signed-in user: **No** (root)
+- Hide script notifications: **Yes**
+- Script frequency: **Not configured** (une seule fois)
+- Max number of retries: **3**
+
+## Monitorer la conformité
+
+### Rapports disponibles
+
+```
+Reports → Device Compliance → macOS
+→ Compliance status by policy
+→ Noncompliant devices
+→ Device compliance trends
+```
+
+### Dashboard Endpoint Analytics
+
+```
+Reports → Endpoint Analytics → Overview
+→ Startup performance (temps de démarrage)
+→ Recommended software
+→ Work from anywhere score
+```
+
+## Exemple concret — Audit de conformité sur 100 Mac
+
+**Scénario** : Le RSSI demande l'état de conformité de la flotte Mac.
+
+```powershell
+# PowerShell — Export rapport de conformité macOS
+Connect-MgGraph -Scopes "DeviceManagementManagedDevices.Read.All"
+
+$devices = Get-MgDeviceManagementManagedDevice -Filter "operatingSystem eq 'macOS'" -All
+
+$report = $devices | Select-Object DeviceName, ComplianceState, OsVersion, 
+    LastSyncDateTime, UserPrincipalName, IsEncrypted |
+    Sort-Object ComplianceState
+
+# Export CSV
+$report | Export-Csv -Path "~/Desktop/mac_compliance_$(Get-Date -Format 'yyyyMMdd').csv" -NoTypeInformation
+
+# Résumé
+Write-Host "Total Mac: $($devices.Count)"
+Write-Host "Compliant: $(($devices | Where-Object ComplianceState -eq 'compliant').Count)"
+Write-Host "NonCompliant: $(($devices | Where-Object ComplianceState -eq 'noncompliant').Count)"
+Write-Host "Encrypted: $(($devices | Where-Object IsEncrypted -eq $true).Count)"
+```
+
+## Bonnes pratiques
+
+- **Commencer par les profils de base** (FileVault, mot de passe) avant d'ajouter de la complexité
+- **Tester sur un groupe pilote** (10% du parc) avant le déploiement global
+- **Conditional Access** : activer progressivement, d'abord en mode "Report-only"
+- **Nommer clairement** les profils : `macOS-Security-FileVault-v1`, `macOS-WiFi-Corp-v2`
+- **Versionner** les profils : toujours créer un nouveau profil plutôt que modifier l'existant
+
+## Mini-lab pratique
+
+### Créer votre premier profil de conformité macOS
+
+1. Dans Intune, créez une politique de conformité macOS avec les paramètres minimaux :
+   - Password required: Yes
+   - Minimum OS: 13.0
+   - FileVault required: Yes
+
+2. Assignez-la à un groupe de test
+
+3. Vérifiez dans `Devices → macOS → Monitor → Device compliance` l'état des appareils
+
+4. Sur un Mac de test, vérifiez manuellement :
+```bash
+# État FileVault
+fdesetup status
+
+# Version macOS
+sw_vers -productVersion
+
+# Vérifier si le MDM Intune est installé
+profiles status -type enrollment
+```
+
+## Résumé
+
+Intune offre une gestion macOS complète et intégrée à l'écosystème Microsoft 365. C'est le choix naturel pour les organisations Microsoft-first qui souhaitent éviter un MDM supplémentaire. Les points forts : intégration Conditional Access, gestion unifiée cross-platform, et déploiement d'apps Microsoft simplifié. La limite principale : moins de granularité que Jamf Pro sur la personnalisation avancée et le patch management applicatif.

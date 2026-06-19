@@ -1,0 +1,134 @@
+---
+title: "Reporting et conformité Jamf"
+slug: "reporting-conformite-jamf"
+---
+
+## Introduction
+
+Jamf Pro offre des outils de reporting natifs — inventaires avancés, rapports prédéfinis, advanced searches — permettant de générer des tableaux de bord de conformité sans outils externes. Ces rapports sont la base des audits de sécurité (ISO 27001, SOC 2, CNIL) et des revues de parc périodiques.
+
+## Objectifs
+
+- Maîtriser les Advanced Searches (Computer Searches)
+- Créer des rapports CSV exportables pour les audits
+- Configurer des tableaux de bord Jamf Pro
+- Automatiser les rapports via l'API Jamf
+- Comprendre les données d'inventaire collectées
+
+## Données d'inventaire collectées par Jamf
+
+À chaque `jamf recon`, Jamf collecte :
+
+```
+Hardware          : modèle, serial, RAM, disque, processeur, puce
+OS                : version, build, architecture (x86/ARM)
+Network           : IP, MAC address, hostname, interface active
+Users             : utilisateur connecté, tous les comptes locaux
+Applications      : nom, version, bundle ID, taille, path
+Certificates      : certificats installés, expiration
+Profiles          : profils MDM installés
+Security          : FileVault, Gatekeeper, SIP, Firewall
+Software Updates  : mises à jour en attente
+Extension Attrs   : données personnalisées (vos scripts EA)
+```
+
+## Advanced Searches
+
+```
+Computers → Search Computers → Advanced Search → New
+
+Exemple : "Rapport mensuel sécurité"
+
+Criteria :
+  Managed        is    Yes
+  
+Display Fields (colonnes à afficher) :
+  + Computer Name
+  + Serial Number  
+  + Operating System Version
+  + FileVault 2 Status
+  + Gatekeeper Status
+  + Last Check-in
+  + Username
+  + Department
+
+View As : Computer Groups (pour grouper par département)
+Save this search : "Rapport Mensuel Sécurité"
+```
+
+**Export CSV** : depuis les résultats → Export → CSV → ouvre dans Excel.
+
+## Rapports prédéfinis utiles
+
+```
+Computers → Reports (menu latéral) :
+
+- "Application Usage"          → quelles apps sont utilisées et combien de fois
+- "Computer Usage"             → utilisation par date (allumages, utilisateurs)
+- "Disk Encryption Report"     → état FileVault complet
+- "Failed Management Commands" → commandes MDM qui ont échoué
+- "Licensed Software"          → compliance licences logiciels
+- "Patch Management Report"    → état de mise à jour par logiciel
+```
+
+## Tableau de bord de conformité automatique
+
+```
+Jamf Pro → Home → Customize Dashboard
+
+Ajoutez :
+  Widget "Smart Group Count" :
+    - Groupe "FileVault OK" → cible 100%
+    - Groupe "macOS 14+" → cible 100%  
+    - Groupe "Actifs < 7j" → cible 95%
+
+  Widget "Patch Management" :
+    - Chrome compliance
+    - Firefox compliance
+    - Office compliance
+```
+
+## Automatiser via l'API Jamf
+
+```bash
+#!/bin/bash
+# Rapport automatique hebdomadaire - envoyer par email
+
+JAMF_URL="https://votre-instance.jamfcloud.com"
+REPORT_DATE=$(date +%Y-%m-%d)
+
+# Obtenir token
+TOKEN=$(curl -s -X POST -u "$API_USER:$API_PASS" \
+  "$JAMF_URL/api/v1/auth/token" | python3 -c "import sys,json; print(json.load(sys.stdin)['token'])")
+
+# Compter les Mac non conformes
+NON_COMPLIANT=$(curl -s -H "Authorization: Bearer $TOKEN" \
+  "$JAMF_URL/JSSResource/computergroups/name/Non%20Conformes" \
+  | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['computer_group']['computers'].__len__())")
+
+echo "Rapport $REPORT_DATE : $NON_COMPLIANT Mac non conformes"
+
+# Invalider le token
+curl -s -X DELETE -H "Authorization: Bearer $TOKEN" "$JAMF_URL/api/v1/auth/invalidate-token"
+```
+
+## Mini-lab : Rapport d'audit complet
+
+**Étape 1** — Créez l'Advanced Search "Audit Mensuel" avec les champs ci-dessus.
+
+**Étape 2** — Exportez en CSV → ouvrez dans Excel → créez un tableau croisé dynamique par département.
+
+**Étape 3** — Identifiez les 3 Mac les plus anciens (champ `Last Check-in`) → contactez les utilisateurs.
+
+**Étape 4** — Créez un rapport "FileVault non chiffré" → envoyez à votre responsable sécurité.
+
+## Bonnes pratiques
+
+- **Sauvegardez vos Advanced Searches** : elles servent à chaque audit
+- **Exportez mensuellement** en CSV et archivez pour l'historique
+- **Créez des Smart Groups miroir** de vos critères de conformité — ils restent à jour en temps réel
+- **Partagez le dashboard** avec les responsables de département via un compte Jamf en lecture seule
+
+## Résumé
+
+Le reporting Jamf Pro transforme un inventaire technique en tableau de bord de conformité exploitable par la direction IT et les auditeurs. Les Advanced Searches sont la clé : maîtrisez leur construction et vous pouvez répondre à n'importe quelle question sur l'état de votre parc en quelques clics.

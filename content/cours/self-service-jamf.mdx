@@ -1,0 +1,181 @@
+---
+title: "Self Service Jamf Pro"
+slug: "self-service-jamf"
+---
+
+## Introduction
+
+**Jamf Self Service** est un portail d'applications et d'actions mis à disposition des utilisateurs finaux. Plutôt que d'attendre l'IT, les utilisateurs peuvent installer des applications autorisées, lancer des scripts de maintenance, réinitialiser des paramètres — le tout dans un environnement contrôlé par l'administrateur. Self Service réduit le nombre de tickets helpdesk de 30 à 50% dans les organisations qui l'adoptent.
+
+## Objectifs
+
+- Configurer l'apparence et le branding de Self Service
+- Publier des applications, scripts et profils dans Self Service
+- Créer des catégories pour organiser le catalogue
+- Configurer les notifications pour les utilisateurs
+- Restreindre la visibilité selon les groupes d'utilisateurs
+
+## Architecture Self Service
+
+```
+Jamf Pro (backend)
+    │ définit les items disponibles
+    ▼
+Self Service App (macOS / iOS)
+    │ affiche le catalogue à l'utilisateur
+    ▼
+Utilisateur installe / exécute
+    │
+    ▼
+Jamf Pro exécute la Policy associée
+```
+
+Self Service est une application macOS (`.app`) installée automatiquement sur les Mac gérés. Une version iOS/iPadOS existe aussi pour les appareils mobiles.
+
+## Configuration initiale
+
+```
+Jamf Pro → Settings → Self Service → macOS Self Service
+
+Branding :
+  Header Branding Image   : logo entreprise (.png, 300x75px)
+  Icon                    : icône app (512x512px)
+  App Name                : "MonEntreprise App Store"
+  Primary Color           : #1D3A8C (couleur principale)
+  Secondary Color         : #FFFFFF
+
+Login :
+  Require Login           : Yes (recommandé)
+  Login Sources           : LDAP / SAML / Jamf Pro accounts
+
+Notifications :
+  Enable Notifications    : Yes
+  Frequency               : Once per computer
+```
+
+## Publier une application dans Self Service
+
+```
+Computers → Policies → New (ou modifier une existante)
+
+General :
+  Trigger   : None (déclenché uniquement depuis Self Service)
+  
+Self Service :
+  ☑ Make the policy available in Self Service
+  Display Name   : "Installer Slack"
+  Button Name    : "Installer"
+  Description    : "Client de messagerie Slack — approuvé par l'IT"
+  Icon           : [uploadez l'icône Slack]
+  Category       : Communication
+  Feature This   : Yes (pour le mettre en avant)
+  
+Packages : Slack.pkg
+Scope     : All Managed Computers
+```
+
+## Catégories recommandées
+
+```
+Productivité    → Office, PDF, Collaboration
+Développement   → IDE, outils Dev, Git clients  
+Communication   → Slack, Teams, Zoom, Mail
+Sécurité        → VPN, password managers, antivirus
+Maintenance     → Cache cleanup, disk repair, reset prefs
+Système         → Pilotes, utilitaires, configs spéciales
+```
+
+## Scripts utiles dans Self Service
+
+### Réinitialiser les préférences réseau
+```bash
+#!/bin/bash
+# "Réparer le Wi-Fi" dans Self Service
+
+# Supprimer les préférences Wi-Fi corrompues
+sudo rm -f /Library/Preferences/SystemConfiguration/com.apple.airport.preferences.plist
+sudo rm -f /Library/Preferences/SystemConfiguration/NetworkInterfaces.plist
+
+# Redémarrer le service Airport
+sudo ifconfig en0 down
+sleep 2
+sudo ifconfig en0 up
+
+echo "Préférences réseau réinitialisées. Reconnectez-vous au Wi-Fi."
+osascript -e 'display notification "Préférences Wi-Fi réinitialisées." with title "IT Support"'
+```
+
+### Flush DNS cache
+```bash
+#!/bin/bash
+sudo dscacheutil -flushcache
+sudo killall -HUP mDNSResponder
+osascript -e 'display notification "Cache DNS vidé avec succès." with title "IT Support"'
+```
+
+### Renouveler le certificat VPN
+```bash
+#!/bin/bash
+# Supprimer l'ancien certificat et relancer l'enrollment
+security delete-certificate -c "VPN Corp Certificate" /Library/Keychains/System.keychain 2>/dev/null
+sudo jamf policy -event renewVPNCert
+osascript -e 'display notification "Certificat VPN renouvelé." with title "IT Support"'
+```
+
+## Notifications Self Service
+
+```
+Settings → Self Service → Notifications
+
+Configurez des notifications automatiques pour :
+- Nouvelles apps disponibles
+- Mises à jour requises
+- Actions de sécurité obligatoires (ex: FileVault à activer)
+
+Message type :
+  "Une mise à jour de sécurité est disponible dans Self Service.
+   Veuillez l'installer avant vendredi."
+  
+  → Bouton "Ouvrir Self Service" → ouvre l'app directement sur l'item
+```
+
+## Mini-lab : Créer un catalogue Self Service basique
+
+**Étape 1** — Créez 3 catégories :
+```
+Settings → Self Service → Categories → New
+1. "Productivité" 
+2. "Maintenance IT"
+3. "Sécurité"
+```
+
+**Étape 2** — Publiez une app (ex: Firefox) :
+```
+Policy → "Installer Firefox"
+Self Service → ☑ → Catégorie : Productivité → Icône Firefox
+```
+
+**Étape 3** — Publiez un script de maintenance :
+```
+Policy → "Vider le Cache" (script flush cache)
+Self Service → ☑ → Catégorie : Maintenance IT
+```
+
+**Étape 4** — Ouvrez Self Service sur votre Mac :
+```bash
+open "/Applications/Self Service.app"
+```
+→ Vérifiez que vos items apparaissent → Installez Firefox depuis Self Service.
+
+## Bonnes pratiques
+
+- **Icônes HD obligatoires** : utilisez des icônes 512x512px minimum — l'interface Retina le mérite
+- **Descriptions claires** : l'utilisateur ne connaît pas les acronymes IT — expliquez en langage simple
+- **Limitez le catalogue** : 30-50 items max — au-delà, les utilisateurs se perdent
+- **Catégorisez tout** : sans catégories, le catalogue est inutilisable
+- **Testez comme un utilisateur** : ouvrez Self Service sans droits admin et vérifiez que tout fonctionne
+- **Notifiez sans spammer** : maximum 1 notification par semaine par item
+
+## Résumé
+
+Self Service est l'interface entre l'IT et les utilisateurs. Bien configuré, il réduit la charge du helpdesk, améliore l'autonomie des utilisateurs et accélère les déploiements. C'est aussi un excellent canal pour les actions de remédiation urgentes (ex: "installez cette mise à jour de sécurité") présentées de façon claire et accessible.

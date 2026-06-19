@@ -1,0 +1,163 @@
+---
+title: "Threat Detection et Compliance"
+slug: "threat-detection-compliance"
+---
+
+## Introduction
+
+La détection de menaces en environnement Apple combine les capacités natives macOS (Endpoint Security Framework, XProtect, Gatekeeper) avec des solutions spécialisées (Jamf Protect, CrowdStrike, SentinelOne). La compliance, quant à elle, est une boucle continue : détecter les violations → remédier → vérifier → reporter.
+
+## Framework de détection — MITRE ATT&CK pour macOS
+
+MITRE ATT&CK pour macOS documente les tactiques et techniques des attaquants. Les principales menaces macOS en entreprise :
+
+| Technique | MITRE ID | Exemple concret |
+|-----------|---------|-----------------|
+| Login Items | T1547.011 | Malware ajouté au démarrage auto |
+| AppleScript | T1059.002 | Scripts AppleScript malveillants |
+| Dylib Hijacking | T1574.004 | Bibliothèques système remplacées |
+| Keychain Access | T1555.001 | Vol de mots de passe stockés |
+| SSH Tunneling | T1572 | Tunnel persistant vers C2 |
+| Launchd | T1543.004 | Daemon persistant malveillant |
+| Cron Jobs | T1053.003 | Tâches planifiées malveillantes |
+
+## Détection via Jamf Pro (sans Jamf Protect)
+
+### Extension Attributes de détection
+
+```bash
+#!/bin/bash
+# EA : Détection Login Items suspects
+
+SUSPICIOUS=()
+while IFS= read -r item; do
+    # Vérifier si l'item est dans un chemin non standard
+    case "$item" in
+        /Applications/*|/System/*|/Library/*) ;;  # Légitime
+        *) SUSPICIOUS+=("$item") ;;
+    esac
+done < <(osascript -e 'tell application "System Events" to get path of every login item' 2>/dev/null | tr ',' '
+' | xargs)
+
+if [[ ${#SUSPICIOUS[@]} -gt 0 ]]; then
+    echo "<result>SUSPICIOUS: ${SUSPICIOUS[*]}</result>"
+else
+    echo "<result>Clean</result>"
+fi
+```
+
+```bash
+#!/bin/bash
+# EA : Démons LaunchDaemon non Apple/Jamf
+
+SUSPICIOUS_DAEMONS=()
+for plist in /Library/LaunchDaemons/*.plist; do
+    PROGRAM=$(defaults read "$plist" ProgramArguments 2>/dev/null | head -1)
+    LABEL=$(defaults read "$plist" Label 2>/dev/null)
+    
+    # Vérifier si le programme existe et est signé
+    if [[ -n "$PROGRAM" ]]; then
+        case "$LABEL" in
+            com.apple.*|com.jamf.*|com.microsoft.*|com.crowdstrike.*) ;;  # Connu
+            *) SUSPICIOUS_DAEMONS+=("$LABEL: $PROGRAM") ;;
+        esac
+    fi
+done
+
+if [[ ${#SUSPICIOUS_DAEMONS[@]} -gt 0 ]]; then
+    echo "<result>REVIEW: ${SUSPICIOUS_DAEMONS[*]}</result>"
+else
+    echo "<result>Clean</result>"
+fi
+```
+
+## Réponse aux incidents — Runbook macOS
+
+### Isolation réseau d'un Mac compromis
+
+```bash
+# Via Jamf Pro → Lost Mode (supervises uniquement)
+# Ou via script Jamf :
+#!/bin/bash
+# isolate_mac.sh — Bloquer tout le trafic réseau
+
+# Firewall maximal
+/usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on
+/usr/libexec/ApplicationFirewall/socketfilterfw --setblockall on
+
+# Désactiver les interfaces réseau
+networksetup -setairportpower en0 off
+networksetup -setnetworkserviceenabled "Ethernet" off 2>/dev/null
+
+# Logger l'isolation
+logger "SECURITY: Mac isolé par l'IT - $(date)"
+echo "Mac isolé. Appelez l'IT immédiatement."
+```
+
+### Collecte de preuves (forensique légère)
+
+```bash
+#!/bin/bash
+# forensic_collect.sh — Collecte préliminaire
+
+OUTPUT="/tmp/forensic_$(hostname)_$(date +%Y%m%d_%H%M%S)"
+mkdir -p "$OUTPUT"
+
+# Processus en cours
+ps aux > "$OUTPUT/processes.txt"
+
+# Connexions réseau
+netstat -an > "$OUTPUT/network.txt"
+lsof -i > "$OUTPUT/open_connections.txt"
+
+# Login Items
+osascript -e 'tell application "System Events" to get properties of every login item'   > "$OUTPUT/login_items.txt" 2>/dev/null
+
+# LaunchDaemons/Agents
+ls -la /Library/LaunchDaemons/ /Library/LaunchAgents/   ~/Library/LaunchAgents/ 2>/dev/null > "$OUTPUT/launchd_items.txt"
+
+# Historique bash
+cp ~/.bash_history "$OUTPUT/" 2>/dev/null || true
+cp ~/.zsh_history "$OUTPUT/" 2>/dev/null || true
+
+# Logs de sécurité
+log show --last 24h --predicate 'category == "security"'   > "$OUTPUT/security_logs.txt" 2>/dev/null &
+
+# Créer l'archive
+tar czf "${OUTPUT}.tar.gz" "$OUTPUT/" 2>/dev/null
+echo "Preuves collectées : ${OUTPUT}.tar.gz"
+```
+
+## Compliance continue
+
+La compliance n'est pas un état ponctuel mais un processus continu :
+
+```
+Jour 1 : Définir les politiques (CIS, NIST, ISO)
+          ↓
+Jour 1+ : Déployer les profils MDM et scripts
+          ↓
+H24 : Smart Groups mesurent l'état du parc
+          ↓
+Hebdomadaire : Rapport de conformité
+          ↓
+Mensuel : Audit et ajustements
+          ↓
+Continu : Remédiation automatique des écarts
+```
+
+## Indicateurs KPI de sécurité
+
+Mesurez ces KPIs dans votre Smart Group dashboard :
+
+| KPI | Cible | Critique |
+|-----|-------|---------|
+| % Mac FileVault | 100% | < 95% |
+| % Mac macOS ≥ N-1 | 95% | < 85% |
+| % Mac vus < 7j | 98% | < 90% |
+| % Mac CIS Score > 80% | 90% | < 75% |
+| Apps interdites détectées | 0 | > 0 |
+
+## Résumé
+
+La détection de menaces et la compliance macOS forment un système intégré : les Extension Attributes Jamf detestent les anomalies, les Smart Groups les agrègent, les Policies les corrigent, et les rapports mesurent l'amélioration continue. Cette boucle, correctement configurée, produit une posture de sécurité documentée et auditée en permanence.

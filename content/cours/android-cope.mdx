@@ -1,0 +1,137 @@
+---
+title: "Android COPE (Corporate Owned Personally Enabled)"
+slug: "android-cope"
+---
+
+## Introduction
+
+Le mode COPE (Corporate Owned, Personally Enabled) combine les avantages du Fully Managed (contrôle IT complet sur l'appareil d'entreprise) et du Work Profile (usage personnel limité pour l'employé). C'est le mode idéal pour les organisations qui fournissent des appareils à leurs employés tout en leur permettant un usage personnel limité.
+
+## Objectifs pédagogiques
+
+- Comprendre la différence entre COPE, Work Profile et Fully Managed
+- Configurer un profil COPE dans Intune
+- Définir les limites de l'espace personnel en COPE
+- Gérer la transition depuis un mode existant vers COPE
+
+## Architecture COPE
+
+```
+📱 Android d'entreprise (COPE) — Android 11+
+├── 🟠 Work Profile (obligatoire, toujours actif)
+│   ├── Apps pro avec badge valise
+│   ├── Email, Teams, apps métier
+│   ├── Données d'entreprise chiffrées
+│   └── Contrôle IT total
+└── 🔵 Espace personnel (limité par IT)
+    ├── Google Play Store restreint
+    ├── Apps personnelles autorisées par IT
+    └── Données personnelles (inaccessibles à l'IT)
+```
+
+## COPE vs autres modes
+
+| Critère | Work Profile | Fully Managed | COPE |
+|---------|-------------|---------------|------|
+| Propriété appareil | Personnel | Entreprise | Entreprise |
+| Usage personnel | ✅ Libre | ❌ Non | ✅ Limité |
+| Contrôle IT | Partiel | Total | Total + espace perso |
+| Android requis | 8+ | 9+ | 11+ |
+| Wipe appareil complet | ❌ Non | ✅ Oui | ✅ Oui |
+
+## Configuration COPE dans Intune
+
+```
+Devices → Android → Configuration Profiles → Create
+→ Platform: Android Enterprise  
+→ Profile type: Fully Managed, Dedicated, Corporate-owned Work Profile → COPE
+
+Work Profile Settings (zone pro):
+  ├── Data transfer: Block (pro → perso)
+  ├── Screen capture: Block
+  └── [mêmes que Work Profile standard]
+
+Personal Profile Settings (zone perso):
+  ├── Camera: Allow (ou Block si usage sensible)
+  ├── Screen captures: Allow
+  ├── Allow user to enable unknown sources: Block
+  ├── Google Play Store: Allow (restreint aux apps autorisées)
+  └── Google account addition: Allow (compte perso Google)
+
+Device Settings (appareil entier):
+  ├── Factory reset: Block (par l'utilisateur)
+  ├── USB file transfer: Allow/Block
+  └── Bluetooth: Allow
+```
+
+## Limites de l'espace personnel en COPE
+
+L'IT peut définir quelles apps sont autorisées dans l'espace personnel :
+
+```
+Apps → Android → Configuration Profiles → [profil COPE]
+→ Personal profile → Allowed/blocked apps
+
+Exemple — Liste d'apps personnelles autorisées :
+  ├── com.whatsapp (WhatsApp)
+  ├── com.spotify.music (Spotify)
+  ├── com.google.android.youtube (YouTube)
+  └── com.instagram.android (Instagram)
+  
+Apps bloquées dans l'espace personnel :
+  ├── com.dropbox.android (risque de fuite de données)
+  └── com.wechat (sécurité)
+```
+
+## Quand choisir COPE ?
+
+**COPE est le bon choix si** :
+- L'entreprise fournit les appareils Android
+- Les employés souhaitent un usage personnel limité
+- L'IT a besoin d'un contrôle total (wipe complet possible)
+- L'organisation utilise Android 11+
+
+**Préférez Fully Managed si** :
+- Appareils 100% professionnels (entrepôt, terrain)
+- Aucun usage personnel toléré
+- Sécurité maximale requise
+
+**Préférez Work Profile si** :
+- Les employés utilisent leur propre Android (BYOD)
+
+## Exemple concret — Smartphones pour équipe RH
+
+**Scénario** : 30 responsables RH reçoivent un Samsung Galaxy d'entreprise. Ils traitent des données sensibles (RH) mais souhaitent pouvoir utiliser leur téléphone personnellement.
+
+```
+Configuration COPE :
+  Work Profile :
+    ✅ Apps RH, Outlook, Teams
+    ✅ VPN Always-On pour accès SIRH
+    ✅ Données RH chiffrées
+    ✅ Copy/paste bloqué vers espace perso
+  
+  Espace personnel :
+    ✅ Google Play Store (liste blanche d'apps perso autorisées)
+    ✅ Photos personnelles
+    ✅ Compte Google personnel
+    ❌ Dropbox, OneDrive perso (bloqués)
+    ❌ TikTok (bloqué)
+```
+
+## Transition vers COPE
+
+Si vous avez des appareils actuellement en Fully Managed et souhaitez passer en COPE, une réinitialisation de l'appareil est nécessaire — COPE ne peut pas être activé sur un appareil déjà enrôlé en Fully Managed.
+
+## Mini-lab
+
+1. Créez un profil COPE dans Intune (nécessite Android 11+)
+2. Configurez les restrictions Work Profile (data transfer bloqué)
+3. Définissez 3 apps autorisées dans l'espace personnel
+4. Enrôlez un appareil Android 11+ de test
+5. Vérifiez que les apps pro sont dans le Work Profile (badge valise)
+6. Vérifiez que l'espace personnel est accessible mais restreint
+
+## Résumé
+
+COPE est le mode Android Enterprise le plus équilibré pour les organisations qui fournissent des appareils mobiles à leurs employés. Il donne à l'IT le contrôle total dont il a besoin (wipe complet, politiques, apps gérées) tout en offrant aux employés une utilisation personnelle encadrée sur leur téléphone d'entreprise. Prérequis : Android 11 minimum.

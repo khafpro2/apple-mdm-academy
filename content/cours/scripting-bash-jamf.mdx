@@ -1,0 +1,248 @@
+---
+title: "Scripting Bash avec Jamf Pro"
+slug: "scripting-bash-jamf"
+---
+
+## Introduction
+
+Les scripts Bash sont l'outil le plus flexible de l'administrateur Jamf Pro. Là où les profils et politiques standards ont des limites, un script peut faire presque tout : configurer des préférences système, installer des dépendances, réparer des configurations corrompues, collecter des données personnalisées via Extension Attributes. Maîtriser Bash est indispensable pour tout administrateur Jamf sérieux.
+
+## Bonnes pratiques de scripting Jamf
+
+### Structure de base d'un script Jamf
+
+```bash
+#!/bin/bash
+#
+# Script : configure_dock.sh
+# Description : Configure le Dock selon la charte IT
+# Auteur : IT Admin <it@acme.com>
+# Version : 1.2.0
+# Date : 2025-01-15
+# Testée sur : macOS 13, 14, 15
+# Paramètres Jamf :
+#   $4 : Nom du département
+#   $5 : Activer le masquage automatique (true/false)
+#
+# Changelog :
+#   1.2.0 : Ajout support macOS 15
+#   1.1.0 : Ajout paramètre département
+#   1.0.0 : Version initiale
+
+set -euo pipefail   # Arrêt sur erreur, variable indéfinie, pipe failure
+IFS=$'\n\t'         # Séparateur de champ sécurisé
+
+# ── Variables ─────────────────────────────────────────────────────────────────
+SCRIPT_NAME=$(basename "$0")
+LOG_FILE="/var/log/jamf_scripts.log"
+DEPT="${4:-IT}"         # Paramètre Jamf $4
+AUTO_HIDE="${5:-false}"  # Paramètre Jamf $5
+
+# ── Logging ───────────────────────────────────────────────────────────────────
+log() { echo "$(date '+%Y-%m-%d %H:%M:%S') [$SCRIPT_NAME] $*" | tee -a "$LOG_FILE"; }
+log_error() { log "ERROR: $*" >&2; }
+
+# ── Utilisateur connecté ──────────────────────────────────────────────────────
+get_current_user() {
+    scutil <<< "show State:/Users/ConsoleUser" | awk '/Name :/{print $3}'
+}
+
+CURRENT_USER=$(get_current_user)
+if [[ -z "$CURRENT_USER" || "$CURRENT_USER" == "root" || "$CURRENT_USER" == "loginwindow" ]]; then
+    log_error "Aucun utilisateur connecté — abandon"
+    exit 1
+fi
+
+USER_HOME=$(dscl . -read "/Users/$CURRENT_USER" NFSHomeDirectory | awk '{print $2}')
+log "Utilisateur : $CURRENT_USER | Home : $USER_HOME | Dept : $DEPT"
+
+# ── Logique principale ────────────────────────────────────────────────────────
+configure_dock() {
+    local plist="$USER_HOME/Library/Preferences/com.apple.dock.plist"
+    
+    # Taille du Dock
+    defaults write "$plist" tilesize -int 48
+    
+    # Masquage automatique si demandé
+    if [[ "$AUTO_HIDE" == "true" ]]; then
+        defaults write "$plist" autohide -bool true
+        log "Masquage automatique activé"
+    fi
+    
+    # Afficher uniquement les apps ouvertes
+    defaults write "$plist" static-only -bool false
+    
+    # Appliquer sans redémarrer le Dock
+    sudo -u "$CURRENT_USER" killall Dock 2>/dev/null || true
+    
+    log "Dock configuré avec succès"
+}
+
+configure_dock
+
+log "Script terminé avec succès"
+exit 0
+```
+
+## Paramètres Jamf ($4 à $11)
+
+Jamf réserve `$1`, `$2`, `$3` pour les variables système. Vos paramètres commencent à `$4` :
+
+```
+Dans Jamf → Scripts → [votre script] → Options
+
+Parameter 4 Label : "Nom du département"
+Parameter 5 Label : "Masquage automatique (true/false)"
+Parameter 6 Label : "Couleur du thème (dark/light)"
+```
+
+Dans la Policy associée :
+```
+Scripts → [votre script]
+Parameter 4 Value : Finance
+Parameter 5 Value : true
+```
+
+## Scripts d'Extension Attribute (EA)
+
+```bash
+#!/bin/bash
+# EA : Dernière connexion utilisateur
+# Configuration dans Jamf → Extension Attributes → Script
+
+LAST_USER=$(last -1 | awk '/console/{print $1; exit}')
+LAST_LOGIN=$(last -1 | awk '/console/{print $4,$5,$6,$7; exit}')
+
+if [[ -n "$LAST_USER" ]]; then
+    echo "<result>${LAST_USER} - ${LAST_LOGIN}</result>"
+else
+    echo "<result>Aucune connexion récente</result>"
+fi
+```
+
+```bash
+#!/bin/bash
+# EA : Statut de l'agent CrowdStrike
+CS_PATH="/Applications/Falcon.app/Contents/Resources/falconctl"
+if [[ -f "$CS_PATH" ]]; then
+    STATUS=$("$CS_PATH" stats | awk '/Sensor operational:/{print $3}')
+    VERSION=$("$CS_PATH" stats | awk '/version:/{print $2}')
+    echo "<result>Installed v${VERSION} - ${STATUS}</result>"
+else
+    echo "<result>Not Installed</result>"
+fi
+```
+
+## Scripts utiles en production
+
+### Vérifier et réparer les permissions
+```bash
+#!/bin/bash
+# Réparer les permissions courantes après une mise à jour
+
+log() { /usr/bin/logger -t "JamfScript" "$*"; }
+
+CURRENT_USER=$(scutil <<< "show State:/Users/ConsoleUser" | awk '/Name :/{print $3}')
+[[ -z "$CURRENT_USER" ]] && exit 0
+
+log "Réparation des permissions pour $CURRENT_USER"
+
+# Corriger les permissions du home
+chmod 755 "/Users/$CURRENT_USER" 2>/dev/null
+chmod 700 "/Users/$CURRENT_USER/Library" 2>/dev/null
+
+# Forcer la mise à jour des préférences système
+sudo -u "$CURRENT_USER" \
+  /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -ud
+
+log "Réparation terminée"
+```
+
+### Notification utilisateur depuis Bash
+```bash
+#!/bin/bash
+CURRENT_USER=$(scutil <<< "show State:/Users/ConsoleUser" | awk '/Name :/{print $3}')
+USER_ID=$(id -u "$CURRENT_USER")
+
+# Afficher une notification native macOS
+launchctl asuser "$USER_ID" sudo -u "$CURRENT_USER" \
+  osascript -e 'display notification "Une mise à jour de sécurité a été installée." \
+    with title "IT Acme Corp" \
+    subtitle "Action requise" \
+    sound name "default"'
+```
+
+### Détecter l'architecture (Intel vs Apple Silicon)
+```bash
+#!/bin/bash
+ARCH=$(uname -m)
+if [[ "$ARCH" == "arm64" ]]; then
+    PKG_URL="https://cdn.acme.com/app-arm64.pkg"
+    log "Apple Silicon détecté"
+elif [[ "$ARCH" == "x86_64" ]]; then
+    # Vérifier si on tourne sous Rosetta
+    TRANSLATED=$(sysctl -n sysctl.proc_translated 2>/dev/null || echo "0")
+    if [[ "$TRANSLATED" == "1" ]]; then
+        log "Rosetta 2 actif — traitement comme Apple Silicon"
+        PKG_URL="https://cdn.acme.com/app-arm64.pkg"
+    else
+        PKG_URL="https://cdn.acme.com/app-x86_64.pkg"
+        log "Intel natif"
+    fi
+fi
+
+curl -fsSL "$PKG_URL" -o /tmp/app.pkg
+installer -pkg /tmp/app.pkg -target /
+```
+
+## Mini-lab : Script d'onboarding
+
+**Objectif** : créer un script exécuté à l'enrollment qui configure le Mac pour un nouvel employé.
+
+```bash
+#!/bin/bash
+# onboarding.sh — Script d'enrollment initial
+# Paramètre $4 : département (Engineering/Sales/Finance/HR)
+
+set -euo pipefail
+
+DEPT="${4:-General}"
+CURRENT_USER=$(scutil <<< "show State:/Users/ConsoleUser" | awk '/Name :/{print $3}')
+LOG="/var/log/jamf_onboarding.log"
+
+log() { echo "$(date) [Onboarding] $*" | tee -a "$LOG"; }
+
+log "=== Onboarding pour $CURRENT_USER (Dept: $DEPT) ==="
+
+# 1. Configurer les préférences système
+defaults write /Library/Preferences/.GlobalPreferences AppleLanguages -array "fr" "en"
+defaults write /Library/Preferences/.GlobalPreferences AppleLocale -string "fr_FR"
+
+# 2. Activer le firewall
+/usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on
+
+# 3. Créer un dossier de bienvenue sur le Bureau
+sudo -u "$CURRENT_USER" mkdir -p "/Users/$CURRENT_USER/Desktop/Bienvenue"
+
+# 4. Copier la charte informatique
+cp /Library/Company/charte-informatique.pdf "/Users/$CURRENT_USER/Desktop/Bienvenue/" 2>/dev/null || true
+
+# 5. Ouvrir Self Service pour que l'utilisateur installe ses apps
+sudo -u "$CURRENT_USER" open "/Applications/Self Service.app"
+
+log "Onboarding terminé pour $CURRENT_USER (Dept: $DEPT)"
+exit 0
+```
+
+## Bonnes pratiques
+
+- **`set -euo pipefail`** toujours en début de script — arrête le script sur la moindre erreur
+- **Loggez tout** : dans `/var/log/jamf.log` ou un fichier dédié
+- **Testez localement** avant d'uploader dans Jamf : `bash -x script.sh`
+- **Gérez les utilisateurs correctement** : ne supposez jamais que root est connecté
+- **Nettoyez les fichiers temporaires** : `trap 'rm -f /tmp/monscript.*' EXIT`
+- **Versionez vos scripts** : gardez l'historique dans Git, pas dans Jamf uniquement
+
+## Résumé
+
+Le scripting Bash est le super-pouvoir de l'administrateur Jamf. Une fois maîtrisé, vous pouvez automatiser pratiquement n'importe quel aspect de la gestion macOS — de la configuration utilisateur à l'audit de sécurité en passant par le diagnostic de problèmes complexes. La rigueur (set -euo pipefail, logging, gestion des erreurs) distingue les scripts de production des scripts de dépannage rapide.

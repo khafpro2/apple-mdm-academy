@@ -1,0 +1,234 @@
+---
+title: "Policies Jamf Pro"
+slug: "policies-jamf-pro"
+---
+
+## Introduction
+
+Les **Policies** (politiques) Jamf Pro sont le mécanisme d'exécution d'actions sur les Mac gérés. Là où les Configuration Profiles configurent l'état persistant du système, les Policies exécutent des actions : installer un package, lancer un script, mettre à jour un logiciel, renouveler l'inventaire, afficher une notification. Une Policy se déclenche sur un **trigger** (événement) et s'applique à un **scope** (cible).
+
+## Objectifs
+
+- Comprendre la différence Policy vs Configuration Profile
+- Maîtriser les triggers disponibles (Startup, Login, Network, Custom)
+- Configurer les actions disponibles (packages, scripts, maintenance, User Interaction)
+- Utiliser Recurring Check-in vs Run Once
+- Déboguer les policies qui ne s'exécutent pas
+
+## Anatomie d'une Policy
+
+```
+Policy
+├── General
+│   ├── Trigger : Startup | Login | Network State Change | Custom | Recurring Check-in
+│   ├── Execution Frequency : Once per computer | Always | Once per user | Custom
+│   └── Category : (organisation)
+├── Packages
+│   └── [pkg à installer]
+├── Scripts  
+│   └── [scripts Bash à exécuter]
+├── Maintenance
+│   ├── Update Inventory
+│   ├── Reset Managed Preferences
+│   └── Flush Policy Logs
+├── Files and Processes
+│   ├── Kill a process
+│   └── Delete a file/folder
+├── User Interaction
+│   ├── Message to display
+│   └── Restart/Shutdown options
+├── Disk Encryption
+│   └── FileVault 2 enforcement
+└── Scope
+    ├── Targets : All Computers | Smart Groups | Individual
+    └── Exclusions : (optionnel)
+```
+
+## Triggers disponibles
+
+| Trigger | Quand | Usage typique |
+|---------|-------|--------------|
+| **Startup** | Au démarrage du Mac | VPN, certificats, configuration initiale |
+| **Login** | Quand un utilisateur se connecte | Policies per-user, scripts de session |
+| **Logout** | À la déconnexion | Nettoyage, logs |
+| **Network State Change** | Connexion/déconnexion réseau | VPN automatique, push config |
+| **Enrollment** | Juste après l'enrollment | Bootstrap initial (apps, config) |
+| **Recurring Check-in** | Toutes les 15-30 min (jamf policy) | Maintenance, mises à jour |
+| **Custom** | Déclenché manuellement par l'admin | Actions ad-hoc, urgences |
+
+## Execution Frequency
+
+| Fréquence | Comportement | Usage |
+|-----------|-------------|-------|
+| **Once per computer** | S'exécute une fois, jamais reprise | Installation initiale de logiciel |
+| **Always** | À chaque check-in | Vérification d'état continue |
+| **Once per user per computer** | Une fois par utilisateur par Mac | Config utilisateur première connexion |
+| **Once every day/week** | Planification périodique | Mises à jour, patches |
+
+> **Piège courant** : "Once per computer" s'arrête dès que la policy s'est exécutée avec succès. Si vous modifiez la policy après, elle ne se réexécutera pas (à moins de "Flush Policy Logs").
+
+## Créer une Policy d'installation
+
+### Exemple : Déployer Google Chrome
+
+```
+Computers → Policies → New
+
+General :
+  Display Name : "Install Google Chrome"
+  Trigger       : Recurring Check-in + Enrollment
+  Execution     : Once per computer
+  Category      : [Software - Browsers]
+
+Packages :
+  + Add → GoogleChrome.pkg
+  Action : Install
+
+Maintenance :
+  ☑ Update Inventory
+
+Scope :
+  Targets : Smart Group "All Managed Macs"
+  
+Save
+```
+
+### Déclencher manuellement (Custom Event)
+
+```bash
+# Admin déclenche un event custom "updateChrome" :
+# Dans Jamf : General → Trigger : Custom → Event name : "updateChrome"
+
+# Sur le Mac cible, l'agent exécute :
+sudo jamf policy -event updateChrome
+
+# Ou via Jamf API :
+curl -X POST \
+  -H "Authorization: Bearer $TOKEN" \
+  "https://jamf.corp.com/api/v1/jamf-management-framework/redeploy/$COMPUTER_ID"
+```
+
+## Script dans une Policy
+
+Les scripts Bash sont d'abord uploadés dans **Computers → Scripts** puis attachés à une Policy.
+
+```bash
+#!/bin/bash
+# Script exemple : configurer le hostname selon l'utilisateur connecté
+# À uploader dans Jamf → Scripts
+
+CURRENT_USER=$(ls -l /dev/console | awk '{print $3}')
+FULL_NAME=$(dscl . -read /Users/$CURRENT_USER RealName | tail -1 | xargs)
+SERIAL=$(system_profiler SPHardwareDataType | awk '/Serial Number/{print $NF}')
+
+# Nommer le Mac : "Prénom-SERIAL"
+FIRST_NAME=$(echo "$FULL_NAME" | awk '{print $1}')
+NEW_NAME="${FIRST_NAME}-${SERIAL}"
+
+scutil --set ComputerName "$NEW_NAME"
+scutil --set LocalHostName "$NEW_NAME"
+scutil --set HostName "$NEW_NAME"
+
+echo "Mac renommé : $NEW_NAME"
+
+# Remonter le nouvel inventaire
+/usr/local/bin/jamf recon
+```
+
+```
+Dans la Policy :
+Scripts → + Add → [votre script]
+Priority : Before (avant les packages) ou After
+Parameters : (optionnel, jusqu'à 11 paramètres $4 à $11)
+```
+
+## User Interaction : notifier l'utilisateur
+
+```
+User Interaction :
+  Message : "Une mise à jour de sécurité va s'installer. Enregistrez votre travail."
+  ☑ Allow Deferral up to [3] times
+  Deferral period : 1 hour
+  
+  Restart Options :
+    Action : Restart
+    Message : "Votre Mac va redémarrer dans 5 minutes."
+    Startup Volume : Current Startup Disk
+    ☑ Use No User Logged in Action → Restart Immediately
+```
+
+## Flush Policy Logs
+
+Si une policy "Once per computer" ne se réexécute pas après modification :
+
+```
+Computers → Policies → [votre policy]
+→ Logs → Flush All (ou par appareil)
+```
+
+Ou depuis le Mac :
+```bash
+sudo jamf flushPolicyHistory -id [POLICY_ID]
+```
+
+## Mini-lab : Policy de maintenance quotidienne
+
+**Étape 1** — Créez le script dans Jamf :
+```bash
+#!/bin/bash
+# daily_maintenance.sh
+# Nettoyage et inventaire quotidien
+
+# Purger les logs Application Support > 30 jours
+find ~/Library/Logs -name "*.log" -mtime +30 -delete 2>/dev/null
+
+# Vider le cache de l'App Store
+rm -rf ~/Library/Caches/com.apple.appstore/* 2>/dev/null
+
+echo "Maintenance quotidienne complétée : $(date)"
+exit 0
+```
+
+**Étape 2** — Créez la Policy :
+```
+General : "Maintenance Quotidienne"
+Trigger : Recurring Check-in
+Frequency : Once every day
+Scripts : daily_maintenance.sh → After
+Maintenance : Update Inventory → checked
+Scope : All Managed Computers
+```
+
+**Étape 3** — Vérifiez l'exécution :
+```bash
+# Sur le Mac :
+sudo jamf policy
+# Dans Jamf : Computers → [appareil] → History → Policy Logs
+```
+
+## Bonnes pratiques
+
+- **Catégories obligatoires** : créez des catégories (Software, Security, Maintenance) pour organiser vos 100+ policies
+- **Nommez clairement** : "Install Chrome 120 - Mac - All Users" pas juste "Chrome"
+- **Toujours tester sur un scope restreint** avant "All Computers"
+- **Update Inventory dans chaque policy** : toujours cocher pour que l'inventaire reste à jour
+- **Ne pas abuser des triggers Startup/Login** : ralentissent le démarrage si trop nombreux
+- **Loggez vos scripts** : chaque script doit écrire dans `/var/log/jamf.log` ou un fichier dédié
+
+## Erreurs fréquentes
+
+**La policy ne s'exécute pas**
+→ Vérifiez le scope (le Mac est-il dans le groupe cible ?), le trigger, et si la policy n'a pas déjà été exécutée (Flush Logs).
+
+**"Script result: 1"** (erreur) dans les logs
+→ Le script a retourné un code d'erreur. Testez le script manuellement : `sudo bash /tmp/script.sh`
+
+**Policy bloquée sur "Running"**
+→ Un processus long (installation, téléchargement) est en cours. Attendez ou forcez : `sudo killall jamf`
+
+**"Package not found on distribution point"**
+→ Le package n'est pas encore répliqué sur le distribution point local. Attendez ou configurez Jamf Cloud Distribution Point.
+
+## Résumé
+
+Les Policies Jamf Pro sont le moteur d'exécution de votre infrastructure Apple. Maîtriser les triggers, les fréquences et les actions disponibles permet d'automatiser l'installation de logiciels, la maintenance, la remédiation et la communication avec les utilisateurs. Combinées aux Smart Groups dynamiques, les policies deviennent un système complet d'automation IT.

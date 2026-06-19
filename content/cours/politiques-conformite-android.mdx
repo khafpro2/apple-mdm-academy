@@ -1,0 +1,236 @@
+---
+title: "Politiques de conformité Android avec Intune"
+slug: "politiques-conformite-android"
+---
+
+## Introduction
+
+Les politiques de conformité Android Intune définissent les critères minimaux de sécurité qu'un appareil Android doit respecter pour accéder aux ressources d'entreprise. Combinées au Conditional Access Azure AD, elles constituent le premier rempart contre les appareils compromis ou non sécurisés.
+
+## Objectifs pédagogiques
+
+- Créer des politiques de conformité adaptées à chaque mode Android Enterprise
+- Configurer les actions en cas de non-conformité
+- Intégrer la conformité avec Conditional Access
+- Diagnostiquer les appareils non conformes
+- Utiliser Google Play Protect dans les critères de conformité
+
+## Niveaux de sécurité Android Enterprise
+
+Google définit 3 niveaux de sécurité pour Android Enterprise :
+
+| Niveau | Nom | Description | Usage type |
+|--------|-----|-------------|------------|
+| 1 | Basic Security | Protection minimale | BYOD faible risque |
+| 2 | Enhanced Security | Protection renforcée | La plupart des entreprises |
+| 3 | High Security | Protection maximale | Données très sensibles |
+
+## Politique de conformité — Niveau 2 (recommandé)
+
+```
+Devices → Android → Compliance Policies → Create Policy
+→ Platform: Android Enterprise
+→ Choose profile type selon votre mode
+```
+
+### Paramètres recommandés (Niveau 2)
+
+```yaml
+Device Health:
+  Rooted devices: Block
+  Require the device to be at or under machine risk score: Secured
+  Require Google Play Services: Require
+  Require updated security provider: Require
+  Require threat scan on apps: Require
+
+Device Properties:
+  Minimum OS version: 11.0
+  Maximum OS version: (laisser vide)
+  
+System Security:
+  Require a password to unlock mobile devices: Require
+  Required password type: Numeric complex
+  Minimum password length: 6
+  Maximum minutes of inactivity before password required: 5
+  Password expiration days: 90
+  Number of previous passwords to prevent reuse: 5
+  
+  # Chiffrement
+  Require encryption of data storage on device: Require
+```
+
+### Paramètres niveau 3 (haute sécurité)
+
+```yaml
+# En plus du niveau 2 :
+System Security:
+  Required password type: Alphanumeric
+  Minimum password length: 8
+  Minimum number of character sets: 3
+  Maximum minutes of inactivity: 2
+
+Device Health:
+  # Intégration Microsoft Defender for Endpoint ou autre MTD
+  Require the device to be at or under machine risk score: Low
+```
+
+## Actions en cas de non-conformité
+
+```
+Compliance Policy → Actions for noncompliance
+
+Actions séquentielles :
+1. Mark device noncompliant
+   └── Schedule: Immediately
+
+2. Send email to end user
+   └── Schedule: 1 day after noncompliance
+   └── Message template: [Personnalisé]
+
+3. Remotely lock device
+   └── Schedule: 7 days after noncompliance
+   └── (pour les appareils d'entreprise)
+
+4. Retire device
+   └── Schedule: 30 days after noncompliance
+   └── (optionnel, pour les longs délais)
+```
+
+### Template de message email personnalisé
+
+```
+Devices → Device Compliance → Notification message templates → Create
+
+Objet : [Action requise] Votre appareil Android n'est pas conforme
+Corps :
+Bonjour {{UserName}},
+
+Votre appareil Android ({{DeviceName}}) ne respecte pas les 
+politiques de sécurité de votre organisation.
+
+Problème détecté : {{NonComplianceReason}}
+
+Actions requises :
+1. Ouvrez le Portail d'entreprise Intune
+2. Suivez les instructions de mise en conformité
+3. Délai : 48 heures avant blocage d'accès
+
+Support IT : helpdesk@votreentreprise.com
+```
+
+## Intégration Conditional Access
+
+La conformité Intune s'intègre directement avec le Conditional Access Azure AD :
+
+```
+Azure AD → Security → Conditional Access → New policy
+
+Conditions:
+  ├── Users: Tous ou groupes cibles
+  ├── Cloud apps: Microsoft 365, SharePoint, Teams
+  └── Device platforms: Android
+
+Grant:
+  ├── ☑️ Require device to be marked as compliant
+  └── OU Require approved client app (pour MAM sans enrôlement)
+
+Session: (optionnel)
+  └── Sign-in frequency: Every 7 days
+```
+
+> **Mode Report-Only** : Activez d'abord en Report-Only pour identifier qui serait bloqué avant d'activer le blocage réel.
+
+## Google Play Protect
+
+Google Play Protect analyse les applications pour détecter les malwares :
+
+```
+Compliance Policy → Device Health:
+  ├── Require Google Play Services: Require
+  ├── Require updated security provider: Require  
+  └── Require threat scan on apps (Play Protect): Require
+```
+
+Si Play Protect détecte une app malveillante → l'appareil devient non conforme → accès bloqué.
+
+## Diagnostic de non-conformité
+
+### Vue d'ensemble
+
+```
+Reports → Device Compliance → Policy compliance report
+→ Filtrer par: Android Enterprise
+→ Voir: Compliant / Noncompliant / Not evaluated / In grace period
+```
+
+### Appareil non conforme individuel
+
+```
+Devices → [Appareil] → Device compliance
+→ Voir chaque critère : ✅ Compliant / ❌ Not compliant
+└── Raison exacte de non-conformité affichée
+```
+
+### PowerShell — Export des non-conformes
+
+```powershell
+Connect-MgGraph -Scopes "DeviceManagementManagedDevices.Read.All"
+
+$devices = Get-MgDeviceManagementManagedDevice -Filter "operatingSystem eq 'Android'" -All
+$nonCompliant = $devices | Where-Object {$_.ComplianceState -eq 'noncompliant'}
+
+$nonCompliant | Select-Object DeviceName, UserPrincipalName, 
+    ComplianceState, OsVersion, LastSyncDateTime |
+    Export-Csv "android_noncompliant_$(Get-Date -Format 'yyyyMMdd').csv"
+
+Write-Host "Non-conformes: $($nonCompliant.Count) / $($devices.Count)"
+```
+
+## Exemple concret — Mise en conformité d'une flotte
+
+**Scénario** : Audit révèle que 20% des Android ne sont pas conformes.
+
+```
+Étape 1 — Diagnostiquer
+  → Rapport Intune : identifier les raisons exactes
+  → Top 3 raisons : OS trop vieux (12), PIN trop court (5), rooted (3)
+
+Étape 2 — Remédier
+  Android OS obsolètes (12 appareils) :
+    → Email aux utilisateurs avec instructions de mise à jour
+    → Délai : 2 semaines
+    → Si pas mis à jour → escalade manager
+  
+  PIN trop court (5 appareils) :
+    → Message dans Company Portal
+    → L'utilisateur est guidé pour changer son PIN
+  
+  Rooted (3 appareils) :
+    → Contact immédiat avec l'utilisateur
+    → Investigation sécurité
+    → Wipe si nécessaire
+
+Étape 3 — Prévenir
+  → Ajouter minimum OS dans la politique de conformité
+  → Activer les notifications de mise à jour OS via Intune
+```
+
+## Bonnes pratiques
+
+- **Grâce de 24-48h** avant le blocage — les utilisateurs en voyage ou sans réseau ne doivent pas être bloqués immédiatement
+- **Politique distincte par mode** (Work Profile / Fully Managed / Dedicated)
+- **Communication avant activation** du Conditional Access — prévenir les utilisateurs
+- **Mode Report-Only** pendant 2-4 semaines avant d'activer le blocage
+- **Exclure les comptes de service** des politiques de conformité
+
+## Mini-lab
+
+1. Créez une politique de conformité Android Enterprise (niveau 2)
+2. Activez la notification email en cas de non-conformité
+3. Assignez-la à votre groupe de test
+4. Vérifiez dans Intune l'état de conformité de vos appareils Android
+5. Identifiez et notez les raisons de non-conformité éventuelles
+
+## Résumé
+
+Les politiques de conformité Android Intune, couplées au Conditional Access, forment l'épine dorsale de la sécurité mobile Android en entreprise. Un appareil non conforme (rooté, OS obsolète, sans PIN) ne peut pas accéder aux données d'entreprise. La clé : des politiques adaptées à chaque mode, des actions en cascade (notification → blocage progressif), et un monitoring régulier.

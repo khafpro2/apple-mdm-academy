@@ -1,0 +1,128 @@
+---
+title: "Gestion des mises à jour macOS"
+slug: "gestion-mises-a-jour-macos"
+---
+
+## Introduction
+
+La gestion des mises à jour macOS en entreprise doit concilier sécurité (appliquer les patches rapidement) et stabilité (tester avant de déployer massivement). Apple propose plusieurs mécanismes : Software Update natif, MDM commands, et depuis macOS 14, les Managed Device Attestation pour les mises à jour différées.
+
+## Mécanismes disponibles
+
+### softwareupdate (ligne de commande)
+```bash
+# Lister les mises à jour disponibles
+softwareupdate --list
+
+# Installer toutes les mises à jour (sans redémarrer)
+sudo softwareupdate --install --all
+
+# Installer ET redémarrer
+sudo softwareupdate --install --all --restart
+
+# Télécharger sans installer (préparation)
+sudo softwareupdate --download --all
+
+# Forcer une version spécifique
+sudo softwareupdate --install "macOS Sequoia 15.2-15.2"
+```
+
+### DDM (Declarative Device Management) — macOS 13+
+Apple a introduit les **Software Update Declarations** via DDM. Le MDM déclare la version cible, l'appareil gère l'installation de façon autonome.
+
+```json
+{
+  "Type": "com.apple.configuration.softwareupdate.enforcement.specific",
+  "Identifier": "macos-update-policy",
+  "Payload": {
+    "TargetOSVersion": "15.2",
+    "TargetLocalDateTime": "2025-02-01T08:00:00",
+    "DetailsURL": "https://support.apple.com/...",
+    "TargetBuildVersion": "24C101"
+  }
+}
+```
+
+### Jamf Pro — Managed Software Updates
+```
+Computers → Managed Software Updates → New
+
+Target Version : Latest Minor (recommandé pour la sécurité)
+                Latest Major (attention — breaking changes)
+                Specific Version
+
+Force Install After : 14 jours (délai accordé aux utilisateurs)
+Download Only      : oui (télécharge en arrière-plan)
+Schedule           : Hors heures ouvrées (22h-6h)
+```
+
+## Stratégie de déploiement par vague
+
+```
+Vague 1 (J+0 après release Apple) : IT Lab (5-10 Mac)
+  → Tests pendant 48h
+  
+Vague 2 (J+3) : Power Users (20-30 Mac) 
+  → Tests fonctionnels métier
+  
+Vague 3 (J+7) : 25% du parc
+  → Surveillance des incidents helpdesk
+  
+Vague 4 (J+14) : Reste du parc
+  → Déploiement général
+```
+
+Smart Groups par vague :
+```
+"Wave 1 - IT Lab" : Department is IT AND Building is Siège
+"Wave 2 - Power Users" : EA "Power User" is Yes
+"Wave 3 - 25% General" : (utiliser Random sampling dans les critères)
+"Wave 4 - All" : Managed is Yes
+```
+
+## Différer les mises à jour macOS
+
+Via profil MDM :
+```xml
+<key>PayloadType</key>
+<string>com.apple.applicationaccess</string>
+<key>enforcedSoftwareUpdateDelay</key>
+<integer>14</integer>  <!-- Délai de 14 jours avant que la mise à jour soit proposée -->
+<key>forceDelayedSoftwareUpdates</key>
+<true/>
+```
+
+## Script de vérification pre-update
+
+```bash
+#!/bin/bash
+# Vérifier que le Mac peut recevoir la mise à jour macOS
+
+# Espace disque disponible (minimum 15 GB)
+AVAILABLE=$(df -g / | awk 'NR==2{print $4}')
+if [[ $AVAILABLE -lt 15 ]]; then
+    echo "Espace insuffisant : ${AVAILABLE}GB disponible, 15GB requis"
+    exit 1
+fi
+
+# Batterie suffisante (Mac portable)
+BATTERY=$(pmset -g batt | grep -o "[0-9]*%" | head -1 | tr -d "%")
+if [[ -n "$BATTERY" && $BATTERY -lt 50 ]]; then
+    echo "Batterie insuffisante : ${BATTERY}% (minimum 50%)"
+    echo "Branchez le Mac avant la mise à jour"
+    exit 1
+fi
+
+echo "Mac prêt pour la mise à jour"
+exit 0
+```
+
+## Bonnes pratiques
+
+- **Ne forcez jamais une mise à jour majeure** (ex: macOS 14 → 15) sans avoir testé toutes vos apps critiques
+- **Communiquez à l'avance** : envoyez un email 7 jours avant le déploiement obligatoire
+- **Surveillance post-update** : créez un Smart Group "Mac mis à jour dans les 24h" et surveillez les tickets helpdesk
+
+## Résumé
+
+La gestion des mises à jour macOS nécessite une stratégie par vague, des tests systématiques et une communication claire avec les utilisateurs. DDM et Jamf Managed Software Updates permettent d'automatiser le déploiement tout en respectant les contraintes de productivité.

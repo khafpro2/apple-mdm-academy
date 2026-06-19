@@ -1,0 +1,208 @@
+---
+title: "Intune et Apple Business Manager"
+slug: "intune-apple-business-manager"
+---
+
+## Introduction
+
+L'intégration entre Microsoft Intune et Apple Business Manager (ABM) constitue le socle de toute gestion d'appareils Apple dans un environnement Microsoft 365. Cette liaison permet d'activer l'Automated Device Enrollment (ADE), de distribuer des applications sans Apple ID personnel, et de gérer le cycle de vie complet des Mac, iPhone et iPad depuis un seul portail.
+
+> **Contexte entreprise** : Les organisations qui utilisent Microsoft 365 + Azure AD (Microsoft Entra ID) et qui déploient des appareils Apple ont tout intérêt à centraliser la gestion dans Intune plutôt que de multiplier les outils. Cette intégration est la première étape obligatoire.
+
+## Objectifs pédagogiques
+
+À l'issue de ce cours, vous serez capable de :
+- Lier Apple Business Manager à Microsoft Intune via un certificat MDM Push
+- Configurer un token ADE (Automated Device Enrollment) pour Intune
+- Comprendre le flux d'enrôlement automatique Apple → ABM → Intune
+- Distribuer des apps via le programme Apps & Books dans Intune
+- Diagnostiquer les erreurs de liaison ABM/Intune
+
+## Contexte professionnel
+
+Dans un environnement entreprise typique :
+
+```
+Utilisateurs Microsoft 365
+         │
+Microsoft Entra ID (Azure AD)
+         │
+   Microsoft Intune ◄──── Apple Business Manager
+         │                      │
+    Mac / iPhone            ADE Token
+    iPad géré              Apps & Books
+```
+
+Intune agit comme le **serveur MDM** côté Microsoft. ABM agit comme l'**autorité d'approvisionnement** côté Apple. Les deux sont liés par des tokens de confiance mutuelle.
+
+## Prérequis techniques
+
+| Élément | Requis |
+|---------|--------|
+| Licence Intune | Intune Plan 1 (ou Microsoft 365 Business Premium) |
+| Rôle Intune | Administrateur de stratégie et de profil |
+| Compte ABM | Administrateur ou Gestionnaire d'appareils |
+| Apple ID dédié | Pour le certificat APNs (service push Apple) |
+| Domaine vérifié | Dans Microsoft Entra ID |
+
+## Étape 1 — Certificat APNs (Apple Push Notification Service)
+
+Le certificat APNs permet à Intune d'envoyer des commandes MDM aux appareils Apple. **Il expire tous les ans** et doit être renouvelé avec le même Apple ID.
+
+### Procédure
+
+**Dans Intune :**
+1. Accédez à `Devices → iOS/iPadOS → Enrollment → Apple MDM Push Certificate`
+2. Cliquez **Configure MDM Push Certificate**
+3. Cochez la case de confirmation
+4. Cliquez **Download your CSR** → télécharge un fichier `.csr`
+
+**Sur le portail Apple Push Certificates :**
+1. Accédez à [appleid.apple.com/account/home](https://appleid.apple.com) puis [identity.apple.com/pushcert](https://identity.apple.com/pushcert)
+2. Connectez-vous avec un **Apple ID dédié** (jamais un compte personnel)
+3. Cliquez **Create a Certificate**
+4. Uploadez le fichier `.csr` téléchargé depuis Intune
+5. Téléchargez le certificat `.pem` généré
+
+**Retour dans Intune :**
+1. Renseignez l'Apple ID utilisé
+2. Uploadez le fichier `.pem`
+3. Cliquez **Upload**
+
+```
+✅ Résultat attendu : "Active" avec une date d'expiration dans 365 jours
+```
+
+> ⚠️ **Attention critique** : Si vous renouvelez avec un Apple ID différent, tous les appareils déjà enrôlés perdent leur connexion MDM et doivent être réenrôlés. Documentez l'Apple ID utilisé et créez un compte Apple ID dédié à cet usage.
+
+## Étape 2 — Liaison avec Apple Business Manager
+
+### Génération du token ADE dans ABM
+
+1. Connectez-vous sur **business.apple.com**
+2. Allez dans **Paramètres → Serveurs MDM**
+3. Cliquez **Ajouter un serveur MDM**
+4. Nommez le serveur (ex: `Microsoft Intune - Production`)
+5. Uploadez le **certificat public Intune** (téléchargé depuis Intune)
+6. Téléchargez le **token `.p7m`** généré par ABM
+
+### Configuration dans Intune
+
+1. Dans Intune : `Devices → iOS/iPadOS → Enrollment → Enrollment Program Tokens`
+2. Cliquez **Add**
+3. Uploadez le token `.p7m` téléchargé depuis ABM
+4. Renseignez l'Apple ID du compte ABM
+5. Cliquez **Next → Create**
+
+```
+Token valide : 1 an (à renouveler AVANT expiration)
+Renouvellement : télécharger nouveau token depuis ABM → uploader dans Intune
+```
+
+## Étape 3 — Apps & Books dans Intune
+
+La distribution d'apps via ABM élimine le besoin d'Apple ID personnel sur les appareils gérés.
+
+### Acheter des licences dans ABM
+
+1. Dans ABM : **Apps et Livres → Rechercher**
+2. Recherchez l'application (ex: Microsoft Teams)
+3. Sélectionnez **Acheter** → choisissez le nombre de licences
+4. Sélectionnez **Assigner au serveur MDM → Microsoft Intune**
+
+### Déployer dans Intune
+
+1. Dans Intune : `Apps → iOS/iPadOS apps → Add`
+2. Type : **iOS store app**
+3. Recherchez l'app → **Required** (obligatoire) ou **Available** (portail libre-service)
+4. Assignez aux groupes cibles
+
+> **Avantage clé** : Installation silencieuse sans interaction utilisateur, sans Apple ID, sans mot de passe.
+
+## Exemple concret — Déploiement Microsoft Teams sur iPhone
+
+**Scénario** : 200 iPhones d'entreprise, déploiement automatique de Teams.
+
+```bash
+# Vérification via Graph API (PowerShell)
+Connect-MgGraph -Scopes "DeviceManagementApps.ReadWrite.All"
+
+# Lister les apps VPP disponibles
+Get-MgDeviceAppManagementMobileApp | Where-Object {$_.OdataType -eq "#microsoft.graph.iosVppApp"}
+```
+
+**Dans l'interface Intune :**
+1. ABM → Acheter 200 licences Teams → Assigner à Intune
+2. Intune → Apps → Add → iOS VPP app → Microsoft Teams
+3. Deployment type : **Required**
+4. Groupe cible : `SG-iPhone-Entreprise`
+5. Résultat : Teams s'installe automatiquement à l'enrôlement
+
+## Bonnes pratiques
+
+- **Apple ID dédié** pour le certificat APNs — jamais un compte personnel
+- **Calendrier de renouvellement** : créez une alerte 60 jours avant l'expiration des tokens
+- **Token par MDM serveur** : si vous avez Jamf ET Intune, créez deux serveurs MDM distincts dans ABM
+- **Tester sur un appareil** avant tout déploiement en masse
+- **Documenter** l'Apple ID ABM et APNs dans votre coffre-fort de mots de passe
+
+## Erreurs fréquentes
+
+| Erreur | Cause | Solution |
+|--------|-------|----------|
+| `MDM push certificate expired` | APNs non renouvelé | Renouveler avec le même Apple ID |
+| `Token not syncing` | Token ABM expiré | Renouveler le token ADE dans ABM |
+| `Device not appearing in ABM` | Acheté hors revendeur agréé | Ajouter manuellement via Apple Configurator |
+| `Apps not installing` | Licences insuffisantes | Acheter des licences supplémentaires dans ABM |
+| `Wrong Apple ID on renewal` | Apple ID différent | Réenrôler tous les appareils |
+
+## Mini-lab pratique
+
+### Objectif
+Vérifier et diagnostiquer l'état de la liaison ABM/Intune dans votre environnement.
+
+### Étapes
+
+**1. Vérifier le certificat APNs**
+```
+Intune → Devices → iOS/iPadOS → Enrollment → Apple MDM Push Certificate
+→ Vérifier la date d'expiration
+→ Vérifier que le statut est "Active"
+```
+
+**2. Vérifier les tokens ADE**
+```
+Intune → Devices → iOS/iPadOS → Enrollment → Enrollment Program Tokens
+→ Lister tous les tokens
+→ Vérifier la date d'expiration de chacun
+→ Vérifier le nombre d'appareils associés
+```
+
+**3. Vérifier la synchronisation des apps**
+```
+Intune → Apps → iOS VPP apps
+→ Vérifier que les apps achetées dans ABM apparaissent
+→ Vérifier le nombre de licences disponibles vs utilisées
+```
+
+**4. Script de vérification PowerShell**
+```powershell
+# Vérifier les tokens expirés
+Connect-MgGraph -Scopes "DeviceManagementServiceConfig.Read.All"
+$tokens = Get-MgDeviceManagementDepOnboardingSetting
+foreach ($token in $tokens) {
+    $expiry = [DateTime]$token.TokenExpirationDateTime
+    $daysLeft = ($expiry - (Get-Date)).Days
+    Write-Host "$($token.TokenName): $daysLeft jours restants" -ForegroundColor $(if ($daysLeft -lt 30) {"Red"} else {"Green"})
+}
+```
+
+## Résumé
+
+| Composant | Rôle | Validité |
+|-----------|------|----------|
+| Certificat APNs | Communication MDM Apple | 1 an |
+| Token ADE | Enrôlement automatique ADE | 1 an |
+| Apps & Books | Distribution apps sans Apple ID | Permanent |
+
+La liaison ABM/Intune est la fondation de toute gestion Apple dans un environnement Microsoft. Une fois configurée, elle permet l'enrôlement zéro-touch et le déploiement silencieux d'applications — les deux piliers du déploiement Apple en entreprise.

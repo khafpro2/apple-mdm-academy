@@ -1,0 +1,172 @@
+---
+title: "Introduction à Android Enterprise"
+slug: "introduction-android-enterprise"
+---
+
+## Introduction
+
+Android Enterprise est le programme de gestion des appareils Android en entreprise, développé par Google. Il remplace les approches MDM legacy (Device Administrator) depuis Android 9 et fournit une API sécurisée, standardisée et performante pour la gestion par les MDM comme Microsoft Intune.
+
+## Objectifs pédagogiques
+
+- Comprendre l'architecture Android Enterprise et ses modes de gestion
+- Distinguer Work Profile, Fully Managed, Dedicated et COPE
+- Configurer Google Workspace ou Managed Google Play dans Intune
+- Choisir le bon mode selon le cas d'usage métier
+- Comprendre les garanties de confidentialité d'Android Enterprise
+
+## Architecture Android Enterprise
+
+```
+Google Android Enterprise
+├── Managed Google Play Store
+│   ├── Applications approuvées par l'IT
+│   └── Applications privées d'entreprise
+├── Modes de gestion
+│   ├── Work Profile (BYOD)
+│   ├── Fully Managed (COBO)
+│   ├── Dedicated Device (COSU/Kiosque)
+│   └── COPE (Corporate Owned, Personally Enabled)
+└── API de gestion
+    └── ← Microsoft Intune se connecte ici
+```
+
+## Les 4 modes Android Enterprise
+
+### Work Profile — BYOD
+
+**Cas d'usage** : Employé qui utilise son Android personnel pour le travail.
+
+```
+📱 Android personnel
+├── 🔵 Zone personnelle (inaccessible au MDM)
+│   ├── Applications personnelles
+│   ├── Photos personnelles  
+│   └── Contacts personnels
+└── 🟠 Work Profile (géré par Intune)
+    ├── Applications professionnelles (badge valise)
+    ├── Email, Teams, Outlook
+    └── Données d'entreprise chiffrées séparément
+```
+
+**Garanties de confidentialité** :
+- L'IT ne peut PAS voir les apps personnelles
+- L'IT ne peut PAS accéder aux données personnelles
+- L'IT peut UNIQUEMENT wipe la zone Work Profile (pas l'appareil entier)
+
+### Fully Managed (COBO — Corporate Owned Business Only)
+
+**Cas d'usage** : Appareil d'entreprise dédié à un employé, usage professionnel uniquement.
+
+```
+📱 Android d'entreprise
+└── Zone entièrement gérée par Intune
+    ├── AUCUNE app personnelle possible
+    ├── Contrôle total IT
+    └── Pas de vie privée sur l'appareil
+```
+
+**Enrôlement** : QR code, NFC, token ZT, ou KME (Knox Mobile Enrollment pour Samsung).
+
+### Dedicated Device (COSU — Kiosque)
+
+**Cas d'usage** : Tablette de caisse, borne interactive, terminal de livraison, appareil partagé.
+
+```
+📱 Android dédié
+└── Kiosque — une ou plusieurs apps uniquement
+    ├── Aucune navigation possible hors des apps autorisées
+    ├── Barre de navigation désactivée
+    └── Redémarre automatiquement en mode kiosque
+```
+
+### COPE (Corporate Owned, Personally Enabled)
+
+**Cas d'usage** : Appareil d'entreprise mais l'employé peut avoir un usage personnel limité.
+
+```
+📱 Android COPE
+├── 🟠 Work Profile (géré, obligatoire)
+│   ├── Apps pro
+│   └── Données d'entreprise
+└── 🔵 Zone personnelle limitée
+    ├── Quelques apps personnelles autorisées
+    └── Play Store personnel (restreint)
+```
+
+## Configurer Android Enterprise dans Intune
+
+### Connexion à Managed Google Play
+
+```
+Intune → Devices → Android → Android Enrollment → Managed Google Play
+→ Agree to terms
+→ Sign in with Google account (compte Google dédié entreprise)
+→ Link Intune to Managed Google Play
+```
+
+> **Important** : Utilisez un compte Google dédié à l'IT (ex: `mdm-android@votreentreprise.com`), jamais un compte personnel.
+
+### Approuver des applications dans Managed Google Play
+
+```
+Intune → Apps → Android → Add → Managed Google Play app
+→ Ouvrir le Managed Google Play
+→ Rechercher l'application (ex: Microsoft Teams)
+→ Approve → Approve (accepter les permissions)
+→ Keep approved when app requests new permissions : Yes
+→ Sync
+```
+
+L'application apparaît ensuite dans Intune et peut être déployée silencieusement.
+
+## Méthodes d'enrôlement par mode
+
+| Mode | Méthode | Prérequis |
+|------|---------|-----------|
+| Work Profile | QR code, lien email, ou portail d'entreprise | Appareil Android 8+ |
+| Fully Managed | QR code, NFC, token, KME (Samsung) | Android 9+ |
+| Dedicated Device | QR code, NFC, KME | Android 9+ |
+| COPE | QR code (Work Profile sur Corporate) | Android 11+ |
+
+## Avantages vs Device Administrator (legacy)
+
+| Critère | Android Enterprise | Device Administrator |
+|---------|-------------------|---------------------|
+| Confidentialité BYOD | ✅ Work Profile | ❌ Accès complet |
+| Suppression par Google | N/A | ⚠️ Déprécié |
+| Sécurité API | ✅ Renforcée | ⚠️ Limitée |
+| Silent app install | ✅ Oui | ❌ Non |
+| Gestion granulaire | ✅ Très fine | ❌ Basique |
+
+> **Fin de vie** : Google a supprimé Device Administrator depuis Android 10. Toute nouvelle gestion doit utiliser Android Enterprise.
+
+## Bonnes pratiques
+
+- **Un mode par usage** : ne pas mélanger Fully Managed et Work Profile dans le même groupe
+- **Tester l'enrôlement** sur un appareil de référence avant déploiement
+- **Managed Google Play** : approuver les apps à l'avance, pas en urgence
+- **Factory Reset Protection (FRP)** : désactiver ou configurer un compte de récupération IT
+- **Zero Touch Enrollment** pour les déploiements à grande échelle (voir cours suivant)
+
+## Mini-lab
+
+### Identifier le bon mode pour chaque scénario
+
+Exercice : Pour chaque cas, déterminez le mode Android Enterprise approprié.
+
+1. **Livraison de colis** : Terminal Android partagé entre plusieurs livreurs, uniquement l'app de livraison
+   → **Réponse** : Dedicated Device (Kiosque)
+
+2. **Commercial terrain** : Employé a un Android personnel, accès email et CRM d'entreprise requis
+   → **Réponse** : Work Profile (BYOD)
+
+3. **Développeur** : Android d'entreprise fourni, usage pro uniquement, contrôle total IT
+   → **Réponse** : Fully Managed (COBO)
+
+4. **Manageur** : Android d'entreprise, mais veut garder ses applis personnelles
+   → **Réponse** : COPE
+
+## Résumé
+
+Android Enterprise structure la gestion Android en 4 modes clairs selon le niveau de propriété et d'usage. L'intégration avec Microsoft Intune se fait via Managed Google Play et permet une gestion complète, sécurisée et respectueuse de la vie privée. Le choix du bon mode est la première décision stratégique avant tout déploiement Android Enterprise.

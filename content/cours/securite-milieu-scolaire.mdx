@@ -1,0 +1,251 @@
+---
+title: "Sécurité en milieu scolaire"
+slug: "securite-milieu-scolaire"
+---
+
+## Introduction
+
+La sécurité en milieu scolaire présente des défis spécifiques : protéger des mineurs sur internet, respecter les réglementations (RGPD, CNIL pour la France), bloquer les contenus inappropriés, et équilibrer contrôle et autonomie pédagogique. Jamf School offre des outils adaptés à ces contraintes.
+
+## Objectifs pédagogiques
+
+- Configurer le filtrage de contenu web pour les mineurs
+- Mettre en place des restrictions appropriées à l'âge
+- Gérer la conformité RGPD/CNIL en contexte scolaire
+- Configurer Screen Time pour les iPad scolaires
+- Sécuriser les communications des élèves
+
+## Cadre légal et réglementaire
+
+### France — Obligations légales
+
+```
+Pour les établissements scolaires français :
+
+RGPD (Règlement Général sur la Protection des Données) :
+├── Les données des mineurs sont particulièrement protégées
+├── Consentement parental requis pour traitement de données < 15 ans
+├── Durée de conservation limitée
+└── Droit à l'oubli facilité pour les mineurs
+
+CNIL — Recommandations écoles :
+├── Minimiser la collecte de données personnelles élèves
+├── Ne pas utiliser de services non conformes RGPD (ex: certains services US)
+├── Former le personnel à la protection des données
+└── Désigner un DPO (Data Protection Officer) si école > 250 salariés
+
+Loi du 30 juillet 2020 (interdiction smartphone en milieu scolaire) :
+├── Smartphones interdits en primaire et collège
+├── iPad scolaire supervisé = conforme si les restrictions appropriées sont activées
+└── Lycée : liberté d'organisation de l'établissement
+```
+
+### Managed Apple IDs pour mineurs
+
+```
+Apple School Manager génère des Apple IDs spéciaux pour mineurs :
+
+Restrictions automatiques pour les comptes < 13 ans :
+├── Pas d'accès à l'App Store personnel
+├── iCloud limité (5 Go, pas de partage familial)
+├── FaceTime : configurable par l'école
+├── iMessage : configurable par l'école
+├── Contenu 17+ : bloqué
+└── Pas d'accès à certains services Apple adultes
+
+Protection supplémentaire Jamf School :
+→ Ces restrictions ASM + les profils Jamf School = protection complète
+```
+
+## Filtrage de contenu web
+
+### Configuration du filtre web natif iOS
+
+```
+Jamf School → Profiles → Web Content Filter
+
+Type: Limit Adult Websites (filtrage intelligent iOS)
+├── Bloque automatiquement les sites adultes via IA Apple
+├── Whitelist : sites toujours autorisés
+│   ├── edu.example.fr (ENT de l'école)
+│   ├── khanacademy.org
+│   └── wikipedia.org
+└── Blacklist : sites spécifiquement bloqués
+    ├── youtube.com (si non souhaité)
+    └── [autres sites problématiques]
+```
+
+### Filter personnalisé — Listes blanches uniquement
+
+Pour un contrôle total (recommandé pour les plus jeunes) :
+
+```
+Type: Specific Websites Only
+
+Allowed URLs (liste complète) :
+├── https://classroom.google.com
+├── https://www.khan academy.org
+├── https://www.numericite.eu (ENT France)
+├── https://pronote.net
+├── https://apps.apple.com (App Store si autorisé)
+└── [autres sites pédagogiques validés]
+
+Résultat : SEULS ces sites sont accessibles — tout le reste est bloqué
+Usage : Primaire et début de collège
+```
+
+### Filtre réseau — Solution dédiée
+
+Pour un filtrage plus sophistiqué (toujours recommandé en complément) :
+
+```
+Options de filtrage réseau :
+├── Cisco Umbrella (filtrage DNS)
+├── Forcepoint (solution complète)
+└── Boîtier réseau de filtrage local
+
+Intégration avec Jamf School :
+→ Les iPad envoient tout le trafic via le service de filtrage
+→ Double protection : filtre iOS + filtre réseau
+```
+
+## Screen Time en contexte scolaire
+
+### Configuration scolaire
+
+```
+Jamf School → Profiles → Screen Time
+
+Communication Limits (qui peut contacter l'élève) :
+├── During screen time: Contacts only (ou Teachers only)
+├── During downtime: Contacts only
+└── Always allowed: [Numéros d'urgence, parents]
+
+Content & Privacy Restrictions:
+├── iTunes & App Store Purchases: Disable
+├── Location Services: When using the app
+├── Camera: Allow (pour les travaux scolaires)
+└── Multiplayer Gaming: Disable
+
+Downtime (heures sans iPad) :
+├── Start: 17:00
+├── End: 08:00
+└── Always Allowed during downtime: Phone, Messages (pour contacter parents)
+```
+
+### Limites d'applications
+
+```
+App Limits :
+├── Games: 0 minutes (bloquer complètement)
+├── Social Networking: 0 minutes
+├── Entertainment: 0 minutes
+└── Productivity & Finance: No limit (apps scolaires)
+```
+
+## Sécurité des communications
+
+### iMessage et FaceTime
+
+```
+Pour les établissements qui autorisent FaceTime (lycée) :
+→ Restreindre aux contacts uniquement (pas d'inconnus)
+→ FaceTime limité aux heures scolaires
+
+Pour les établissements qui n'autorisent pas (primaire/collège) :
+→ Profil Restrictions → Allow FaceTime: No
+→ Allow iMessage: No (ou limiter aux contacts enseignants)
+```
+
+### Microsoft Teams Education
+
+```
+Teams Education avec élèves mineurs :
+├── External access: Disabled
+├── Guest access: Disabled
+├── Private chat: Between students of same class only
+├── Meeting recordings: Teacher consent required
+└── Data stored in European datacenters (RGPD)
+
+Configuration dans Teams Admin Center :
+→ Policies → Messaging Policy → Students Policy
+→ Chat: Enabled within class only
+```
+
+## Incident response scolaire
+
+### Si un élève contourne les restrictions
+
+```
+Scénario : Un élève a réussi à désactiver le profil Jamf School
+
+Réponse IT :
+1. Jamf School → Devices → [iPad] → Push Profile
+   → Forcer la réinstallation du profil
+   
+2. Si l'iPad est compromis :
+   Jamf School → Devices → [iPad] → Erase Device
+   → Réenrôlement depuis zéro
+   
+3. Audit :
+   → Vérifier les logs : comment le profil a été retiré ?
+   → Si Supervised + profil non-removable = impossible normalement
+   → Peut indiquer un jailbreak → vérifier l'intégrité iOS
+   
+4. Communication :
+   → Informer la direction et les parents
+   → Documenter l'incident
+```
+
+### Contenu inapproprié découvert sur un iPad
+
+```
+Procédure :
+1. Sécuriser l'iPad (ne pas effacer immédiatement)
+2. Documenter (captures d'écran si légalement approprié)
+3. Informer la direction et les personnes compétentes
+4. Ne pas interroger l'élève directement (protection des mineurs)
+5. Collaborer avec les services compétents si nécessaire
+
+Dans Jamf School :
+→ Devices → [iPad] → Logs : voir l'historique de navigation
+   (si la navigation est loguée dans la solution de filtrage)
+```
+
+## Conformité RGPD pour les établissements scolaires
+
+### Registre des traitements — Données iPad scolaires
+
+```
+Traitement: Gestion des iPads pédagogiques
+Base légale: Mission d'intérêt public (Education)
+Données collectées:
+├── Nom, prénom, classe (identification)
+├── Numéro de série iPad (gestion matérielle)
+├── Applications installées (audit)
+└── Logs de navigation (si activé — attention RGPD)
+
+Conservation:
+├── Durée de la scolarité + 1 an
+└── Suppression à la fin de l'inscription
+
+Destinataires:
+├── Jamf (sous-traitant, DPA signé)
+├── Apple (ASM, sous-traitant, clauses contractuelles)
+└── Personnel IT de l'établissement
+
+Droits des personnes:
+└── Parents/élèves peuvent demander accès/suppression à : dpo@ecole.fr
+```
+
+## Bonnes pratiques
+
+- **Politique d'utilisation acceptable** : document signé par les parents en début d'année
+- **Formation des élèves** : éducation au numérique responsable (E-NOVIE, Pix)
+- **Filtrage réseau en complément** : le filtrage iOS seul n'est pas suffisant pour garantir la sécurité
+- **Audit régulier** : vérifier trimestriellement que les restrictions sont toujours actives
+- **DPO scolaire** : désigner un responsable RGPD même informel pour les petits établissements
+
+## Résumé
+
+La sécurité en milieu scolaire requiert une approche à plusieurs niveaux : restrictions iOS adaptées à l'âge, filtrage web (natif + réseau), Screen Time, et gestion rigoureuse des données personnelles. Jamf School, combiné à Apple School Manager et à une solution de filtrage réseau, offre toutes les briques nécessaires pour un environnement numérique scolaire sécurisé et conforme aux obligations légales françaises (RGPD, CNIL).

@@ -1,0 +1,192 @@
+---
+title: "Remédiation automatique avec Jamf Pro"
+slug: "remediation-automatique-jamf"
+---
+
+## Introduction
+
+La **remédiation automatique** est la capacité de Jamf à détecter une non-conformité et à la corriger automatiquement, sans intervention humaine. Un Mac perd FileVault ? Une policy se déclenche et l'active. Chrome n'est pas à jour ? Le patch est installé au prochain check-in. Cette boucle detect → remediate est le cœur d'une infrastructure MDM mature.
+
+## Architecture detect → remediate
+
+```
+Smart Group "Non conformes"
+    │ détecte les Mac en violation
+    ▼
+Policy de remédiation
+    │ s'exécute automatiquement sur ces Mac
+    ▼
+Remédiation (script, package, profil)
+    │
+    ▼
+jamf recon → inventaire mis à jour
+    │
+    ▼
+Mac sort du Smart Group "Non conformes"
+    │ (si remédiation réussie)
+    ▼
+Cycle recommence (Recurring Check-in)
+```
+
+## Scénario 1 : FileVault non activé
+
+**Détection** :
+```
+Smart Group "FileVault Désactivé"
+Critère : FileVault 2 Status  is not  All Partitions Encrypted
+```
+
+**Remédiation** :
+```bash
+#!/bin/bash
+# remediate_filevault.sh
+
+CURRENT_USER=$(scutil <<< "show State:/Users/ConsoleUser" | awk '/Name :/{print $3}')
+FV_STATUS=$(fdesetup status | head -1)
+
+if echo "$FV_STATUS" | grep -q "Off"; then
+    logger "FileVault désactivé — tentative d'activation différée"
+    
+    # Activer via profil MDM (méthode recommandée)
+    # Le profil FileVault est déployé via Configuration Profile
+    # Ce script notifie l'utilisateur
+    
+    launchctl asuser $(id -u "$CURRENT_USER") sudo -u "$CURRENT_USER" \
+        osascript -e 'display dialog "FileVault doit être activé. Veuillez vous déconnecter et reconnecter." \
+        with title "Sécurité IT" buttons {"OK"} default button 1'
+    
+    logger "Utilisateur $CURRENT_USER notifié pour FileVault"
+fi
+```
+
+## Scénario 2 : Application interdite détectée
+
+```bash
+#!/bin/bash
+# remediate_forbidden_apps.sh
+
+FORBIDDEN_APPS=(
+    "TorBrowser"
+    "uTorrent"  
+    "Transmission"
+    "Bitcoin Miner"
+)
+
+CURRENT_USER=$(scutil <<< "show State:/Users/ConsoleUser" | awk '/Name :/{print $3}')
+
+for APP in "${FORBIDDEN_APPS[@]}"; do
+    APP_PATH=$(find /Applications /Users -name "${APP}.app" -maxdepth 3 2>/dev/null | head -1)
+    
+    if [[ -n "$APP_PATH" ]]; then
+        logger "Application interdite détectée : $APP_PATH"
+        
+        # Fermer si ouverte
+        killall "$APP" 2>/dev/null || true
+        
+        # Supprimer
+        rm -rf "$APP_PATH"
+        logger "Application supprimée : $APP_PATH"
+        
+        # Notifier l'utilisateur
+        launchctl asuser $(id -u "$CURRENT_USER") sudo -u "$CURRENT_USER" \
+            osascript -e "display notification \"$APP a été supprimé. Contactez l'IT si nécessaire.\" \
+            with title \"Sécurité IT\""
+    fi
+done
+
+# Mettre à jour l'inventaire
+/usr/local/bin/jamf recon
+exit 0
+```
+
+## Scénario 3 : Mac non vu depuis 7 jours
+
+```
+Smart Group "Mac Inactifs"
+Critère : Last Check-in  more than  7 days ago
+          AND Managed is Yes
+
+Policy "Alerte Mac Inactif"
+Trigger : Custom Event "alertInactive"
+Action : Script envoyer email à l'admin
+```
+
+```bash
+#!/bin/bash
+# alert_inactive_mac.sh
+# Envoyer un email quand un Mac est inactif > 7 jours
+
+COMPUTER_NAME="$1"
+LAST_SEEN="$2"
+ADMIN_EMAIL="it-admin@acme.com"
+
+# Requiert un relay SMTP configuré
+echo "Mac inactif détecté : $COMPUTER_NAME (dernière vue : $LAST_SEEN)" | \
+    mail -s "[ALERTE] Mac inactif : $COMPUTER_NAME" "$ADMIN_EMAIL"
+```
+
+## Scénario 4 : SSH activé (violation sécurité)
+
+```bash
+#!/bin/bash
+# remediate_ssh.sh
+
+SSH_STATUS=$(systemsetup -getremotelogin 2>/dev/null | awk '{print $NF}')
+
+if [[ "$SSH_STATUS" == "On" ]]; then
+    logger "SSH activé — désactivation automatique"
+    systemsetup -setremotelogin off
+    logger "SSH désactivé"
+    
+    # Log de sécurité
+    echo "$(date) SSH désactivé automatiquement sur $(hostname)" \
+        >> /var/log/security_remediation.log
+fi
+
+exit 0
+```
+
+## Remédiation via Extension Attribute
+
+Les EA permettent de détecter des états complexes impossibles à capturer avec les critères standard :
+
+```bash
+#!/bin/bash
+# EA : Détection Proxy Système Non Autorisé
+# Si un proxy système est configuré (hors VPN corporate) → Non conforme
+
+PROXY=$(networksetup -getwebproxy Wi-Fi 2>/dev/null | awk '/Server:/{print $2}')
+AUTHORIZED_PROXIES=("proxy.acme.com" "10.0.0.100")
+
+if [[ -z "$PROXY" ]]; then
+    echo "<result>No Proxy</result>"
+elif [[ " ${AUTHORIZED_PROXIES[*]} " =~ " ${PROXY} " ]]; then
+    echo "<result>Authorized: $PROXY</result>"
+else
+    echo "<result>UNAUTHORIZED: $PROXY</result>"
+fi
+```
+
+Smart Group : `EA "Proxy Status"  like  "UNAUTHORIZED"` → Policy de remédiation : désactiver le proxy.
+
+## Tableau de remédiation recommandé
+
+| Violation | Smart Group | Délai remédiation | Action |
+|-----------|-------------|-------------------|--------|
+| FileVault off | Immédiat | Check-in suivant | Profil + notification |
+| macOS obsolète | Patch Policy | 7 jours | softwareupdate |
+| App interdite | Immédiat | Check-in suivant | rm -rf + notification |
+| SSH activé | Immédiat | Check-in suivant | systemsetup off |
+| Mac inactif 7j | Quotidien | Email admin | Alerte manuelle |
+| Certificat expiré | Immédiat | Check-in suivant | Policy renewal |
+
+## Bonnes pratiques
+
+- **Loggez toute remédiation** : qui, quoi, quand — indispensable pour les audits
+- **Notifiez l'utilisateur** : expliquez pourquoi l'action a eu lieu
+- **Testez la boucle complète** : vérifiez que le Mac sort bien du Smart Group après remédiation
+- **Prévoyez des escalades** : si la remédiation automatique échoue 3 fois → créer un ticket helpdesk automatiquement
+
+## Résumé
+
+La remédiation automatique transforme Jamf Pro en système de compliance continu. Chaque non-conformité est détectée et corrigée sans ticket helpdesk, sans appel utilisateur, sans intervention IT manuelle. Le résultat : un parc toujours conforme, des audits de sécurité réussis, et une charge IT réduite.

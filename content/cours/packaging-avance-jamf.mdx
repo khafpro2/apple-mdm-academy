@@ -1,0 +1,131 @@
+---
+title: "Packaging avancé avec Jamf Pro"
+slug: "packaging-avance-jamf"
+---
+
+## Introduction
+
+Le packaging est l'art de conditionner des applications et configurations en fichiers `.pkg` ou `.dmg` déployables via Jamf Pro. Un bon package s'installe silencieusement, sans fenêtre graphique, sur n'importe quel Mac géré — indépendamment de l'utilisateur connecté.
+
+## Formats de packages
+
+### .pkg (recommandé pour Jamf)
+Format natif macOS, géré par `installer(8)`. Deux types :
+- **Component Package** : contient des fichiers à copier + des scripts pre/post install
+- **Product Archive** : bundle de composants (utilisé par les gros éditeurs)
+
+### .dmg
+Image disque — Jamf peut monter le DMG, copier l'app dans `/Applications`, et démonter. Utilisé quand l'éditeur ne fournit pas de .pkg.
+
+## Créer un package avec pkgbuild
+
+```bash
+# Structure minimale
+mkdir -p /tmp/mypkg-root/Applications
+cp -R /Applications/MonApp.app /tmp/mypkg-root/Applications/
+
+# Créer le .pkg
+pkgbuild \
+  --root /tmp/mypkg-root \
+  --identifier "com.acme.monapp" \
+  --version "1.0.0" \
+  --install-location "/" \
+  /tmp/MonApp-1.0.0.pkg
+
+# Vérifier le contenu
+pkgutil --payload-files /tmp/MonApp-1.0.0.pkg
+```
+
+## Scripts pre/post-install
+
+```bash
+# preinstall : exécuté AVANT la copie des fichiers
+#!/bin/bash
+# Arrêter l'app si elle tourne
+killall "MonApp" 2>/dev/null || true
+# Sauvegarder les préférences existantes
+cp ~/Library/Preferences/com.acme.monapp.plist /tmp/monapp-backup.plist 2>/dev/null || true
+exit 0
+
+# postinstall : exécuté APRÈS la copie des fichiers  
+#!/bin/bash
+# Corriger les permissions
+chown -R root:wheel /Applications/MonApp.app
+chmod -R 755 /Applications/MonApp.app
+# Enregistrer dans la base pkgutil
+/usr/sbin/pkgutil --pkg-info com.acme.monapp
+exit 0
+```
+
+```bash
+# Intégrer les scripts dans le package
+pkgbuild \
+  --root /tmp/mypkg-root \
+  --identifier "com.acme.monapp" \
+  --version "1.0.0" \
+  --scripts /tmp/pkg-scripts/ \  # dossier contenant preinstall et postinstall
+  /tmp/MonApp-1.0.0.pkg
+```
+
+## Composer (Jamf)
+
+**Jamf Composer** est un outil graphique (macOS) pour créer des packages. Il capture les changements système entre deux états ("snapshot before/after") et génère automatiquement le .pkg.
+
+```
+1. Composer → New Package → Snapshot
+2. Installez votre app manuellement
+3. Composer → Snapshot → "Take Snapshot"
+4. Composer compare les deux états → génère le .pkg
+5. Ajoutez scripts pre/post si nécessaire
+6. Build → .pkg prêt à uploader dans Jamf
+```
+
+## Signer les packages
+
+```bash
+# Signer avec un certificat Developer ID Installer
+productsign \
+  --sign "Developer ID Installer: Acme Corp (XXXXXXXXXX)" \
+  unsigned.pkg \
+  signed.pkg
+
+# Vérifier la signature
+pkgutil --check-signature signed.pkg
+```
+
+## Uploader dans Jamf Pro
+
+```
+Computers → Management → Packages → New
+
+Display Name : "MonApp 1.0.0 - macOS"
+Filename     : MonApp-1.0.0.pkg
+Category     : [Software - Productivity]
+Priority     : 10 (plus le chiffre est bas, plus la priorité est haute)
+```
+
+## Tester un package
+
+```bash
+# Installation de test (sans Jamf)
+sudo installer -pkg /tmp/MonApp-1.0.0.pkg -target / -verbose
+
+# Vérifier ce que le package a installé
+pkgutil --files com.acme.monapp
+
+# Désinstaller proprement
+pkgutil --forget com.acme.monapp
+# + supprimer manuellement les fichiers installés
+```
+
+## Bonnes pratiques
+
+- **Un package par app** : ne bundlez pas 5 apps dans un seul .pkg
+- **Signez toujours** vos packages — Gatekeeper les bloque sinon en macOS 15+
+- **Testez sur une VM propre** avant production
+- **Nommez clairement** : `GoogleChrome-121.0.6167.139-macOS-Universal.pkg`
+- **Version dans le nom** : facilite la gestion des updates dans Jamf
+
+## Résumé
+
+La maîtrise du packaging permet de déployer n'importe quel logiciel, configuration ou script de façon silencieuse et reproductible. `pkgbuild` + scripts pre/postinstall couvrent 95% des cas ; Composer gère les cas complexes.

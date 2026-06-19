@@ -1,0 +1,178 @@
+---
+title: "Android Fully Managed Devices"
+slug: "android-fully-managed"
+---
+
+## Introduction
+
+Le mode Fully Managed (COBO — Corporate Owned, Business Only) est le mode de gestion Android Enterprise où l'appareil est entièrement la propriété de l'entreprise et dédié à un usage professionnel exclusif. L'IT dispose du contrôle total depuis Intune.
+
+## Objectifs pédagogiques
+
+- Configurer l'enrôlement Fully Managed dans Intune
+- Créer et déployer un profil Fully Managed complet
+- Gérer le cycle de vie des appareils d'entreprise Android
+- Configurer les méthodes d'enrôlement (QR, NFC, Zero Touch)
+- Comprendre les différences avec le Work Profile
+
+## Modes d'enrôlement Fully Managed
+
+### QR Code (le plus courant)
+
+```
+Intune → Devices → Android → Enrollment → Corporate-owned, fully managed
+
+1. Créer un profil d'enrôlement
+2. Générer le QR code
+3. Lors du setup Android : taper 6 fois sur l'écran de bienvenue
+4. Scanner le QR code avec la caméra
+5. Enrôlement automatique dans Intune
+```
+
+### Zero Touch Enrollment (ZTE)
+
+Pour les déploiements à grande échelle avec des revendeurs certifiés Zero Touch :
+
+```
+1. Achat chez un revendeur Zero Touch certifié
+2. Configuration dans le portail ZTE (partner.android.com/zerotouch)
+3. Associer avec Intune → fournir le JSON de configuration
+4. L'appareil démarre directement en enrôlement Intune
+```
+
+**JSON de configuration ZTE pour Intune :**
+```json
+{
+  "android.app.extra.PROVISIONING_DEVICE_ADMIN_COMPONENT_NAME":
+    "com.microsoft.intune/com.microsoft.intune.MAMDeviceAdminReceiver",
+  "android.app.extra.PROVISIONING_DEVICE_ADMIN_SIGNATURE_CHECKSUM":
+    "I/XJaE+MtPl6fMQqAlApFBKTm8aMJk+rOFMDNS2IEFQ=",
+  "android.app.extra.PROVISIONING_DEVICE_ADMIN_PACKAGE_DOWNLOAD_LOCATION":
+    "https://go.microsoft.com/fwlink/?linkid=401098"
+}
+```
+
+### Knox Mobile Enrollment (Samsung)
+
+Pour les flottes Samsung, KME permet un enrôlement encore plus automatisé :
+- Appareils Samsung enregistrés dans le portail KME
+- Enrôlement automatique au premier démarrage
+- Pas besoin de scanner un QR code
+
+## Profil de configuration Fully Managed
+
+```
+Devices → Android → Configuration Profiles → Create
+→ Platform: Android Enterprise
+→ Profile type: Fully Managed, Dedicated, and Corporate-Owned Work Profile
+
+Paramètres essentiels:
+
+General:
+  Copy and paste: Block (entre apps non managées)
+  Screen capture: Block
+  Factory reset: Block (empêche l'utilisateur de réinitialiser)
+  
+System:
+  Date and time configuration: Allow
+  System error dialogs: Allow
+  User configuration of Bluetooth: Allow
+  
+Applications:
+  Google Play Store access: Block (seul Managed Google Play)
+  Installing apps from unknown sources: Block
+  
+Connectivity:
+  Always-on VPN: Configure (optionnel)
+  Wi-Fi configuration: Allow/Block selon usage
+```
+
+## Apps obligatoires sur Fully Managed
+
+```
+Apps → Android → Managed Google Play → 
+
+Requis (Required):
+  ├── Intune Company Portal (gestion)
+  ├── Microsoft Outlook (email)
+  ├── Microsoft Teams (communication)
+  ├── Microsoft Authenticator (MFA)
+  └── Apps métier spécifiques
+
+Available:
+  └── Apps optionnelles que l'utilisateur peut installer
+```
+
+## Politiques de conformité Fully Managed
+
+```
+Device Health:
+  ├── Rooted devices: Block
+  ├── Require Play Protect: Require
+  └── Threat scan on apps: Require
+
+System Security:
+  ├── Password required: Yes
+  ├── Password type: Alphanumeric
+  ├── Minimum length: 8
+  └── Max failed attempts before wipe: 10
+
+OS Version:
+  └── Minimum: Android 11
+```
+
+## Factory Reset Protection (FRP)
+
+Le FRP empêche la réutilisation d'un appareil Fully Managed sans autorisation IT :
+
+```
+Si l'appareil est réinitialisé en dehors du MDM :
+→ Demande les identifiants Google du dernier compte associé
+→ Sans ces identifiants, l'appareil est inutilisable
+
+Solution IT :
+→ Associer un compte Google IT comme compte de récupération FRP
+→ Ou désactiver FRP via Intune avant tout retrait d'appareil
+```
+
+## Exemple concret — Terminal Android pour techniciens terrain
+
+**Scénario** : 80 techniciens reçoivent un Zebra TC52 Android pour la gestion d'interventions.
+
+```
+Configuration Intune :
+  ✅ Mode : Fully Managed
+  ✅ Enrôlement : QR Code (valable 90 jours)
+  ✅ Apps requises : GMAO mobile, Teams, Maps
+  ✅ Factory reset : Bloqué
+  ✅ Wi-Fi d'entreprise configuré automatiquement
+  ✅ Conformité : Android 11+, PIN requis
+
+Processus de déploiement :
+  1. Technicien reçoit le Zebra neuf
+  2. Allume l'appareil
+  3. Scanne le QR code Intune (affiché sur l'écran ou imprimé)
+  4. Connexion compte Azure AD du technicien
+  5. Apps s'installent automatiquement (GMAO, Teams)
+  6. Prêt en 8 minutes
+```
+
+## Bonnes pratiques
+
+- **QR Code avec expiration** : 90 jours max, régénérer régulièrement
+- **Compte de service FRP** : toujours configurer un compte IT de récupération
+- **Factory Reset bloqué** : activer pour éviter les contournements
+- **Zero Touch** pour les déploiements 50+ appareils identiques
+- **Nommer les appareils** via un script post-enrôlement (numéro de série, département)
+
+## Mini-lab
+
+1. Créez un profil Fully Managed dans Intune
+2. Générez le QR code
+3. Sur un Android de test réinitialisé : tapez 6 fois sur l'écran de bienvenue et scannez le QR
+4. Observez l'enrôlement automatique
+5. Vérifiez dans Intune que l'appareil apparaît géré
+
+## Résumé
+
+Fully Managed est le mode Android Enterprise approprié pour tout appareil professionnel fourni par l'entreprise sans usage personnel. Il offre un contrôle total à l'IT, une installation silencieuse des apps, et une sécurité maximale. La combinaison Zero Touch + Fully Managed permet un déploiement à grande échelle sans contact physique avec chaque appareil.

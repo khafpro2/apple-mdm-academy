@@ -1,0 +1,240 @@
+---
+title: "API Jamf Pro"
+slug: "api-jamf-pro"
+---
+
+## Introduction
+
+Jamf Pro expose deux API : la **Classic API** (XML, `/JSSResource/`) héritée, et la **moderne API REST** (`/api/v1/`, `/api/preview/`) en JSON. L'API REST est celle à privilégier pour tous les nouveaux développements. Elle permet d'automatiser n'importe quelle action : créer des groupes, déployer des politiques, récupérer l'inventaire, gérer les utilisateurs — tout ce que l'UI fait, l'API le fait aussi.
+
+## Objectifs
+
+- Obtenir et gérer les Bearer Tokens (authentification)
+- Explorer l'API avec Swagger UI
+- Maîtriser les opérations CRUD (GET, POST, PUT, DELETE)
+- Créer des scripts d'automatisation Bash/Python
+- Utiliser Postman ou curl pour le développement
+
+## Authentification — Bearer Token
+
+```bash
+# Obtenir un token (valide 30 minutes)
+TOKEN=$(curl -s -X POST \
+  -u "api_user:api_password" \
+  -H "Content-Type: application/json" \
+  "https://votre-instance.jamfcloud.com/api/v1/auth/token" \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['token'])")
+
+echo "Token obtenu : ${TOKEN:0:20}..."
+
+# Vérifier l'expiration du token
+curl -s \
+  -H "Authorization: Bearer $TOKEN" \
+  "https://votre-instance.jamfcloud.com/api/v1/auth" | python3 -m json.tool
+
+# Renouveler (avant expiration)
+curl -s -X POST \
+  -H "Authorization: Bearer $TOKEN" \
+  "https://votre-instance.jamfcloud.com/api/v1/auth/keep-alive"
+
+# Invalider (toujours faire à la fin)
+curl -s -X DELETE \
+  -H "Authorization: Bearer $TOKEN" \
+  "https://votre-instance.jamfcloud.com/api/v1/auth/invalidate-token"
+```
+
+## Compte API dédié
+
+```
+Jamf Pro → Settings → System Settings → Jamf Pro User Accounts → New
+
+Account Name   : api-readonly
+Access Level   : Full Access
+Privilege Set  : Custom
+Password       : [généré aléatoirement]
+
+Privileges (pour lecture seule) :
+  ☑ Read Computers
+  ☑ Read Computer Groups  
+  ☑ Read Policies
+  ☑ Read Scripts
+  (décochez tout le reste)
+```
+
+> **Ne jamais utiliser le compte admin** pour les scripts. Créez des comptes API avec les droits minimaux nécessaires (principe du moindre privilège).
+
+## Opérations courantes
+
+### Lister les Mac (pagination)
+```bash
+BASE_URL="https://votre-instance.jamfcloud.com"
+
+# Page 1, 50 résultats
+curl -s \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Accept: application/json" \
+  "$BASE_URL/api/v1/computers-preview?page=0&page-size=50" \
+  | python3 -m json.tool
+
+# Filtrage : Mac sans FileVault
+curl -s \
+  -H "Authorization: Bearer $TOKEN" \
+  "$BASE_URL/api/v1/computers-preview?filter=diskEncryption.bootPartitionEncryptionDetails.partitionFileVault2State%3D%3DNot%20Encrypted"
+```
+
+### Récupérer les détails d'un Mac
+```bash
+# Par ID
+curl -s -H "Authorization: Bearer $TOKEN" \
+  "$BASE_URL/api/v1/computers-preview/42" | python3 -m json.tool
+
+# Par numéro de série
+SERIAL="C02G1234MD6M"
+curl -s -H "Authorization: Bearer $TOKEN" \
+  "$BASE_URL/api/v1/computers-preview?filter=hardware.serialNumber%3D%3D%22$SERIAL%22" \
+  | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['results'][0]['id'] if d['totalCount'] > 0 else 'Not found')"
+```
+
+### Envoyer une commande MDM (wipe, lock, etc.)
+```bash
+# Envoyer "Update Inventory" à un appareil
+COMPUTER_ID=42
+curl -s -X POST \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  "$BASE_URL/api/v1/jamf-management-framework/redeploy/$COMPUTER_ID"
+
+# Lock un Mac (Lost Mode)
+curl -s -X POST \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"passcode":"123456","lock_message":"Mac perdu. Appelez IT: +33 1 XX XX XX XX"}' \
+  "$BASE_URL/api/v2/mdm/commands" 
+```
+
+### Créer un groupe statique
+```bash
+curl -s -X POST \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Déploiement Chrome Wave 1",
+    "isSmart": false,
+    "computers": [
+      {"id": 42},
+      {"id": 43},
+      {"id": 44}
+    ]
+  }' \
+  "$BASE_URL/api/v1/computer-groups"
+```
+
+## Script Python : Rapport de conformité
+
+```python
+#!/usr/bin/env python3
+"""
+Rapport de conformité Jamf Pro — API REST
+Génère un CSV avec l'état FileVault de tous les Mac
+"""
+
+import requests
+import json
+import csv
+import sys
+from datetime import datetime
+
+JAMF_URL = "https://votre-instance.jamfcloud.com"
+API_USER = "api-readonly"
+API_PASS = "votre-mot-de-passe"
+
+def get_token():
+    r = requests.post(f"{JAMF_URL}/api/v1/auth/token", auth=(API_USER, API_PASS))
+    r.raise_for_status()
+    return r.json()["token"]
+
+def get_computers(token, page_size=100):
+    headers = {"Authorization": f"Bearer {token}", "Accept": "application/json"}
+    computers = []
+    page = 0
+    
+    while True:
+        r = requests.get(
+            f"{JAMF_URL}/api/v1/computers-preview",
+            headers=headers,
+            params={"page": page, "page-size": page_size}
+        )
+        data = r.json()
+        computers.extend(data["results"])
+        
+        if len(computers) >= data["totalCount"]:
+            break
+        page += 1
+    
+    return computers
+
+def invalidate_token(token):
+    requests.delete(f"{JAMF_URL}/api/v1/auth/invalidate-token",
+                   headers={"Authorization": f"Bearer {token}"})
+
+if __name__ == "__main__":
+    token = get_token()
+    computers = get_computers(token)
+    invalidate_token(token)
+    
+    # Export CSV
+    filename = f"jamf_report_{datetime.now().strftime('%Y%m%d')}.csv"
+    with open(filename, "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["Name", "Serial", "OS Version", "Last Check-in"])
+        for c in computers:
+            writer.writerow([
+                c.get("name", ""),
+                c.get("hardware", {}).get("serialNumber", ""),
+                c.get("operatingSystem", {}).get("version", ""),
+                c.get("lastContactTime", "")
+            ])
+    
+    print(f"Rapport généré : {filename} ({len(computers)} Mac)")
+```
+
+## Explorer l'API avec Swagger
+
+```
+https://votre-instance.jamfcloud.com/api
+```
+
+Swagger UI documente tous les endpoints disponibles avec les schémas de requête et réponse. Vous pouvez tester directement depuis le navigateur.
+
+## Mini-lab : Audit complet via API
+
+**Étape 1** — Créez le compte api-readonly dans Jamf.
+
+**Étape 2** — Testez l'authentification :
+```bash
+TOKEN=$(curl -s -X POST -u "api-readonly:password" \
+  "https://votre-instance.jamfcloud.com/api/v1/auth/token" \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['token'])")
+echo "Token: ${TOKEN:0:30}..."
+```
+
+**Étape 3** — Listez vos Mac :
+```bash
+curl -s -H "Authorization: Bearer $TOKEN" \
+  "https://votre-instance.jamfcloud.com/api/v1/computers-preview?page-size=5" \
+  | python3 -m json.tool
+```
+
+**Étape 4** — Exécutez le script Python → vérifiez le CSV généré.
+
+## Bonnes pratiques
+
+- **Jamais de credentials en clair** dans les scripts → utilisez des variables d'environnement ou un vault (1Password CLI, HashiCorp Vault)
+- **Invalidez toujours le token** en fin de script (`trap` Bash pour les erreurs)
+- **Gérez la pagination** : ne supposez jamais que tous les résultats tiennent dans une seule page
+- **Rate limiting** : Jamf limite les appels API — ajoutez `sleep 0.5` entre les appels en masse
+- **Loggez toutes les actions** destructives : wipes, modifications de groupes, etc.
+
+## Résumé
+
+L'API Jamf Pro est la clé de toute automatisation avancée. Bearer Token, opérations CRUD, pagination et gestion des erreurs sont les fondamentaux à maîtriser. Une fois ces bases acquises, vous pouvez automatiser n'importe quel workflow : onboarding, offboarding, reporting, remédiation — sans jamais ouvrir l'interface Jamf.

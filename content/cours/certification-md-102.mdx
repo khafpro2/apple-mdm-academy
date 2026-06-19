@@ -1,0 +1,387 @@
+---
+title: "Microsoft MD-102 — Endpoint Administrator Associate"
+description: "Préparation complète à la certification Microsoft MD-102 : déploiement Windows et macOS, Intune, Azure AD, conformité et sécurité endpoint."
+module: "certifications"
+level: "intermédiaire"
+duration: "120 min"
+prerequisites: ["gestion-macos-intune", "compliance-policies-intune-apple", "conditional-access-apple-intune"]
+tags: ["Certification", "Microsoft", "MD-102", "Intune", "Endpoint", "Windows"]
+---
+
+## Introduction
+
+La certification **Microsoft MD-102** (Microsoft 365 Certified: Endpoint Administrator Associate) valide les compétences de gestion des endpoints modernes dans un environnement Microsoft 365. Elle couvre principalement Windows 11, mais inclut également la gestion des appareils macOS, iOS et Android via Microsoft Intune.
+
+Pour un administrateur MDM Apple, la MD-102 est un complément naturel qui démontre la maîtrise de l'écosystème Microsoft complet.
+
+---
+
+## Objectifs pédagogiques
+
+À la fin de ce cours, vous serez capable de :
+- Comprendre les domaines couverts par l'examen MD-102 et leur pondération
+- Identifier les compétences Microsoft 365 complémentaires à votre expertise Apple
+- Préparer les parties de l'examen liées à la gestion des appareils macOS et mobiles
+- Planifier votre préparation avec les ressources Microsoft Learn gratuites
+
+---
+
+## Informations sur l'examen
+
+| Paramètre | Détail |
+|-----------|--------|
+| **Nom complet** | Endpoint Administrator Associate |
+| **Code** | MD-102 |
+| **Durée** | 120 minutes |
+| **Format** | QCM, case studies, drag-and-drop, lab simulé |
+| **Questions** | ~55-65 questions |
+| **Score minimum** | 700/1000 |
+| **Prix** | ~165 USD |
+| **Validité** | 1 an (renouvellement gratuit via Microsoft Learn) |
+| **Ressources officielles** | Microsoft Learn (gratuit) |
+
+---
+
+## Domaines évalués
+
+### Domaine 1 — Deploy and upgrade operating systems (25%)
+
+**Windows Autopilot (équivalent ADE pour Windows) :**
+```
+Windows Autopilot ≈ Apple ADE
+
+Flux Autopilot :
+  1. Fabricant/revendeur enregistre le hash matériel dans Microsoft 365
+  2. Première mise en marche → connexion Microsoft 365
+  3. Autopilot provisioning profile → applications Intune
+  4. Appareil prêt à l'emploi sans intervention IT
+
+Modes Autopilot :
+  User-driven : l'utilisateur passe le setup
+  Self-deploying : sans interaction (kiosques, présentations)
+  Pre-provisioning (White Glove) : IT prépare l'appareil puis le donne à l'utilisateur
+  Existing device : migration depuis Windows 7/10 vers Windows 11 + Intune
+
+Hash matériel Windows :
+  PowerShell (sur le PC) :
+  Get-WindowsAutopilotInfo -OutputFile .\Autopilot-Hash.csv
+  → Importer dans Microsoft 365 Devices
+```
+
+**macOS dans le domaine déploiement :**
+```
+Pour macOS, Autopilot n'existe pas.
+MD-102 couvre l'équivalent macOS : ADE via ABM + Intune
+(identique au cours "Enrôlement ADE Intune" de notre formation)
+
+Points évalués par l'examen MD-102 côté macOS :
+  - Enrôlement via ABM et ADE
+  - Configuration du Setup Assistant
+  - Déploiement d'apps macOS via Intune
+  - Profils de configuration macOS (Wi-Fi, VPN, certificats)
+```
+
+**System Image Management :**
+```
+Windows :
+  - WDS (Windows Deployment Services)
+  - MDT (Microsoft Deployment Toolkit)
+  - Windows Imaging and Configuration Designer
+  
+macOS (pour info) :
+  - Apple Configurator 2 (restauration images)
+  - macOS ne supporte pas les images système custom via MDM
+    → Apps et configs déployées individuellement
+```
+
+### Domaine 2 — Manage identity and compliance (20%)
+
+**Microsoft Entra ID Join (anciennement Azure AD Join) :**
+```
+Types de jonction Entra ID :
+
+Entra ID Joined :
+  - Appareil appartient à l'organisation dans Entra ID
+  - Login Windows avec compte Microsoft 365
+  - Policies Intune appliquées automatiquement
+  - Sans serveur Active Directory on-premise
+  → Recommandé pour Modern Workplace
+
+Hybrid Entra ID Joined :
+  - Appareil joint à AD on-premise ET Entra ID
+  - Sync via Azure AD Connect
+  - Compatible avec GPO et Intune
+  → Migration progressive vers le cloud
+
+Entra ID Registered (BYOD) :
+  - Appareil personnel enregistré dans Entra
+  - Séparation données perso/pro
+  - Gestion partielle via Intune (App Protection Policies)
+```
+
+**Politiques de conformité Intune :**
+```
+Évalués dans MD-102 (toutes plateformes) :
+
+Windows :
+  - Version Windows minimale
+  - BitLocker activé
+  - TPM requis
+  - Antivirus Defender
+  - Pare-feu activé
+  - UEFI Secure Boot
+  - Configuration Lock activé
+
+macOS (identique à notre cours) :
+  - FileVault, Gatekeeper, Pare-feu
+  - Version macOS minimale
+
+iOS / Android :
+  - Passcode, chiffrement
+  - Jailbreak/root détecté
+  - Version OS minimale
+```
+
+**Accès conditionnel :**
+```
+Identique au cours "Accès conditionnel pour Apple" mais étendu à toutes les plateformes.
+
+Scénarios types dans MD-102 :
+  - Bloquer l'authentification héritée (all users + other clients)
+  - Exiger MFA pour accès admin (privileged identities)
+  - Exiger conformité appareil pour Microsoft 365
+  - Bloquer l'accès depuis pays non autorisés (named locations)
+  - Accès limité pour BYOD (app-based protection, pas conformité device)
+```
+
+### Domaine 3 — Manage, maintain and protect devices (40%)
+
+**Microsoft Endpoint Manager / Intune :**
+Ce domaine est le cœur de MD-102. Il couvre :
+
+**Configuration profiles (toutes plateformes) :**
+- Windows : Settings Catalog, Administrative Templates (ADMX), DFCI
+- macOS/iOS : voir cours dédiés de notre formation
+- Android : Work Profile, Fully Managed
+
+**App management :**
+```
+Types d'apps dans Intune :
+
+Store apps : Microsoft Store, App Store, Google Play
+  → Gérées via Managed Google Play Account
+  → iOS : Volume Purchase Program (ABM)
+
+Line-of-Business apps :
+  Windows : .msi, .exe, .msix, Win32 (Intune Management Extension)
+  macOS : .pkg, .dmg
+  iOS : .ipa (via ABM Custom App)
+  Android : .apk (via Managed Google Play)
+
+Microsoft 365 apps (Windows) :
+  → Intune déploie la suite Office via XML de configuration
+  → "Microsoft 365 Apps" dans Intune Apps catalogue
+
+App Protection Policies (APP) :
+  → Pour BYOD : protège les données dans les apps managées
+  → Même sans MDM enrollment
+  → Empêche copier-coller entre apps perso et pro
+  → Chiffrement des données dans l'app
+  → Wipe sélectif (données pro uniquement)
+```
+
+**Windows Update for Business :**
+```
+Politique Intune pour les mises à jour Windows :
+
+Update rings : groupes de mise à jour avec délais
+  Ring 0 (Canary) : reçoit les updates dès leur sortie (IT)
+  Ring 1 (Fast) : délai 3 jours (département IT étendu)
+  Ring 2 (Broad) : délai 7 jours (tous les employés)
+  Ring 3 (Slow) : délai 14 jours (systèmes critiques)
+
+Paramètres :
+  Deferral period : nombre de jours avant installation
+  Maintenance windows : plage horaire d'installation
+  Update compliance : suivi dans Intune
+```
+
+**Endpoint Analytics :**
+```
+Intune → Reports → Endpoint Analytics
+
+Scores disponibles :
+  Startup performance : temps de démarrage des PC
+  Restart frequency : fréquence des redémarrages
+  Work from anywhere score : prêt pour le travail nomade
+  App reliability score : stabilité des applications
+  Battery health : santé des batteries (Mac inclus)
+
+Recommandations :
+  → Identifier les PC/Mac qui doivent être remplacés
+  → Optimiser les scripts de startup
+```
+
+**Privilege Management (EPM - Endpoint Privilege Management) :**
+```
+Pour Windows uniquement (MD-102) :
+  Permettre aux utilisateurs standard d'élever temporairement
+  leurs droits pour des tâches spécifiques.
+
+  Config : Users connectés en standard (pas admin local)
+  + EPM policy : "Autoriser élévation pour [app] pendant [durée]"
+  → L'utilisateur voit un prompt, entre une justification
+  → L'app s'exécute en elevated sans donner les droits admin permanents
+```
+
+### Domaine 4 — Manage applications (15%)
+
+**Microsoft Store for Business (remplacé par Microsoft Store Apps) :**
+- Distribution d'apps Windows via Intune
+- Apps gratuites et payantes
+- Offline licensing
+
+**Microsoft 365 Apps deployment :**
+```
+Office Deployment Tool (ODT) → configuration.xml
+Ou : Intune direct (Microsoft 365 Apps pour enterprise)
+
+Example configuration.xml minimal :
+<Configuration>
+  <Add OfficeClientEdition="64" Channel="MonthlyEnterprise">
+    <Product ID="O365BusinessRetail">
+      <Language ID="fr-fr"/>
+      <ExcludeApp ID="Lync"/>
+      <ExcludeApp ID="Groove"/>
+    </Product>
+  </Add>
+  <Updates Enabled="TRUE" Channel="MonthlyEnterprise"/>
+  <Display Level="None" AcceptEULA="TRUE"/>
+</Configuration>
+```
+
+---
+
+## Points spécifiques Apple dans MD-102
+
+En tant qu'expert Apple, ces domaines MD-102 vous seront familiers :
+
+| Sujet MD-102 | Lien avec vos cours |
+|-------------|---------------------|
+| ADE / ABM pour macOS | Cours ADE + ABM |
+| Profils de configuration macOS | Cours "Profils Intune Apple" |
+| Conformité macOS | Cours "Conformité Intune Apple" |
+| Accès conditionnel Apple | Cours "Accès conditionnel Apple" |
+| MDE sur Mac | Cours "Microsoft Defender Apple" |
+| App deployment macOS | Cours "Gestion macOS Intune" |
+
+**Domaines à approfondir pour MD-102 :**
+- Windows Autopilot (logique = ADE mais pour Windows)
+- BitLocker (= FileVault mais Windows)
+- Windows Update for Business (= Software Updates Jamf mais Windows)
+- App Protection Policies BYOD
+- Endpoint Analytics
+
+---
+
+## Stratégie de préparation
+
+### Ressources officielles gratuites
+
+**Microsoft Learn :** https://learn.microsoft.com/certifications/exams/md-102
+
+Learning paths officiels :
+```
+1. Deploy and update operating systems
+2. Manage identity and compliance with Microsoft Entra
+3. Manage, maintain and protect devices
+4. Manage applications
+```
+
+Chaque module inclut :
+- Cours interactifs (lecture)
+- Sandbox Lab (environnement de pratique gratuit)
+- Quiz de validation
+- Exercices pratiques
+
+**Temps estimé :** 30-40 heures de Microsoft Learn pour couvrir l'ensemble
+
+### Planning 6 semaines (pour expert Apple)
+
+```
+Semaine 1 : Bases Windows 11 + Entra ID
+  → Microsoft Learn : "Entra ID fundamentals"
+  → Comprendre Autopilot vs ADE
+
+Semaine 2 : Intune Windows (Configuration profiles, compliance)
+  → Votre expertise macOS/iOS vous aide beaucoup ici
+  → Focus sur les spécificités Windows (BitLocker, ADMX...)
+
+Semaine 3 : Apps et mises à jour Windows
+  → Win32 apps dans Intune (Intune Management Extension)
+  → Windows Update for Business
+
+Semaine 4 : Sécurité et conformité
+  → Conditional Access (vous connaissez)
+  → Defender for Endpoint sur Windows
+  → Endpoint Privilege Management
+
+Semaine 5 : Pratique Labs
+  → Sandbox Microsoft Learn
+  → Tenant M365 d'essai (90 jours gratuit)
+
+Semaine 6 : Examens blancs + révision
+  → MeasureUp practice tests (~40 USD)
+  → Focus sur Windows Autopilot et ADMX
+```
+
+---
+
+## Questions types MD-102
+
+**Question 1**
+Un administrateur Intune veut déployer une application .pkg macOS. Quel type d'application doit-il créer dans Intune ?
+- A) iOS Store app
+- B) macOS app (DMG)
+- C) macOS app (PKG)
+- D) Win32 app
+
+**Réponse : C** — Pour les fichiers .pkg macOS, le type d'application dans Intune est "macOS app (PKG)". Le type DMG est disponible pour les fichiers .dmg.
+
+---
+
+**Question 2**
+Quelle est la différence principale entre Entra ID Joined et Hybrid Entra ID Joined pour un PC Windows ?
+- A) Hybrid Join nécessite Azure AD Premium P2
+- B) Entra ID Joined est cloud-only (sans AD on-premise), Hybrid Join connecte l'appareil à AD on-premise ET Entra ID
+- C) Hybrid Join ne supporte pas les policies Intune
+- D) Entra ID Joined ne supporte pas Windows Hello
+
+**Réponse : B** — Entra ID Joined = cloud-only, sans dépendance à un AD on-premise. Hybrid Join = l'appareil est joint à un AD on-premise classique ET synchronisé dans Entra ID via Azure AD Connect. Hybrid Join est utilisé lors de la migration progressive vers le cloud.
+
+---
+
+**Question 3**
+Un utilisateur BYOD (iPhone personnel) doit accéder à ses emails Microsoft 365 sans enrôler l'appareil dans Intune. Quelle solution Microsoft permet de protéger les données d'entreprise dans Outlook sans enrôlement MDM ?
+- A) Compliance policies Intune
+- B) App Protection Policies (Intune MAM without enrollment)
+- C) Conditional Access avec conformité requise
+- D) Configuration profiles Intune
+
+**Réponse : B** — Les App Protection Policies (MAM - Mobile Application Management) sans enrollment permettent de protéger les données dans les apps managées (Outlook, Teams, Edge) sur des appareils BYOD sans les enrôler dans Intune. Les données d'entreprise sont chiffrées et le wipe sélectif est possible.
+
+---
+
+## Résumé
+
+| Domaine | Poids | Expertise Apple utile |
+|---------|-------|----------------------|
+| Déploiement OS | 25% | ADE, macOS profils, apps |
+| Identité et conformité | 20% | Accès conditionnel, conformité |
+| Gestion et protection | 40% | Intune (toutes plateformes) |
+| Applications | 15% | Distribution apps macOS/iOS |
+| **Score minimum** | **700/1000** | ~70% |
+
+La MD-102 est la certification Microsoft la plus pertinente pour un administrateur MDM Apple travaillant dans un environnement Microsoft 365. Elle élargit votre profil vers la gestion complète des endpoints (Windows + Apple) et est très recherchée par les entreprises qui ne sont pas mono-écosystème.
+
+**Renouvellement gratuit :** Contrairement aux certifications Apple et Jamf, la MD-102 peut être renouvelée gratuitement via un examen de renouvellement annuel sur Microsoft Learn (30 minutes, questions mises à jour).

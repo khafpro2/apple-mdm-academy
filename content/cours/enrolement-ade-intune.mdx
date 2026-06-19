@@ -1,0 +1,213 @@
+---
+title: "Enrôlement ADE avec Microsoft Intune"
+slug: "enrolement-ade-intune"
+---
+
+## Introduction
+
+L'Automated Device Enrollment (ADE) avec Intune permet à un appareil Apple neuf de s'enrôler automatiquement dans Microsoft Intune dès sa première mise en route, sans aucune intervention de l'équipe IT. L'utilisateur final reçoit son appareil déjà configuré, avec ses applications et ses politiques de sécurité.
+
+## Objectifs pédagogiques
+
+- Créer et configurer un profil d'enrôlement ADE dans Intune
+- Maîtriser les options du Setup Assistant (étapes à afficher ou masquer)
+- Comprendre la différence entre enrôlement **supervisé** et non supervisé
+- Assigner des appareils ABM à Intune et déclencher l'enrôlement
+- Tester et valider un enrôlement ADE de bout en bout
+
+## Le flux ADE en détail
+
+```
+1. Achat appareil (Apple/revendeur ABM)
+          ↓
+2. Appareil apparaît dans ABM (numéro de série)
+          ↓
+3. ABM assigne l'appareil au serveur MDM Intune
+          ↓
+4. Intune reçoit l'appareil (Enrollment Program Tokens)
+          ↓
+5. Utilisateur allume l'appareil
+          ↓
+6. Setup Assistant → connexion à internet
+          ↓
+7. Appareil contacte servers Apple → redirigé vers MDM Intune
+          ↓
+8. Intune push le profil d'enrôlement
+          ↓
+9. Apps, profils, politiques déployés automatiquement
+          ↓
+10. Appareil prêt à l'emploi ✅
+```
+
+## Créer un profil d'enrôlement ADE
+
+### Dans Intune : Devices → macOS → Enrollment → Enrollment Program Tokens
+
+**1. Sélectionner le token ADE**
+Choisissez le token ABM correspondant à votre organisation.
+
+**2. Créer un profil (Create Profile → macOS ou iOS/iPadOS)**
+
+#### Paramètres essentiels
+
+| Paramètre | Valeur recommandée entreprise |
+|-----------|-------------------------------|
+| Name | `ADE-MacBook-Production` |
+| User Affinity | `Enroll with User Affinity` (si utilisateur dédié) |
+| Authentication | `Setup Assistant with Modern Auth` |
+| Supervised | `Yes` ← **critique** |
+| Locked enrollment | `Yes` (empêche le retrait MDM) |
+| Sync with computers | `Refuse All` |
+
+#### Options du Setup Assistant (macOS)
+
+Étapes à **masquer** pour simplifier l'expérience utilisateur :
+- ✅ Location Services (configurer via profil)
+- ✅ Restore (pas de migration pour les appareils neufs)
+- ✅ Apple ID (géré via Jamf Connect ou SSO)
+- ✅ Terms and Conditions (acceptés par l'entreprise)
+- ✅ Siri (optionnel)
+- ✅ Screen Time (configurer via politique)
+- ✅ Touch ID (laisser l'utilisateur configurer)
+- ✅ FileVault (déployer via Configuration Profile)
+
+Étapes à **afficher** :
+- Language / Region
+- Accessibility
+- Network (Wi-Fi ou Ethernet)
+
+### Supervised vs Non-Supervised
+
+| Fonctionnalité | Supervisé | Non-supervisé |
+|----------------|-----------|----------------|
+| Restrictions avancées | ✅ | ❌ |
+| App Lock (Kiosque) | ✅ | ❌ |
+| Silent app install | ✅ | ❌ |
+| Blocage du retrait MDM | ✅ | ❌ |
+| Web Content Filter | ✅ | ❌ |
+| ADE obligatoire pour supervisé | ✅ | N/A |
+
+> **Règle absolue** : Tous les appareils d'entreprise doivent être **supervisés**. C'est la condition sine qua non pour les restrictions avancées et la gestion complète.
+
+## Assigner des appareils dans ABM
+
+### Dans ABM : Appareils → Tous les appareils
+
+1. **Filtrer** par date d'achat, modèle ou numéro de série
+2. **Sélectionner** les appareils à assigner
+3. **Modifier le serveur MDM** → Sélectionner `Microsoft Intune - Production`
+4. **Confirmer** l'assignation
+
+```
+Délai de synchronisation ABM → Intune : environ 15 minutes
+Force sync : Intune → Devices → Enrollment Program Tokens → Sync
+```
+
+### Vérification dans Intune
+
+```
+Devices → macOS → macOS devices → filtrer par "Pending enrollment"
+```
+
+L'appareil apparaît avec le statut `Not enrolled` jusqu'à sa première mise en route.
+
+## Exemple concret — MacBook Air pour nouveaux arrivants
+
+**Scénario** : Votre entreprise reçoit 50 MacBook Air M3 pour une vague d'embauches.
+
+**Workflow complet :**
+
+```bash
+# 1. ABM : assigner les 50 numéros de série à Intune
+# (interface web ABM, ou via API ABM)
+
+# 2. Intune : forcer la sync
+# Devices → Enrollment Program Tokens → [votre token] → Sync
+
+# 3. Intune : vérifier que les 50 appareils apparaissent
+# Devices → Enrollment Program Tokens → [votre token] → Devices
+# Status: "Not enrolled" → normal, ils ne sont pas encore allumés
+
+# 4. Envoi aux utilisateurs
+# Chaque MacBook est livré directement à l'utilisateur (dropship)
+# L'utilisateur l'allume → ADE démarre automatiquement
+
+# 5. Vérification post-enrôlement
+# Devices → macOS → macOS devices → filtrer par date d'enrôlement du jour
+```
+
+**Résultat** : L'utilisateur démarre, voit le Setup Assistant simplifié, se connecte avec son compte Microsoft 365, et son MacBook est prêt en moins de 15 minutes.
+
+## Gestion des appareils non éligibles ADE
+
+Certains appareils ne sont pas dans ABM (achetés en dehors du circuit agréé) :
+
+**Option 1 — Apple Configurator 2**
+```
+1. Connecter l'iPhone/iPad en USB à un Mac
+2. Apple Configurator 2 → Préparer → Organisation → ABM
+3. L'appareil est ajouté à ABM et peut bénéficier d'ADE
+⚠️ Nécessite une réinitialisation de l'appareil
+```
+
+**Option 2 — Enrôlement BYOD (User Enrollment)**
+```
+Intune → Devices → iOS/iPadOS → Enrollment → User Enrollment
+→ L'utilisateur scanne un QR code ou suit un lien
+→ L'appareil n'est pas supervisé
+→ Séparation données personnelles/pro via User Enrollment
+```
+
+## Bonnes pratiques
+
+- **Tester le profil ADE sur un appareil de test** avant le déploiement en masse
+- **Documenter les options Setup Assistant** choisies et leur justification
+- **Créer des profils distincts** par type d'usage (MacBook Dev, MacBook Finance, iPad terrain)
+- **User Affinity** : toujours activer si l'appareil est attribué à une personne spécifique
+- **Ne jamais partager un token ADE** entre plusieurs MDM — un token = un MDM
+
+## Erreurs fréquentes
+
+| Erreur | Cause probable | Solution |
+|--------|---------------|----------|
+| L'appareil ne passe pas par ADE | Non assigné dans ABM | Vérifier l'assignation dans ABM et forcer sync Intune |
+| `Device not supervised` après enrôlement | Mode supervisé non activé dans le profil | Recréer le profil avec Supervised=Yes et réenrôler |
+| Boucle de setup assistant | Problème réseau pendant l'enrôlement | Vérifier la connectivité aux serveurs Apple (Albert) |
+| L'utilisateur peut retirer le MDM | `Locked enrollment` non activé | Activer dans le profil ADE |
+| Apps non installées après enrôlement | Groupe non assigné | Vérifier l'assignation des apps dans Intune |
+
+## Mini-lab pratique
+
+### Simuler un enrôlement ADE (sans effacer un appareil)
+
+Si vous n'avez pas d'appareil de test disponible, vous pouvez tester la configuration :
+
+**1. Vérifier votre profil ADE**
+```
+Intune → Devices → iOS/iPadOS → Enrollment → Enrollment Program Tokens
+→ [Votre token] → Profiles → [Votre profil]
+→ Review all settings
+```
+
+**2. Assigner un appareil de test au profil**
+```
+→ Devices → [Sélectionner appareil de test]
+→ Assign to profile → [Votre profil ADE]
+```
+
+**3. Vérifier l'état de synchronisation**
+```powershell
+# PowerShell - Vérifier les appareils ADE non enrôlés
+Connect-MgGraph -Scopes "DeviceManagementServiceConfig.Read.All"
+$token = Get-MgDeviceManagementDepOnboardingSetting | Select-Object -First 1
+$devices = Get-MgDeviceManagementDepOnboardingSettingImportedAppleDeviceIdentity -DepOnboardingSettingId $token.Id
+$devices | Where-Object {$_.DiscoverySource -eq "deviceEnrollmentProgram"} | Select-Object SerialNumber, ProfileAssignmentState | Format-Table
+```
+
+## Résumé
+
+L'ADE avec Intune transforme radicalement le processus de déploiement Apple :
+- **Avant ADE** : IT touche physiquement chaque appareil, configure, remet à l'utilisateur → 30-60 min/appareil
+- **Avec ADE** : Dropship direct à l'utilisateur, configuration automatique → 0 min IT, 10-15 min utilisateur
+
+La clé du succès : un profil ADE bien configuré (supervisé, locked, Setup Assistant simplifié) et des appareils correctement assignés dans ABM avant livraison.

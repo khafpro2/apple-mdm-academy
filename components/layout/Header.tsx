@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Menu, X, BookOpen, GraduationCap, Trophy, Search, Command, Layers, ChevronRight, Clock } from 'lucide-react';
+import { Menu, X, BookOpen, GraduationCap, Trophy, Search, Command, Layers, ChevronRight } from 'lucide-react';
 import clsx from 'clsx';
 import { search, type SearchResult } from '@/lib/search';
 
@@ -24,6 +24,7 @@ function SearchModal({ onClose }: { onClose: () => void }) {
   useEffect(() => { inputRef.current?.focus(); }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (query.length < 2) { setResults([]); return; }
     const timer = setTimeout(() => {
       setResults(search(query, 8));
@@ -155,6 +156,7 @@ export default function Header() {
   }, []);
 
   // Close menu on route change
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setMenuOpen(false); }, [pathname]);
 
   const isActive = (href: string) =>

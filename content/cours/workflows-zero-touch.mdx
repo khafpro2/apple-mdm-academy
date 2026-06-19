@@ -1,0 +1,173 @@
+---
+title: "Workflows Zero-Touch avec Jamf Pro"
+slug: "workflows-zero-touch"
+---
+
+## Introduction
+
+Un **workflow Zero-Touch** est un processus complet de déploiement où un appareil neuf va de "dans le carton" à "utilisable par l'employé" sans aucune manipulation IT. L'utilisateur ouvre le carton, allume le Mac, et 15-20 minutes plus tard il est productif avec toutes ses apps et configurations — sans jamais appeler l'IT.
+
+## Architecture du workflow Zero-Touch
+
+```
+1. Commande Apple/Revendeur ABM
+       ↓ Serial enregistré automatiquement dans ABM
+2. ABM → Assigner au MDM (Jamf Pro)
+       ↓ Serial visible dans Jamf PreStage
+3. Livraison directe à l'utilisateur
+       ↓ Utilisateur allume le Mac
+4. Setup Assistant → ADE → Enrollment Jamf
+       ↓ Profil MDM installé
+5. Trigger "Enrollment" → Bootstrap Policy
+       ↓ Tout s'installe automatiquement
+6. DEPNotify affiche la progression
+       ↓ Utilisateur voit l'avancement
+7. Mac prêt — Self Service disponible
+```
+
+## Bootstrap Policy — Le cœur du Zero-Touch
+
+La Bootstrap Policy est une politique Jamf déclenchée au trigger "Enrollment". Elle orchestre toute l'installation initiale :
+
+```bash
+#!/bin/bash
+# bootstrap.sh — Orchestration Zero-Touch
+# Déclenchée via Policy trigger "Enrollment"
+
+set -euo pipefail
+LOG="/var/log/jamf_bootstrap.log"
+log() { echo "$(date) [Bootstrap] $*" | tee -a "$LOG"; }
+
+NOTIFY="/var/tmp/depnotify.log"
+CURRENT_USER=$(scutil <<< "show State:/Users/ConsoleUser" | awk '/Name :/{print $3}')
+
+# ── DEPNotify : interface utilisateur ─────────────────────────────────────────
+echo "Command: MainTitle: Configuration de votre Mac" > "$NOTIFY"
+echo "Command: MainText: Bienvenue chez Acme Corp !\nConfiguration en cours, veuillez patienter..." >> "$NOTIFY"
+echo "Command: DeterminateManual: 8" >> "$NOTIFY"
+
+# ── Étape 1 : Nom du Mac ──────────────────────────────────────────────────────
+echo "Status: Configuration du nom du Mac..." >> "$NOTIFY"
+log "Étape 1 : Nommage"
+SERIAL=$(system_profiler SPHardwareDataType | awk '/Serial Number/{print $NF}')
+scutil --set ComputerName "ACME-${SERIAL}"
+scutil --set HostName "ACME-${SERIAL}"
+echo "Command: DeterminateManualStep:" >> "$NOTIFY"
+
+# ── Étape 2 : Certificats CA ──────────────────────────────────────────────────
+echo "Status: Installation des certificats d'entreprise..." >> "$NOTIFY"
+log "Étape 2 : Certificats"
+/usr/local/bin/jamf policy -event installCertificates
+echo "Command: DeterminateManualStep:" >> "$NOTIFY"
+
+# ── Étape 3 : VPN ────────────────────────────────────────────────────────────
+echo "Status: Configuration du VPN..." >> "$NOTIFY"
+log "Étape 3 : VPN"
+/usr/local/bin/jamf policy -event installVPN
+echo "Command: DeterminateManualStep:" >> "$NOTIFY"
+
+# ── Étape 4 : Apps essentielles ───────────────────────────────────────────────
+echo "Status: Installation des applications (peut prendre 5-10 min)..." >> "$NOTIFY"
+log "Étape 4 : Apps"
+/usr/local/bin/jamf policy -event installEssentialApps
+echo "Command: DeterminateManualStep:" >> "$NOTIFY"
+
+# ── Étape 5 : Sécurité ───────────────────────────────────────────────────────
+echo "Status: Installation de la sécurité endpoint..." >> "$NOTIFY"
+log "Étape 5 : Sécurité"
+/usr/local/bin/jamf policy -event installJamfProtect
+echo "Command: DeterminateManualStep:" >> "$NOTIFY"
+
+# ── Étape 6 : FileVault ──────────────────────────────────────────────────────
+echo "Status: Activation du chiffrement du disque..." >> "$NOTIFY"
+log "Étape 6 : FileVault"
+# FileVault se configure via profil — vérification seulement
+fdesetup status | grep -q "On" && log "FileVault OK" || log "FileVault en attente"
+echo "Command: DeterminateManualStep:" >> "$NOTIFY"
+
+# ── Étape 7 : Inventaire ─────────────────────────────────────────────────────
+echo "Status: Finalisation..." >> "$NOTIFY"
+log "Étape 7 : Inventaire"
+/usr/local/bin/jamf recon
+echo "Command: DeterminateManualStep:" >> "$NOTIFY"
+
+# ── Étape 8 : Finalisation ────────────────────────────────────────────────────
+echo "Command: DeterminateManualStep:" >> "$NOTIFY"
+echo "Command: MainText: Votre Mac est prêt !\nOuvrez Self Service pour installer vos applications." >> "$NOTIFY"
+echo "Command: ContinueButtonRegister: Commencer" >> "$NOTIFY"
+
+log "Bootstrap terminé avec succès"
+```
+
+## Configurer DEPNotify
+
+```bash
+# Package DEPNotify à installer avant le bootstrap
+# Télécharger : https://github.com/jamf/DEPNotify
+
+# Configuration de l'interface
+cat > /tmp/depnotify-config.sh << 'DEPCONFIG'
+#!/bin/bash
+NOTIFY="/var/tmp/depnotify.log"
+open /Applications/Utilities/DEPNotify.app
+
+# Attendre que DEPNotify soit prêt
+sleep 2
+
+echo "Command: Image: /Library/Company/logo.png" > "$NOTIFY"
+echo "Command: WindowStyle: Activated" >> "$NOTIFY"
+echo "Command: NotificationOn:" >> "$NOTIFY"
+DEPCONFIG
+```
+
+## Triggers personnalisés pour le Zero-Touch
+
+Créez des Custom Events dans Jamf pour chaque étape :
+
+```
+Policy "Installer Certificats CA"
+  Trigger : Custom Event "installCertificates"
+  Action  : Package CACertificates.pkg
+
+Policy "Installer VPN"
+  Trigger : Custom Event "installVPN"  
+  Action  : Package CiscoAnyConnect.pkg + Script configure_vpn.sh
+
+Policy "Installer Apps Essentielles"
+  Trigger : Custom Event "installEssentialApps"
+  Action  : Packages Chrome.pkg, Slack.pkg, Office365.pkg (séquentiels)
+
+Policy "Installer Jamf Protect"
+  Trigger : Custom Event "installJamfProtect"
+  Action  : Package JamfProtect.pkg
+```
+
+## Gestion des différents types d'utilisateurs
+
+```bash
+# Dans le PreStage Jamf :
+# Option 1 : L'utilisateur crée son compte au Setup Assistant (standard)
+# Option 2 : L'IT crée un compte via l'attribut utilisateur ABM
+# Option 3 : Login directement via Jamf Connect (SSO)
+
+# Détecter le type d'enrollment pour adapter le bootstrap
+if /usr/bin/profiles status -type enrollment | grep -q "Supervised"; then
+    log "Appareil supervisé — workflow corporate"
+    WORKFLOW="corporate"
+else
+    log "Appareil non supervisé — workflow BYOD"
+    WORKFLOW="byod"
+fi
+```
+
+## Bonnes pratiques
+
+- **Testez 10 fois** sur différents modèles avant le déploiement en production
+- **Prévoyez les erreurs réseau** : que faire si le VPN échoue ? Retry automatique
+- **Limitez la durée** : un Zero-Touch doit se terminer en moins de 20 minutes
+- **Informez l'utilisateur** : DEPNotify évite les questions "ça plante ou ça charge ?"
+- **Loggez tout** : en cas de problème, les logs permettent un diagnostic en 2 minutes
+
+## Résumé
+
+Le Zero-Touch est le Graal du déploiement Apple. Sa mise en place demande un investissement initial (2-3 jours de configuration et tests), mais le ROI est immédiat sur les déploiements de plus de 10 appareils. Chaque heure économisée en ne "touchant" pas les Mac en physique se traduit directement en productivité IT.

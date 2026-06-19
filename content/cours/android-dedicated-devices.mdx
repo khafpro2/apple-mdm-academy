@@ -1,0 +1,172 @@
+---
+title: "Android Dedicated Devices (Kiosque)"
+slug: "android-dedicated-devices"
+---
+
+## Introduction
+
+Le mode Dedicated Device (COSU — Corporate Owned, Single Use) verrouille un appareil Android sur une ou plusieurs applications spécifiques. C'est le mode kiosque d'Android Enterprise, idéal pour les bornes interactives, terminaux de vente, tablettes de restaurant ou équipements industriels partagés.
+
+## Objectifs pédagogiques
+
+- Configurer le mode kiosque single-app et multi-app sur Android
+- Créer un profil Dedicated Device dans Intune
+- Gérer les appareils partagés sans compte utilisateur individuel
+- Configurer le redémarrage automatique et les restrictions physiques
+- Résoudre les problèmes courants en mode kiosque
+
+## Single App vs Multi App Kiosque
+
+### Single App Kiosque
+
+```
+📱 Tablette en mode single app
+└── Seule l'application autorisée est visible
+   ├── Barre de navigation désactivée
+   ├── Barre de statut masquée
+   ├── Accès aux paramètres impossible
+   └── Retour à l'app si l'utilisateur tente de sortir
+```
+
+**Usage** : Borne de prise de rendez-vous, terminal de livraison, affichage dynamique.
+
+### Multi App Kiosque
+
+```
+📱 Tablette multi-app
+├── 3-5 applications autorisées
+├── Interface simplifiée (launcher kiosque)
+└── Aucune autre app accessible
+```
+
+**Usage** : iPad de vente (CRM + calculatrice + PDF viewer), tablette de restaurant.
+
+## Configurer Dedicated Device dans Intune
+
+### Profil de configuration
+
+```
+Devices → Android → Configuration Profiles → Create
+→ Platform: Android Enterprise
+→ Profile type: Fully Managed, Dedicated, and Corporate-Owned Work Profile → Dedicated
+
+Kiosk mode settings:
+  ├── Kiosk mode: Single app OR Multi-app
+  ├── App to run in kiosk mode: [votre app]
+  └── (Multi-app) Allowed apps: [liste des apps]
+
+Kiosk browser:
+  ├── Allow browsers: Block
+  └── (ou configurer Managed Home Screen comme browser sécurisé)
+
+Hardware buttons:
+  ├── Volume buttons: Block (ou Allow)
+  ├── Power button: Block (ou Allow)
+  └── Screen brightness: Block
+
+System:
+  ├── Screen saver: Configure (image de marque)
+  ├── Auto-lock: Require (60 min d'inactivité)
+  └── Reboot device: Schedule daily at 3:00 AM
+
+Connectivity:
+  └── Bluetooth: Block (sauf si scanners BT nécessaires)
+```
+
+## Managed Home Screen (MHS)
+
+Microsoft propose **Managed Home Screen** — un launcher kiosque pour les appareils Dedicated Device :
+
+```
+Apps → Android → Add → Managed Google Play
+→ Rechercher "Managed Home Screen"
+→ Approve → Sync
+→ Assigner comme Required + set as device home screen
+```
+
+**Configuration MHS via Intune App Configuration :**
+
+```json
+{
+  "kind": "androidenterprise#managedConfiguration",
+  "productId": "app:com.microsoft.launcher.enterprise",
+  "managedProperty": [
+    {
+      "key": "show_volume_setting",
+      "valueBoolean": false
+    },
+    {
+      "key": "allow_user_to_add_apps",
+      "valueBoolean": false
+    },
+    {
+      "key": "show_bluetooth_setting",
+      "valueBoolean": false
+    },
+    {
+      "key": "lock_home_screen",
+      "valueBoolean": true
+    },
+    {
+      "key": "apps_in_folder_display_order",
+      "valueString": "auto"
+    }
+  ]
+}
+```
+
+## Appareils partagés — Sans compte utilisateur
+
+Pour les appareils en mode kiosque partagés entre plusieurs personnes (ex: tablette d'accueil) :
+
+```
+Intune → Devices → Android Enrollment → Corporate-owned dedicated devices
+
+Mode sans affinité utilisateur :
+  ├── Pas de connexion Azure AD requise
+  ├── L'appareil fonctionne sans identité utilisateur
+  └── Les données sont communes à tous les utilisateurs
+```
+
+## Exemple concret — Bornes de self-service dans 20 agences
+
+**Scénario** : 20 agences bancaires, chacune avec 2 tablettes en libre-service pour les clients.
+
+```
+Configuration :
+  ✅ Mode : Dedicated Device, Single App
+  ✅ App kiosque : com.banque.selfservice
+  ✅ Managed Home Screen activé
+  ✅ Volume : bloqué
+  ✅ Power button : bloqué (sauf pour l'IT)
+  ✅ Redémarrage automatique : tous les jours à 22h00
+  ✅ Mise à jour app : automatique via Managed Google Play
+  ✅ Wi-Fi : configuré automatiquement
+
+Monitoring :
+  → Intune rapporte l'état de chaque tablette
+  → Alertes si tablette hors ligne > 24h
+  → Mise à jour app planifiée hors horaires d'ouverture
+```
+
+## Résolution de problèmes kiosque
+
+| Problème | Solution |
+|---------|---------|
+| L'app sort du mode kiosque | Vérifier que l'app supporte le pinning ou activer Autonomous Single App |
+| Appareil bloqué, IT ne peut plus accéder | Utiliser le PIN admin MHS ou effectuer un wipe depuis Intune |
+| App ne se met pas à jour | Vérifier auto-update dans Managed Google Play settings |
+| Écran figé | Planifier un redémarrage automatique nocturne |
+| Wi-Fi déconnecté | Vérifier le profil Wi-Fi et le maintien de connexion |
+
+## Mini-lab
+
+1. Installez Managed Home Screen sur un Android de test via Intune
+2. Configurez 2 applications autorisées (Teams + Edge)
+3. Activez le lock de l'écran d'accueil
+4. Testez : pouvez-vous accéder aux paramètres ou à d'autres apps ?
+5. Simulez une mise à jour d'app via Managed Google Play
+
+## Résumé
+
+Le mode Dedicated Device Android Enterprise est la solution kiosque Android la plus robuste pour les appareils à usage unique ou partagé. Intégré à Intune, il permet une gestion centralisée des bornes, terminaux et tablettes d'affichage, avec mise à jour silencieuse, redémarrage planifié et monitoring à distance — sans nécessiter de présence physique sur chaque site.

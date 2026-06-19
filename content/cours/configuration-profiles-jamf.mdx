@@ -1,0 +1,265 @@
+---
+title: "Configuration Profiles avec Jamf Pro"
+slug: "configuration-profiles-jamf"
+---
+
+## Introduction
+
+Les **Configuration Profiles** (`.mobileconfig`) sont le mécanisme par lequel MDM configure le système d'exploitation Apple. Chaque profil contient un ou plusieurs **payloads** — des instructions XML qui modifient les préférences système, les règles de sécurité, les paramètres réseau, les certificats, ou les restrictions d'usage. Une fois installé, le profil s'applique immédiatement et persiste après redémarrage.
+
+> **Différence avec les scripts** : un profil configure l'OS de façon déclarative et persistante. Un script exécute des commandes à un moment précis. Pour verrouiller FileVault : profil. Pour installer une app : script ou politique Jamf.
+
+## Objectifs
+
+- Comprendre la structure XML d'un Configuration Profile
+- Créer et déployer des profils via Jamf Pro
+- Maîtriser les payloads les plus courants (Password, FileVault, Wi-Fi, Certificates, Restrictions)
+- Signer les profils pour éviter les alertes de sécurité
+- Déboguer les profils qui ne s'appliquent pas
+
+## Structure d'un Configuration Profile
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!-- Métadonnées du profil -->
+  <key>PayloadDisplayName</key>
+  <string>Politique de sécurité Acme Corp</string>
+  
+  <key>PayloadDescription</key>
+  <string>Politique de sécurité standard</string>
+  
+  <key>PayloadIdentifier</key>
+  <string>com.acme.security.standard</string>
+  
+  <key>PayloadOrganization</key>
+  <string>Acme Corp</string>
+  
+  <key>PayloadUUID</key>
+  <string>GENERATE-A-UUID-HERE</string>
+  
+  <key>PayloadVersion</key>
+  <integer>1</integer>
+  
+  <key>PayloadType</key>
+  <string>Configuration</string>
+  
+  <!-- Supprimer ce profil manuellement = interdit -->
+  <key>PayloadRemovalDisallowed</key>
+  <true/>
+  
+  <!-- Liste des payloads -->
+  <key>PayloadContent</key>
+  <array>
+    <!-- Payload 1 : mot de passe -->
+    <dict>
+      <key>PayloadType</key>
+      <string>com.apple.mobiledevicemanagement.passcode</string>
+      ...
+    </dict>
+    <!-- Payload 2 : Wi-Fi -->
+    <dict>
+      <key>PayloadType</key>
+      <string>com.apple.wifi.managed</string>
+      ...
+    </dict>
+  </array>
+</dict>
+</plist>
+```
+
+## Payloads les plus utilisés
+
+### Passcode / Mot de passe
+```xml
+<key>PayloadType</key>
+<string>com.apple.mobiledevicemanagement.passcode</string>
+
+<key>minLength</key>          <integer>8</integer>
+<key>minComplexChars</key>    <integer>1</integer>
+<key>maxPINAgeInDays</key>    <integer>90</integer>
+<key>maxFailedAttempts</key>  <integer>10</integer>
+<key>requireAlphanumeric</key><true/>
+```
+
+### Wi-Fi d'entreprise (WPA2 Enterprise avec certificat)
+```xml
+<key>PayloadType</key>
+<string>com.apple.wifi.managed</string>
+
+<key>SSID_STR</key>           <string>CorpWiFi</string>
+<key>EncryptionType</key>     <string>WPA2</string>
+<key>EAPClientConfiguration</key>
+<dict>
+  <key>AcceptEAPTypes</key>
+  <array><integer>25</integer></array>  <!-- PEAP -->
+  <key>UserName</key>   <string></string>  <!-- vide = demandé à l'utilisateur -->
+</dict>
+```
+
+### FileVault 2 — Activation obligatoire
+```xml
+<key>PayloadType</key>
+<string>com.apple.MCX.FileVault2</string>
+
+<key>Enable</key>              <string>On</string>
+<key>UseRecoveryKey</key>      <true/>
+<key>DeferForceAtUserLoginMaxBypassAttempts</key>
+<integer>-1</integer>         <!-- -1 = force à la prochaine connexion -->
+```
+
+### Restrictions macOS
+```xml
+<key>PayloadType</key>
+<string>com.apple.applicationaccess</string>
+
+<key>allowAppInstallation</key>  <true/>   <!-- App Store autorisé -->
+<key>allowAirDrop</key>          <false/>  <!-- AirDrop interdit -->
+<key>allowUSBRestrictedMode</key><false/>  <!-- USB limité (sécurité) -->
+<key>allowPasswordAutoFill</key> <false/>  <!-- Pas d'autofill mdp -->
+```
+
+### Certificat racine (CA Enterprise)
+```xml
+<key>PayloadType</key>
+<string>com.apple.security.root</string>
+
+<key>PayloadContent</key>
+<data>
+  <!-- Base64 du certificat .der ou .cer -->
+  MIIFXzCCA0egAwIBAgIJANF...
+</data>
+```
+
+## Créer un profil dans Jamf Pro
+
+### Via l'interface graphique (GUI)
+```
+Jamf Pro → Computers → Configuration Profiles → New
+
+Onglet General :
+  Name : "Sécurité - Standard - macOS"
+  Description : "Profil de sécurité de base pour tous les Mac"
+  Level : Computer Level (pas User Level)
+  Distribution Method : Install Automatically
+  
+Onglet Options :
+  Cliquez "+ Add Payload" → choisissez le type
+  Remplissez les champs
+  
+Onglet Scope :
+  Targets : All Computers (ou un Smart Group)
+  Exclusions : Smart Group "Test Machines" (pour les appareils de test)
+  
+Onglet Self Service :
+  (laisser décoché pour les profils de sécurité obligatoires)
+```
+
+### Importer un profil XML existant
+```
+Configuration Profiles → New → Upload → choisir le .mobileconfig
+```
+
+## Niveaux de profil
+
+| Niveau | Application | Supprimable par | Usage |
+|--------|------------|-----------------|-------|
+| Computer Level | Tout l'OS | Admin MDM uniquement | Sécurité, réseau, certificats |
+| User Level | Profil utilisateur actuel | Utilisateur (si non locké) | Préférences, email |
+| System Level | Avant login | Admin MDM uniquement | FileVault, MDM enrollment |
+
+## Vérifier l'application des profils
+
+```bash
+# Lister tous les profils installés
+profiles list -all
+
+# Profil spécifique
+profiles show -all | grep -A 10 "com.acme.security"
+
+# Vérifier si FileVault est bien géré par profil
+fdesetup status
+# → "FileVault is On." + "Encryption in progress..."
+
+# Vérifier en temps réel l'installation d'un profil
+log stream --predicate 'subsystem == "com.apple.ManagedClient"' \
+  | grep -E "profile|install|payload"
+```
+
+## Signer les profils
+
+Un profil non signé affiche une alerte "Non signé" à l'installation. Avec Jamf, les profils déployés via MDM n'ont pas besoin d'être signés. Mais pour les profils distribués manuellement :
+
+```bash
+# Signer avec un certificat de signature de code (Apple Developer)
+security cms -S \
+  -N "Apple Distribution: Acme Corp (XXXXXXXXXX)" \
+  -i unsigned_profile.mobileconfig \
+  -o signed_profile.mobileconfig
+
+# Vérifier la signature
+security cms -D -i signed_profile.mobileconfig
+```
+
+## Mini-lab : Créer et déployer un profil de restriction
+
+**Étape 1** — Créez le profil dans Jamf Pro :
+```
+Computers → Configuration Profiles → New
+General : "Lab - Restrictions Test"
+Add Payload : Restrictions
+  → décochez "Allow use of AirDrop"
+  → décochez "Allow Screen Recording"
+Scope : votre Mac de test uniquement
+Save
+```
+
+**Étape 2** — Appliquez immédiatement :
+```bash
+# Sur le Mac de test
+sudo profiles -N  # Force sync des profils MDM
+# ou
+sudo jamf mdm
+```
+
+**Étape 3** — Vérifiez :
+```bash
+profiles list -all | grep "Lab - Restrictions"
+# Dans System Settings → AirDrop : option grisée/absente
+```
+
+**Étape 4** — Nettoyage :
+```
+Jamf Pro → Configuration Profiles → Lab - Restrictions Test → Delete
+```
+→ Le profil se retire automatiquement du Mac dans les 2 minutes.
+
+## Bonnes pratiques
+
+- **Un profil par domaine** : sécurité, Wi-Fi, VPN, certificats — ne pas tout mélanger dans un seul profil
+- **Versionnez vos profils** : incrémentez le numéro de version à chaque modification (champ `PayloadVersion`)
+- **Testez sur un échantillon** avant déploiement en masse : 5-10 machines de test
+- **Documentez le Payload Identifier** : `com.votreorg.domaine.sous-domaine` (convention inversée)
+- **PayloadRemovalDisallowed: true** pour tous les profils de sécurité
+- **Scope avec exclusions** : excluez toujours les machines de test de vos profils production
+
+## Erreurs fréquentes
+
+**Le profil est dans Jamf mais pas sur le Mac**
+→ Vérifiez la connectivité : `jamf checkjssconnection`. Forcez : `sudo profiles -N`
+
+**"Profile failed to install"** dans les logs
+→ UUID dupliqué (deux profils avec le même PayloadUUID). Générez un UUID unique : `uuidgen`
+
+**Le payload FileVault ne force pas l'activation**
+→ Vérifiez `DeferForceAtUserLoginMaxBypassAttempts`. La valeur `-1` force immédiatement à la prochaine connexion.
+
+**Profil installé mais restrictions non appliquées**
+→ Le profil est en User Level alors qu'il doit être en Computer Level (pour les restrictions globales).
+
+## Résumé
+
+Les Configuration Profiles sont le langage de configuration MDM Apple. Maîtriser leur structure XML, les payloads courants et les niveaux d'application (Computer vs User) est indispensable pour tout administrateur Jamf Pro. La démarche — créer, tester sur un scope limité, puis déployer en production — doit être systématique.

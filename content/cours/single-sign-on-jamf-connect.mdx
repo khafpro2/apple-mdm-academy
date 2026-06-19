@@ -1,0 +1,240 @@
+---
+title: "Single Sign-On avec Jamf Connect"
+slug: "single-sign-on-jamf-connect"
+---
+
+## Introduction
+
+Le Single Sign-On (SSO) avec Jamf Connect permet aux utilisateurs Mac de s'authentifier une seule fois au démarrage de leur session, puis d'accéder automatiquement à toutes les applications et ressources d'entreprise — sans ressaisir leurs identifiants. Jamf Connect utilise les tokens OIDC/Kerberos pour propager l'authentification.
+
+## Objectifs pédagogiques
+
+- Configurer le SSO Extension macOS avec Jamf Connect
+- Comprendre la différence entre SSO Kerberos et SSO Azure AD
+- Déployer le profil Platform SSO (macOS 13+)
+- Configurer l'accès SSO pour les apps web et natives
+- Résoudre les problèmes SSO courants
+
+## Types de SSO sur macOS
+
+### SSO classique — Kerberos
+
+Historiquement, le SSO macOS en entreprise reposait sur Kerberos (protocole Windows Active Directory) :
+
+```
+Mac rejoint le domaine AD → Kerberos ticket au login → SSO ressources AD
+Problème : nécessite AD on-premise, complexité réseau, VPN requis
+```
+
+### SSO moderne — OIDC / OpenID Connect
+
+Jamf Connect apporte le SSO moderne basé sur les tokens OIDC Azure AD :
+
+```
+Mac + Jamf Connect → Token Azure AD au login → SSO Microsoft 365
+Avantage : cloud-first, pas d'AD on-premise requis, fonctionne partout
+```
+
+## Platform SSO (macOS 13 Ventura+)
+
+Apple a introduit **Platform SSO** en macOS 13 — une API native permettant au SSO extension de s'intégrer directement dans le Login Window macOS.
+
+### Avantages Platform SSO
+
+- Authentification Azure AD **directement dans la fenêtre de connexion macOS native** (pas besoin de remplacer le Login Window)
+- Création automatique de compte macOS avec les identifiants Azure AD
+- Synchronisation native du mot de passe macOS ↔ Azure AD
+- Compatible avec Touch ID pour déverrouiller après authentification cloud
+
+### Configuration Platform SSO via Jamf Pro
+
+```xml
+<!-- Configuration Profile → Single Sign-On Extension -->
+<key>PayloadType</key>
+<string>com.apple.extensiblesso</string>
+
+<key>ExtensionIdentifier</key>
+<string>com.jamf.connect.ssoextension</string>
+
+<key>TeamIdentifier</key>
+<string>483DWKW443</string>
+
+<key>Urls</key>
+<array>
+  <string>https://login.microsoftonline.com</string>
+  <string>https://login.microsoft.com</string>
+  <string>https://sts.windows.net</string>
+</array>
+
+<!-- Platform SSO spécifique (macOS 13+) -->
+<key>PlatformSSO</key>
+<dict>
+  <key>AuthenticationMethod</key>
+  <string>UserSecureEnclaveKey</string>
+  
+  <key>TokenToUserMapping</key>
+  <dict>
+    <key>AccountName</key>
+    <string>preferred_username</string>
+    <key>FullName</key>
+    <string>name</string>
+  </dict>
+  
+  <key>UseSharedDeviceKeys</key>
+  <false/>
+</dict>
+```
+
+## SSO Extension pour les apps web
+
+Le SSO Extension Jamf Connect propage automatiquement les tokens Azure AD aux apps web compatibles OIDC/SAML :
+
+```
+Apps web qui bénéficient du SSO automatique :
+├── Microsoft 365 (Outlook Web, Teams Web, SharePoint)
+├── Salesforce (si configuré avec Azure AD SSO)
+├── ServiceNow
+├── Slack
+├── Zoom
+└── Toute app configurée avec Azure AD comme IdP
+```
+
+### Configuration du SSO Extension
+
+```
+Jamf Pro → Configuration Profiles → New
+
+Payload: Single Sign-On Extension
+
+Type: Credential
+  
+Extension ID: com.jamf.connect.ssoextension
+Team ID: 483DWKW443
+
+URLs (domaines protégés par le SSO):
+├── https://login.microsoftonline.com
+├── https://login.windows.net
+├── https://*.sharepoint.com
+├── https://outlook.office365.com
+└── https://teams.microsoft.com
+
+Additional configurations:
+  browser_sso_interaction_enabled: true
+  disable_explicit_app_prompt: true
+```
+
+## Expérience utilisateur SSO
+
+### Première connexion de la journée
+
+```
+1. Utilisateur se connecte au Mac (Jamf Connect Login ou Platform SSO)
+2. Authentification Azure AD + MFA (une seule fois)
+3. Token OIDC obtenu et stocké dans le trousseau macOS
+```
+
+### Accès aux ressources ensuite
+
+```
+4. Utilisateur ouvre Safari → va sur teams.microsoft.com
+5. Safari → SSO Extension intercepte la requête
+6. Présente automatiquement le token Azure AD
+7. Teams Web s'ouvre sans demander de connexion → SSO réussi ✅
+
+8. Utilisateur ouvre Outlook (natif macOS)
+9. Outlook → utilise le token du trousseau
+10. Connexion automatique → SSO réussi ✅
+```
+
+## Kerberos SSO pour les ressources on-premise
+
+Pour les organisations hybrides (AD on-premise + Azure AD), Jamf Connect supporte aussi le SSO Kerberos :
+
+```xml
+<!-- Profil SSO Extension Kerberos (via Jamf Pro) -->
+<key>PayloadType</key>
+<string>com.apple.extensiblesso</string>
+
+<key>ExtensionIdentifier</key>
+<string>com.apple.AppSSOKerberos.KerberosExtension</string>
+
+<key>Realm</key>
+<string>VOTREDOMAINE.COM</string>
+
+<key>Hosts</key>
+<array>
+  <string>votredomaine.com</string>
+  <string>*.votredomaine.com</string>
+</array>
+
+<key>PrincipalName</key>
+<string>$USERNAME@VOTREDOMAINE.COM</string>
+```
+
+## Monitoring SSO
+
+### Vérifier l'état SSO sur un Mac
+
+```bash
+# Vérifier le SSO Extension actif
+app-sso -l
+
+# Afficher les tokens SSO actuels
+app-sso -a
+
+# Forcer la réauthentification SSO
+app-sso --delete-principals
+
+# Logs SSO Extension
+log show --predicate 'subsystem contains "com.jamf.connect"' --last 30m
+```
+
+### Dans Jamf Pro
+
+```
+Jamf Pro → Computers → [Mac] → History → Policy History
+→ Vérifier que le profil SSO Extension a bien été appliqué
+→ Status: Installed ✅
+```
+
+## Exemple concret — SSO pour 200 Mac développeurs
+
+```
+Contexte : 200 développeurs macOS
+Ressources : GitHub Enterprise, Jira, Confluence, AWS Console, Azure Portal
+
+Configuration SSO Extension (URLs protégées) :
+├── https://github.votreentreprise.com
+├── https://jira.votreentreprise.com
+├── https://confluence.votreentreprise.com
+├── https://signin.aws.amazon.com (si AWS SSO avec Azure AD)
+└── https://login.microsoftonline.com (Microsoft)
+
+Résultat :
+→ Le dev se connecte le matin (Mac + MFA Azure AD)
+→ GitHub Enterprise, Jira, Confluence → connexion automatique
+→ AWS Console via SSO → connexion automatique
+→ Plus de "forgot password" pour les outils internes
+→ Economie estimée : 5 min/jour/développeur = 833h/an pour 200 devs
+```
+
+## Résolution de problèmes SSO
+
+| Symptôme | Vérification | Solution |
+|---------|-------------|---------|
+| SSO ne fonctionne pas | `app-sso -l` | Vérifier profil SSO Extension installé |
+| Token expiré | `app-sso -a` | Forcer réauth Jamf Connect |
+| Site web pas en SSO | URLs dans le profil | Ajouter l'URL dans la liste |
+| Loop d'authentification | Client ID incorrect | Vérifier PLIST Jamf Connect |
+| Platform SSO non activé | macOS version | Vérifier macOS 13+ |
+
+## Bonnes pratiques
+
+- **Platform SSO** (macOS 13+) plutôt que Login Window Jamf Connect sur les nouvelles installations
+- **Liste d'URLs exhaustive** dans le profil SSO Extension — trop restrictif = SSO qui ne marche pas
+- **MFA une seule fois** : configurer Azure AD pour ne pas redemander MFA sur les apps reconnues
+- **Tester avec plusieurs apps** : Microsoft 365 + une app tierce configurée avec Azure AD
+
+## Résumé
+
+Le SSO Jamf Connect + Microsoft Entra ID offre une expérience utilisateur Mac fluide et sécurisée. Platform SSO (macOS 13+) représente l'avenir : intégration native, création de compte automatique, synchronisation du mot de passe. Le SSO Extension propague automatiquement les tokens Azure AD à toutes les apps web et natives configurées avec Azure AD comme fournisseur d'identité.

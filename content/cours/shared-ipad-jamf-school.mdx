@@ -1,0 +1,204 @@
+---
+title: "Shared iPad avec Jamf School"
+slug: "shared-ipad-jamf-school"
+---
+
+## Introduction
+
+Le Shared iPad (iPad partagé) est une fonctionnalité Apple qui permet à plusieurs utilisateurs de partager le même appareil, chacun avec son espace personnel protégé. En milieu scolaire, il permet à plusieurs classes de partager un même parc d'iPad tout en préservant les données et le travail de chaque élève.
+
+## Objectifs pédagogiques
+
+- Comprendre le fonctionnement technique du Shared iPad
+- Configurer le Shared iPad dans Jamf School
+- Gérer les quotas et le stockage
+- Résoudre les problèmes courants
+- Choisir entre iPad individuel et Shared iPad
+
+## Comment fonctionne le Shared iPad
+
+### Architecture technique
+
+```
+iPad en mode Shared (iOS 13.4+ requis, iPadOS 13.4+)
+
+┌────────────────────────────────────────┐
+│           iPad partagé 64 Go            │
+├────────────────────────────────────────┤
+│ Partition système (iOS + apps) : 20 Go │
+├────────────────────────────────────────┤
+│ Espace élèves partagé : 44 Go          │
+│  ├── Élève A (cache local) : 10 Go     │
+│  │   ├── Documents GoodNotes           │
+│  │   ├── Photos de travail             │
+│  │   └── Données des apps             │
+│  ├── Élève B (cache local) : 10 Go     │
+│  ├── Élève C (cache local) : 10 Go     │
+│  └── Espace libre pour nouveaux : 14 Go│
+└────────────────────────────────────────┘
+```
+
+### Flux de connexion d'un élève
+
+```
+1. L'élève prend un iPad de la classe
+2. Écran de connexion Shared iPad :
+   ├── Saisit son Managed Apple ID
+   └── (Optionnel) Connexion temporaire sans Apple ID
+3. Si le profil de l'élève est en cache local :
+   → Connexion instantanée (< 5 secondes)
+4. Si pas en cache :
+   → Téléchargement depuis iCloud (30 secondes à 2 minutes)
+5. L'élève voit ses propres données, ses apps, ses fichiers
+6. Fin de session → déconnexion → données sauvegardées dans iCloud
+```
+
+## Configuration du Shared iPad dans Jamf School
+
+### Activer le Shared iPad dans le profil d'enrôlement
+
+```
+Jamf School → Devices → Enrollment Profiles → Create (ou modifier)
+
+Mode: Shared iPad
+→ Enable Shared iPad: Yes
+
+Quota par utilisateur:
+├── Minimum recommandé: 5 Go (données limitées)
+├── Standard: 10 Go (usage scolaire classique)
+└── Confort: 20 Go (si apps lourdes, photos)
+
+Users cached simultaneously (comptes en cache):
+├── 2 : iPad de 32 Go avec petit quota
+├── 3 : standard pour 64 Go
+└── 5 : iPads 256 Go pour les établissements riches en stockage
+```
+
+### Configuration avancée
+
+```
+Jamf School → Profiles → Add Payload → Shared iPad
+
+Guest Mode (connexion temporaire sans Apple ID):
+├── Allow temporary sessions: Yes (pour les visiteurs, stagiaires)
+├── Temporary session only: No (garder les connexions permanentes)
+└── Session timeout: 8 hours (durée max d'une session)
+
+Data roaming between cloud:
+└── Education Syncing: Enable (sync iCloud automatique)
+
+Maximum Inactivity Time Before Data is Purged:
+└── 7 days (purge les données des élèves inactifs depuis 7 jours)
+```
+
+## Gestion des quotas et du stockage
+
+### Calculer les quotas
+
+```
+Formule de base :
+Quota par élève = (Stockage total iPad - Système) / (Nombre d'utilisateurs simultanés + marge)
+
+Exemple iPad 64 Go :
+├── Stockage total : 64 Go
+├── Système + apps : 20 Go
+├── Disponible : 44 Go
+├── Élèves en cache simultané : 3
+└── Quota recommandé : 44 / 4 = 11 Go (marge de 1 slot libre)
+```
+
+### Surveiller le stockage dans Jamf School
+
+```
+Jamf School → Devices → [iPad en Shared] → Storage
+
+Affiche :
+├── Quota configuré par utilisateur
+├── Nombre d'utilisateurs actuellement en cache
+├── Espace disponible
+└── Liste des utilisateurs et leur espace utilisé
+```
+
+## Connexion temporaire (Guest Mode)
+
+Pour les élèves sans Managed Apple ID ou pour les situations d'urgence :
+
+```
+Écran de connexion Shared iPad → "Continue as Guest"
+
+Session temporaire :
+├── Pas de sauvegarde des données (perdues à la fin de session)
+├── Durée configurable (ex: 8 heures)
+├── Apps disponibles : toutes les apps installées sur l'iPad
+└── Aucun accès aux données des autres élèves
+```
+
+**Quand utiliser le Guest Mode :**
+- Élève oublie son Managed Apple ID
+- Élève temporaire ou visiteur
+- Test rapide d'une app avant déploiement
+
+## iPad individuel vs Shared iPad — Quand choisir ?
+
+| Critère | iPad individuel | Shared iPad |
+|---------|----------------|-------------|
+| Coût parc | 1 iPad/élève | 1 iPad / 3-4 élèves |
+| Personnalisation | ✅ Totale | ✅ Par utilisateur |
+| Performance | ✅ Maximale | ⚠️ Dépend du cache |
+| Données sauvegardées | ✅ Toujours dispo | ✅ Via iCloud |
+| Gestion IT | Plus simple | Plus complexe |
+| Usage continu | ✅ Idéal | ⚠️ Rotations OK |
+| Apps > 10 Go | ✅ | ❌ (quota limité) |
+
+**Shared iPad recommandé quand :**
+- Budget limité (réduction de 60% du parc)
+- Appareils en rotation (salles info, bibliothèque)
+- Usage < 4 heures/jour/élève
+
+## Résolution de problèmes Shared iPad
+
+| Problème | Cause | Solution |
+|---------|-------|---------|
+| Connexion lente | Pas de cache local | Augmenter le nombre de caches simultanés |
+| "Quota full" à la connexion | Quota trop petit | Augmenter le quota ou réduire les données |
+| Données perdues | Session temporaire utilisée | Vérifier si en Guest Mode |
+| iPad ne reconnaît pas l'Apple ID | ASM non configuré | Vérifier la sync ASM |
+| Apps manquantes après connexion | App pas sur l'iPad | Installer l'app sur l'appareil, pas liée au compte |
+
+## Exemple concret — Salle informatique de 25 iPad partagés
+
+```
+Contexte :
+├── 25 iPad (64 Go) en mode Shared
+├── 300 élèves au total en rotation
+├── Usage : 2h/semaine/classe
+└── Budget : éviter 300 iPad individuels
+
+Configuration :
+├── Quota par élève : 8 Go
+├── Caches simultanés : 3 par iPad
+├── Purge après inactivité : 14 jours
+└── Guest mode : activé (15 min max)
+
+Expérience élève :
+→ Lundi : Élève A travaille → connexion 3 secondes (déjà en cache)
+→ Mercredi : Classe B utilise les mêmes iPad
+→ Vendredi : Élève A revient → ses données toujours là (cache ou iCloud)
+
+Résultat :
+→ 25 iPad servent 300 élèves (ratio 1:12)
+→ Économie : 275 iPad non achetés = 165 000€ économisés
+→ Gestion Jamf School : identique aux iPad individuels
+```
+
+## Bonnes pratiques
+
+- **Apple School Manager obligatoire** : Shared iPad nécessite des Managed Apple IDs via ASM
+- **Quota généreux** : mieux vaut un quota de 15 Go que 5 Go — les problèmes de quota sont frustrants
+- **Connexion Wi-Fi rapide** : le chargement depuis iCloud dépend du Wi-Fi — investir dans l'infrastructure réseau
+- **Purge automatique** : configurer la purge après 14-21 jours d'inactivité pour libérer l'espace
+- **iPad de réserve** : toujours avoir 10% du parc en réserve pour remplacer les iPad cassés
+
+## Résumé
+
+Le Shared iPad est l'une des innovations les plus impactantes d'Apple pour l'éducation. En permettant à plusieurs élèves de partager le même appareil avec leurs propres données personnelles, il réduit drastiquement le coût du parc iPad tout en maintenant une expérience personnalisée pour chaque élève. Jamf School simplifie la configuration et la gestion des quotas, faisant du Shared iPad une option viable pour les établissements avec des budgets limités ou des usages non continus.

@@ -1,0 +1,203 @@
+---
+title: "Patch Management avec Jamf Pro"
+slug: "patch-management-jamf"
+---
+
+## Introduction
+
+Le **Patch Management** Jamf Pro permet de surveiller les versions des logiciels tiers installés sur vos Mac et de déployer des mises à jour de façon automatisée. Jamf maintient une base de **1000+ titres logiciels** dont il suit les versions publiées — vous définissez ensuite des politiques de mise à jour avec des délais et des actions pour les utilisateurs retardataires.
+
+## Objectifs
+
+- Configurer les Software Titles et Patch Sources
+- Créer des Patch Policies avec deadlines et notifications
+- Utiliser les Dashboard Reports pour le suivi
+- Automatiser les mises à jour macOS via softwareupdate
+- Différencier Patch Management Jamf et Apple Software Updates
+
+## Architecture Patch Management
+
+```
+Patch Sources (Jamf Cloud / External Sources)
+    │ nouvelles versions détectées
+    ▼
+Software Titles (catalogue Jamf)
+    │
+    ▼
+Patch Reporting          Patch Policies
+(état du parc)           (déploiement automatique)
+    │                         │
+    ▼                         ▼
+Dashboard : X% à jour    Notification utilisateur
+                         → Installer / Reporter
+```
+
+## Configurer les Patch Sources
+
+```
+Jamf Pro → Computers → Patch Management → Patch Sources
+
+Sources disponibles :
+  ☑ Jamf (défaut) — base officielle Jamf avec 1000+ titres
+  + External Patch Sources — flux JSON personnalisés (apps internes)
+```
+
+Pour une app interne non listée dans Jamf, créez un External Patch Source :
+```json
+{
+  "id": "com.acme.internal-tool",
+  "name": "Acme Internal Tool",
+  "publisher": "Acme Corp",
+  "versions": [
+    {
+      "version": "2.1.0",
+      "releaseDate": "2025-01-15",
+      "packageUrl": "https://cdn.acme.com/releases/tool-2.1.0.pkg"
+    }
+  ]
+}
+```
+
+## Créer un Software Title
+
+```
+Computers → Patch Management → Software Titles → + New
+
+Search : "Google Chrome"
+→ Sélectionnez la définition Jamf
+
+Dans la fiche Chrome :
+  Patch Source : Jamf (auto-updated)
+  Extension Attribute : (Jamf détecte Chrome automatiquement via Bundle ID)
+  
+Onglet Dashboard :
+  Activez le suivi → vous voyez immédiatement combien de Mac ont Chrome et leur version
+```
+
+## Créer une Patch Policy
+
+```
+Software Titles → Google Chrome → Patch Policies → New Patch Policy
+
+General :
+  Name    : "Chrome - Mise à jour obligatoire"
+  Target Version : Latest (toujours la dernière)
+  
+Patch Deadline :
+  ☑ Allow users to defer until deadline
+  Deadline     : 7 jours après détection
+  Deferral max : 3 fois (toutes les 1h)
+  
+Reminders :
+  ☑ Remind after : 1 day
+  ☑ Notify before deadline : 24 hours
+  
+Action if user does not install :
+  ○ Force install (silencieux)
+  ● Display notification and then force install
+  
+Scope :
+  All Managed Computers → Exclusions : "Mac - Test Lab"
+```
+
+## Patch Policies pour les apps critiques
+
+### Firefox (sécurité critique)
+```
+Deadline : 3 jours
+Deferral : 2 fois max
+Force install si délai dépassé : Oui
+Message : "Une mise à jour de sécurité Firefox doit être installée."
+```
+
+### Microsoft Office
+```
+Deadline : 14 jours
+Deferral : 5 fois
+Message : "Office va être mis à jour automatiquement à l'heure sélectionnée."
+```
+
+### VPN Client (critique)
+```
+Deadline : 2 jours
+Deferral : 1 fois
+Force install sans délai supplémentaire
+```
+
+## Mise à jour macOS via jamf
+
+Le Patch Management Jamf couvre les apps tierces. Pour macOS lui-même :
+
+```bash
+# Script pour forcer la mise à jour macOS :
+#!/bin/bash
+
+OS_VERSION=$(sw_vers -productVersion)
+echo "Version actuelle : $OS_VERSION"
+
+# Lister les mises à jour disponibles
+UPDATES=$(softwareupdate --list 2>&1)
+echo "$UPDATES"
+
+# Si mise à jour macOS disponible, la télécharger en arrière-plan
+if echo "$UPDATES" | grep -q "macOS"; then
+    echo "Téléchargement de la mise à jour macOS..."
+    softwareupdate --download --all
+fi
+```
+
+Pour forcer l'installation (via Jamf Policy avec redémarrage) :
+```bash
+sudo softwareupdate --install --all --restart
+```
+
+## Dashboard de patch management
+
+```
+Computers → Patch Management → Dashboard
+
+Affiche pour chaque Software Title :
+- % d'appareils à jour
+- Version la plus répandue
+- Appareils outdated avec version installée
+- Graphique d'évolution dans le temps
+```
+
+**Alerte rouge** : si un titre dépasse 20% d'appareils non à jour → action immédiate.
+
+## Mini-lab : Audit de patch management
+
+**Étape 1** — Activez le suivi de 5 apps prioritaires :
+```
+Software Titles → Activer pour : Chrome, Firefox, Zoom, Slack, VS Code
+```
+
+**Étape 2** — Vérifiez l'état actuel :
+```bash
+# Sur un Mac :
+system_profiler SPApplicationsDataType | grep -A2 "Google Chrome"
+# → Version: 120.0.6099.129
+```
+
+**Étape 3** — Créez un Smart Group de machines en retard :
+```
+"Mac - Chrome Outdated"
+Critère : Application Title   is        Google Chrome
+          AND Application Version  less than  121.0
+```
+
+**Étape 4** — Créez une Patch Policy ciblant ce groupe.
+
+**Étape 5** — Vérifiez dans Dashboard la progression dans les 24h.
+
+## Bonnes pratiques
+
+- **Activez le suivi** pour toutes les apps présentes sur plus de 10% de votre parc
+- **Délai 7 jours** pour la plupart des apps — 3 jours pour les navigateurs (vecteur d'attaque fréquent)
+- **Notifiez clairement** : les messages vagues ("une mise à jour est disponible") sont ignorés. Soyez précis ("Chrome 121 doit être installé pour corriger une faille critique")
+- **Excluez les machines de test** du scope des Patch Policies — testez les mises à jour avant
+- **Combinez avec Smart Groups** : ciblez les machines non à jour pour les reminders agressifs
+
+## Résumé
+
+Le Patch Management Jamf est une boucle automatisée : détection de nouvelle version → notification utilisateur → délai → force install. Bien configuré, il maintient votre parc à jour sans intervention manuelle tout en respectant la productivité des utilisateurs grâce aux options de report. C'est l'un des outils les plus impactants en termes de posture de sécurité.

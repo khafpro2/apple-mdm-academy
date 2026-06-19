@@ -1,0 +1,206 @@
+---
+title: "Déploiement d'applications Android avec Intune"
+slug: "deploiement-apps-android"
+---
+
+## Introduction
+
+Le déploiement d'applications Android via Intune et Managed Google Play permet une distribution silencieuse, sécurisée et centralisée des apps sur toute la flotte Android — sans Google Play Store public, sans compte Google personnel requis, et sans intervention de l'utilisateur.
+
+## Objectifs pédagogiques
+
+- Approuver et synchroniser des apps depuis Managed Google Play
+- Configurer les types de déploiement (Required, Available, Uninstall)
+- Déployer des apps privées/internes via Managed Google Play
+- Gérer les mises à jour automatiques des applications
+- Configurer les App Configuration Policies pour personnaliser les apps
+
+## Types d'applications Android dans Intune
+
+| Type | Source | Usage |
+|------|--------|-------|
+| Managed Google Play | Play Store approuvé | Apps publiques tierces |
+| Managed Google Play (private) | Uploadé par l'entreprise | Apps internes |
+| Android Enterprise system app | Préinstallée sur l'appareil | Apps constructeur |
+| Line-of-business (.apk) | Uploadé directement | APK non publié sur Play |
+
+## Workflow Managed Google Play
+
+### Étape 1 — Approuver une app
+
+```
+Intune → Apps → Android → Add → Managed Google Play app
+→ Google Play Store intégré s'ouvre dans Intune
+→ Chercher : "Microsoft Teams"
+→ Cliquer Approve
+→ Permissions : Keep approved when app requests new permissions : Yes
+→ Approve
+→ Select (ajouter à l'inventaire Intune)
+```
+
+### Étape 2 — Synchroniser
+
+```
+Intune → Apps → Android → [app sélectionnée] → Sync
+→ Ou : Tenant Admin → Connectors → Managed Google Play → Sync
+```
+
+### Étape 3 — Assigner
+
+```
+[App] → Properties → Assignments → Add group
+→ Assignment type:
+   ├── Required : installation automatique silencieuse
+   ├── Available for enrolled devices : portail libre-service
+   ├── Available with or without enrollment : MAM sans MDM
+   └── Uninstall : désinstallation forcée
+```
+
+## Apps Microsoft recommandées (Android Enterprise)
+
+```
+Required pour TOUS les modes :
+├── com.microsoft.intune (Intune Company Portal)
+├── com.microsoft.launcher.enterprise (Managed Home Screen — si kiosque)
+├── com.microsoft.intune.mam (MAM plugin — si MAM sans enrôlement)
+
+Required pour Work Profile / Fully Managed / COPE :
+├── com.microsoft.office.outlook (Outlook)
+├── com.microsoft.teams (Microsoft Teams)  
+├── com.microsoft.intune.mam.managedbrowser (Edge)
+├── com.azure.authenticator (Microsoft Authenticator)
+└── com.microsoft.skydrive (OneDrive)
+```
+
+## Applications privées d'entreprise
+
+Pour les apps développées en interne non publiées sur le Play Store :
+
+### Via Managed Google Play Private Apps
+
+```
+Google Play Console (Compte Google d'entreprise) :
+→ Publier l'app en "Private" (visible uniquement pour votre organisation)
+→ L'app apparaît automatiquement dans votre Managed Google Play Intune
+→ Déployer comme n'importe quelle app Managed Google Play
+```
+
+### Via APK direct dans Intune (LOB App)
+
+```
+Apps → Android → Add → Line-of-business app
+→ App package file (.apk)
+→ Upload votre fichier .apk
+→ Renseigner :
+   ├── Name
+   ├── Description
+   ├── Publisher
+   ├── Minimum operating system: Android 10
+   └── Bundle ID (ex: com.votreentreprise.app)
+→ Assign
+```
+
+> **Limite APK** : Les APK doivent être signés. La mise à jour doit être uploadée manuellement (pas de mise à jour automatique via Play Store).
+
+## App Configuration Policies
+
+Les App Configuration Policies permettent de préconfigurer les apps à distance lors du déploiement.
+
+### Exemple — Préconfigurer Outlook pour Android
+
+```
+Apps → App Configuration Policies → Add → Managed Devices → Android Enterprise
+
+App: Microsoft Outlook
+Configuration settings format: Configuration designer
+
+Paramètres:
+├── Account Name: {{userdisplayname}} (variable dynamique)
+├── Email address: {{userprincipalname}}
+├── Account domain: votredomaine.com
+└── Account type: ModernAuth
+
+→ Outlook s'ouvre préconfigué avec le compte de l'utilisateur
+→ Aucune saisie manuelle requise
+```
+
+### Exemple — Configurer Edge avec page d'accueil entreprise
+
+```json
+{
+  "kind": "androidenterprise#managedConfiguration",
+  "managedProperty": [
+    {
+      "key": "com.microsoft.intune.mam.managedbrowser.homepage",
+      "valueString": "https://intranet.votreentreprise.com"
+    },
+    {
+      "key": "com.microsoft.intune.mam.managedbrowser.bookmarks",
+      "valueString": "Intranet|https://intranet.votreentreprise.com||SharePoint|https://votreentreprise.sharepoint.com"
+    }
+  ]
+}
+```
+
+## Gestion des mises à jour
+
+### Politique de mise à jour des apps
+
+```
+Intune → Apps → [App] → Properties → App Update Priority
+
+Options:
+├── Default : mise à jour selon les paramètres de l'appareil
+├── High priority : mise à jour dès que possible
+├── Low priority : uniquement quand l'appareil est en charge et sur Wi-Fi
+└── Postpone : retarder de X jours (tests préalables)
+```
+
+### Mise à jour automatique Managed Google Play
+
+```
+Tenant Admin → Connectors → Google Play → Managed Google Play settings
+→ App update priority: High priority
+→ Auto-approve app updates: Yes (approuve automatiquement les nouvelles versions)
+```
+
+## Exemple concret — Déploiement CRM sur 200 Android
+
+```
+Scénario : 200 commerciaux Android (Work Profile) reçoivent le CRM Salesforce
+
+Étapes :
+1. Approuver Salesforce dans Managed Google Play Intune
+2. Créer une App Configuration Policy :
+   └── Instance URL: https://votreentreprise.my.salesforce.com
+   └── Auto-login: Enabled
+3. Assigner en Required au groupe SG-Android-Commerciaux
+4. App Configuration Policy → même groupe
+
+Résultat :
+→ Salesforce s'installe automatiquement dans le Work Profile
+→ S'ouvre préconfigurée sur l'instance entreprise
+→ L'utilisateur se connecte via SSO Azure AD
+→ Aucune saisie de configuration requise
+```
+
+## Bonnes pratiques
+
+- **Approuver les apps à l'avance** — pas en urgence le jour du déploiement
+- **Tester les App Config Policies** sur un appareil de test avant le déploiement global
+- **High priority updates** pour les apps de sécurité (Authenticator, Company Portal)
+- **Surveiller les permissions** lors des mises à jour d'apps
+- **Utiliser des variables dynamiques** (`{{userprincipalname}}`) pour éviter la saisie manuelle
+
+## Mini-lab
+
+1. Approuvez Microsoft Edge dans votre Managed Google Play
+2. Créez une App Configuration Policy pour Edge avec :
+   - Page d'accueil : votre intranet ou portail
+   - Un signet vers une ressource interne
+3. Déployez Edge en Required sur un groupe de test
+4. Sur l'Android de test, vérifiez qu'Edge s'installe et s'ouvre sur la bonne page
+
+## Résumé
+
+Le déploiement d'applications Android via Managed Google Play + Intune offre une expérience utilisateur sans friction : installation silencieuse, préconfiguration automatique, mises à jour planifiées. Les App Configuration Policies éliminent la configuration manuelle et réduisent les tickets support. C'est la différence entre un déploiement professionnel et un déploiement artisanal.

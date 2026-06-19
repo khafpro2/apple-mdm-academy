@@ -1,0 +1,178 @@
+---
+title: "Présentation de Jamf School"
+slug: "presentation-jamf-school"
+---
+
+## Introduction
+
+Jamf School est la solution MDM de Jamf spécialement conçue pour l'éducation. Contrairement à Jamf Pro orienté enterprise, Jamf School est optimisé pour les flux de travail scolaires : gestion de classes, distribution d'apps pédagogiques, supervision des élèves, et déploiement d'iPad à grande échelle.
+
+## Objectifs pédagogiques
+
+- Comprendre la différence entre Jamf Pro et Jamf School
+- Maîtriser l'architecture et les composants de Jamf School
+- Configurer l'installation initiale de Jamf School
+- Comprendre le flux d'enrôlement en milieu éducatif
+- Identifier les fonctionnalités clés pour les enseignants et l'IT
+
+## Jamf Pro vs Jamf School
+
+| Critère | Jamf Pro | Jamf School |
+|---------|----------|-------------|
+| Public cible | IT entreprise | IT scolaire + Enseignants |
+| Complexité | Élevée | Modérée |
+| App Enseignant | ❌ | ✅ Jamf Teacher |
+| Classes virtuelles | ❌ | ✅ Intégré |
+| Shared iPad | Configuration complexe | ✅ Simplifié |
+| Prix | Par appareil/an (élevé) | Par appareil/an (éducation) |
+| Apple School Manager | Intégration manuelle | ✅ Native |
+| Focus apps péda | ❌ | ✅ |
+
+## Architecture Jamf School
+
+```
+Apple School Manager (ASM)
+         │
+         ├── Appareils (iPads, Mac)
+         ├── Comptes gérés (élèves, enseignants)
+         └── Apps & Books éducation
+                  │
+                  ▼
+           Jamf School Cloud
+         ┌──────────────────┐
+         │ Console admin IT │
+         │ ← Configure tout │
+         └────────┬─────────┘
+                  │
+         ┌────────┴─────────────┐
+         │                      │
+         ▼                      ▼
+  App Jamf Teacher         iPads des élèves
+  (Enseignant)             (Gérés par Jamf)
+  ├── Voir les élèves      ├── Apps déployées
+  ├── Bloquer les apps     ├── Restrictions
+  ├── Partager des docs    └── Monitoring
+  └── Gérer la classe
+```
+
+## Apple School Manager (ASM)
+
+ASM est l'équivalent d'Apple Business Manager pour l'éducation :
+
+### Fonctionnalités spécifiques éducation
+
+```
+ASM vs ABM :
+├── Mêmes fonctionnalités (ADE, Apps & Books)
+├── + Classes et listes de cours importées depuis SIS
+├── + Comptes élèves gérés (Apple IDs spéciaux mineur)
+├── + Shared iPad optimisé
+└── + Contenu éducatif privilégié (tarifs, apps gratuites)
+```
+
+### Comptes étudiants dans ASM
+
+```
+ASM génère des Managed Apple IDs pour les élèves :
+Format : 2026prenom.nom@k12.ecole.fr
+├── Compte Apple spécial pour mineurs
+├── Pas d'achats App Store personnels
+├── iCloud limité (5 Go, pas de partage familial)
+├── FaceTime/iMessage selon configuration école
+└── Pas d'accès à certains services adultes
+```
+
+## Configuration initiale Jamf School
+
+### Étape 1 — Créer le compte Jamf School
+
+```
+school.jamfcloud.com → Request Trial ou Acheter une licence
+→ Instance créée sur votre domaine : votreecole.jamfcloud.com
+```
+
+### Étape 2 — Lier avec Apple School Manager
+
+```
+Jamf School → Organisation → Apple School Manager
+
+1. Dans ASM : Settings → MDM Servers → Add MDM Server
+2. Télécharger le certificat public Jamf School
+3. Uploader dans ASM
+4. Télécharger le token .p7m depuis ASM
+5. Uploader le token dans Jamf School
+6. Synchroniser → Appareils ASM apparaissent dans Jamf School
+```
+
+### Étape 3 — Importer les utilisateurs
+
+```
+Option A — CSV manuel :
+Jamf School → Users → Import CSV
+→ Colonnes : prénom, nom, email, rôle, classe
+
+Option B — LDAP/AD :
+Jamf School → Organisation → LDAP
+→ Connecter votre Active Directory scolaire
+
+Option C — Depuis ASM :
+→ ASM synchronise automatiquement les comptes gérés vers Jamf School
+```
+
+## Fonctionnalités enseignant — Jamf Teacher App
+
+L'application Jamf Teacher permet aux enseignants de gérer leur classe **sans passer par la console IT** :
+
+```
+Jamf Teacher App (iPhone/iPad de l'enseignant) :
+├── Voir quelles apps sont ouvertes sur les iPads des élèves
+├── Bloquer une app spécifique (ou toutes sauf une)
+├── Bloquer l'internet
+├── Partager un document ou une page web à toute la classe
+├── Envoyer l'iPad en mode mono-application (lock sur 1 app)
+├── Voir quels élèves sont connectés
+└── Notifications si un élève sort de l'app autorisée
+```
+
+## Exemple concret — École primaire, 120 iPads
+
+```
+Contexte :
+├── 6 classes × 20 élèves = 120 iPads
+├── 6 enseignants + 1 admin IT
+├── Shared iPad (iPad partagé entre les élèves)
+
+Configuration Jamf School :
+├── 120 iPads enrôlés via ADE/ASM
+├── 6 groupes de classes créés
+├── Apps pédagogiques déployées (iMovie, GoodNotes, Swift Playgrounds)
+├── Restrictions : App Store désactivé, navigateur filtré
+└── Shared iPad : chaque élève se connecte avec son compte ASM
+
+Utilisation quotidienne :
+→ Matin : iPads chargés, Shared iPad réinitialisé
+→ Enseignant ouvre Jamf Teacher
+→ Démarre la "séance" → bloque tout sauf l'app du cours
+→ Fin de cours → libère les restrictions
+→ IT : 0 intervention quotidienne nécessaire
+```
+
+## Bonnes pratiques
+
+- **Apple School Manager first** : configurer ASM complètement avant de configurer Jamf School
+- **Nommer les appareils** avec l'école + la classe + un numéro (ex: PRIMAIRE-CE2A-01)
+- **Shared iPad** : configurer le cache local pour accélérer les connexions (quota 5-10 Go/élève)
+- **Former les enseignants** à Jamf Teacher — c'est leur outil quotidien
+- **Groupes par classe** : facilite le ciblage des apps et des restrictions
+
+## Mini-lab
+
+1. Créez un compte d'essai Jamf School (30 jours gratuit)
+2. Créez 3 utilisateurs fictifs : 1 admin, 1 enseignant, 2 élèves
+3. Créez une classe avec les 2 élèves et l'enseignant
+4. Explorez les paramètres de classe et les restrictions disponibles
+5. Installez l'app Jamf Teacher sur un iPad et connectez-vous comme enseignant
+
+## Résumé
+
+Jamf School est la réponse de Jamf aux besoins spécifiques de l'éducation. En simplifiant la gestion des appareils pour l'IT et en donnant le contrôle pédagogique aux enseignants via Jamf Teacher, il permet des déploiements massifs d'iPad avec un minimum d'overhead administratif. L'intégration native avec Apple School Manager en fait la solution la plus complète pour les établissements scolaires Apple.

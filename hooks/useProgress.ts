@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import {
-  getProgress, isCourseComplete, getCompletedLessons,
+  getProgress,
   getModuleProgress, toggleCourseComplete as _toggle,
   markLessonComplete as _markLesson, saveQuizScore as _saveQuiz,
   recordVisit as _recordVisit, getRecentCourses, getXPLevel,
@@ -21,6 +21,7 @@ export function useProgress() {
   const refresh = useCallback(() => setProgress(getProgress()), []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     refresh();
     window.addEventListener('mdm-progress-update', refresh);
     return () => window.removeEventListener('mdm-progress-update', refresh);

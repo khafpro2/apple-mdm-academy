@@ -1,0 +1,238 @@
+---
+title: "Applications pédagogiques avec Jamf School"
+slug: "apps-pedagogiques-jamf-school"
+---
+
+## Introduction
+
+Le déploiement d'applications pédagogiques est l'une des missions principales de l'IT dans un établissement scolaire Apple. Jamf School simplifie la distribution d'apps éducatives depuis l'Apple School Manager, en permettant une installation silencieuse sur tous les iPad d'une classe ou d'un niveau.
+
+## Objectifs pédagogiques
+
+- Approuver et distribuer des apps depuis Apple School Manager
+- Gérer les licences Apps & Books en milieu éducatif
+- Configurer les App Configuration Policies pour apps pédagogiques
+- Déployer des apps propriétaires ou développées par l'école
+- Contrôler les versions et les mises à jour des apps
+
+## Apps & Books pour l'éducation
+
+### Acheter des licences dans ASM (Education)
+
+```
+Apple School Manager → Apps et Livres
+
+Tarifs éducation (souvent réduits ou gratuits) :
+├── Suite iWork (Pages, Numbers, Keynote) : GRATUIT
+├── Suite iLife (iMovie, GarageBand) : GRATUIT
+├── Swift Playgrounds : GRATUIT
+├── Classroom (Apple) : GRATUIT
+└── Apps tierces : remises éducation (20-50%)
+
+Achat en volume :
+→ Sélectionner l'app → Quantité → Acheter
+→ Assigner au MDM Server Jamf School
+→ Les licences apparaissent dans Jamf School
+```
+
+### Types de licences
+
+```
+Device-based licensing (recommandé pour les iPads partagés) :
+├── La licence est liée à l'appareil, pas à l'élève
+├── Fonctionne sans Managed Apple ID actif
+└── Idéal pour Shared iPad
+
+User-based licensing (pour les iPads individuels) :
+├── La licence est liée au Managed Apple ID de l'élève
+├── L'élève retrouve ses apps sur n'importe quel iPad
+└── Nécessite que l'élève soit connecté avec son Apple ID
+```
+
+## Applications pédagogiques recommandées
+
+### Productivité et création
+
+| App | Matière | Licence |
+|-----|---------|---------|
+| GoodNotes 5 | Toutes | Payante (remise éducation) |
+| Notability | Toutes | Payante |
+| Keynote | Toutes | GRATUIT |
+| Pages | Français, Rédaction | GRATUIT |
+| iMovie | Arts, Médias | GRATUIT |
+| GarageBand | Musique | GRATUIT |
+
+### Matières spécifiques
+
+| App | Matière | Notes |
+|-----|---------|-------|
+| Swift Playgrounds | Informatique | Apprentissage code |
+| Explain Everything | Toutes | Tableaux blancs interactifs |
+| Khan Academy | Maths, Sciences | Gratuit, contenu complet |
+| PhyPhox | Physique | Utilise capteurs iPad |
+| PocketCAS | Maths | Calculatrice avancée |
+| Star Walk 2 | SVT | Astronomie AR |
+| Human Anatomy Atlas | SVT | Corps humain 3D |
+
+### Apps Microsoft en contexte scolaire
+
+```
+Si l'école utilise Microsoft 365 Education :
+├── Microsoft Teams for Education (gratuit A1)
+├── Microsoft OneNote (carnets de cours)
+├── Microsoft Forms (quiz et évaluations)
+└── Microsoft Whiteboard (tableaux collaboratifs)
+```
+
+## Déploiement dans Jamf School
+
+### Ajouter une app à Jamf School
+
+```
+Jamf School → Apps → Add App
+
+Source :
+├── App Store : rechercher par nom ou Bundle ID
+├── VPP/ASM : apps achetées en volume dans ASM
+├── In-House : apps développées par l'école (.ipa)
+└── Web Clip : liens vers des sites web (comme une app)
+
+Configuration :
+├── Distribution: Required (auto-install) ou Optional
+├── Remove app when unenrolled: Yes
+└── Prevent app removal: Yes (éviter désinstallation par l'élève)
+```
+
+### Assigner les apps par niveau
+
+```
+Stratégie recommandée :
+
+Apps universelles (tous les niveaux) :
+└── Tous les appareils → GoodNotes, Keynote, iMovie
+
+Apps par niveau :
+├── Primaire (CP-CM2) → 
+│   ├── Scratch Jr (programmation)
+│   ├── Duolingo (langues)
+│   └── Mathway (calcul)
+├── Collège (6ème-3ème) →
+│   ├── Swift Playgrounds
+│   ├── Khan Academy
+│   └── Human Anatomy Atlas
+└── Lycée (2nde-Term) →
+    ├── Wolfram Alpha
+    ├── Python3 IDE
+    └── GeoGebra
+```
+
+## App Configuration Policies (préconfiguration)
+
+### Préconfigurer GoodNotes pour l'école
+
+```
+Jamf School → Apps → [GoodNotes 5] → App Configuration
+
+Paramètres :
+{
+  "DefaultNotebookName": "Cahier de {{CLASS_NAME}}",
+  "SchoolDomain": "ecole.fr",
+  "DefaultCloudSync": "iCloud",
+  "DisableAI": "true"
+}
+```
+
+### Préconfigurer Microsoft Teams Education
+
+```
+App Configuration → Microsoft Teams:
+  
+  TenantId: [votre tenant Azure ED]
+  DefaultMeetingPolicy: Education_default
+  AllowUserToChangeTheirProfile: false
+  AllowExternalUsers: false
+```
+
+## Mise à jour des applications
+
+### Politique de mise à jour
+
+```
+Jamf School → Apps → [App] → Settings
+
+Auto-update: Enable
+→ Les apps se mettent à jour automatiquement dans la nuit
+
+Force update policy:
+→ Si une version spécifique est requise (bug fix) :
+   Apps → [App] → Force Specific Version → 5.2.1
+→ Tous les iPad mettent à jour avant la prochaine session
+```
+
+### Test avant déploiement d'une nouvelle version
+
+```
+Workflow recommandé :
+1. Nouvelle version disponible dans App Store
+2. Tester sur 3-5 iPad pilotes (classe de test)
+3. Vérifier : pas de régression, compatibilité iOS
+4. Si OK : déployer sur tout le parc
+5. Si problème : forcer l'ancienne version
+
+Configuration :
+Apps → [App] → Prevent Auto-Update
+→ Bloquer la mise à jour jusqu'à validation
+```
+
+## Apps internes développées par l'école
+
+```
+Développement via Apple Enterprise Developer Program (non disponible en .edu)
+→ Alternative : Apple App Store (soumettre l'app normalement)
+→ Ou via Managed Distribution (app B2B) via ASM
+
+Déploiement app interne via Jamf School :
+Apps → Add → In-House App
+├── Upload le fichier .ipa
+├── Bundle ID : com.votreecole.app
+├── Version minimale iOS
+└── Assign aux classes concernées
+```
+
+## Exemple concret — École de 300 élèves, 30 apps
+
+```
+Inventaire apps (extrait) :
+├── 8 apps universelles (tous les élèves)
+├── 6 apps primaire uniquement
+├── 8 apps collège uniquement
+└── 8 apps lycée uniquement
+
+Organisation dans Jamf School :
+├── Groupe "Primaire" → 14 apps (8 universelles + 6 primaire)
+├── Groupe "Collège" → 16 apps
+└── Groupe "Lycée" → 16 apps
+
+Licences gérées :
+├── 300 licences GoodNotes (device-based)
+├── 300 licences Notability (device-based)
+├── Apps gratuites : illimitées
+└── Budget annuel apps : 3000€ pour 300 élèves
+
+Résultat :
+→ Rentrée : 300 iPad configurés avec les bonnes apps en 2 heures
+→ Zéro intervention IT pour les apps (Jamf Teacher gère le quotidien)
+→ IT focus sur : infrastructure, mises à jour iOS, incidents
+```
+
+## Bonnes pratiques
+
+- **Device-based licensing** pour les apps payantes sur les iPad partagés
+- **Tester les mises à jour** avant le déploiement global — une app cassée bloque toute une classe
+- **Apps disponibles vs requises** : ne pas forcer les apps non essentielles — respecter le stockage iPad
+- **Inventaire annuel** : audit des apps installées vs utilisées → supprimer les non-utilisées
+- **Communication enseignants** : les informer des nouvelles apps disponibles avant qu'ils ne les découvrent seuls
+
+## Résumé
+
+Le déploiement d'apps pédagogiques dans Jamf School transforme un iPad nu en outil d'apprentissage complet et personnalisé par niveau. Les licences ASM (device-based) permettent une installation silencieuse sans Apple ID, les App Configuration Policies préconfigurent les apps pour l'établissement, et le système de groupes assure que chaque élève reçoit exactement les apps dont il a besoin — ni plus, ni moins.

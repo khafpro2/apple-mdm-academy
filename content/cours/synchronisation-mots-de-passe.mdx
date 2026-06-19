@@ -1,0 +1,239 @@
+---
+title: "Synchronisation des mots de passe avec Jamf Connect"
+slug: "synchronisation-mots-de-passe"
+---
+
+## Introduction
+
+La synchronisation des mots de passe est l'un des défis majeurs de la gestion macOS en entreprise. Quand un utilisateur change son mot de passe Azure AD (expiration, réinitialisation), son Mac continue d'utiliser l'ancien mot de passe local — créant une désynchronisation frustrante. Jamf Connect résout ce problème automatiquement.
+
+## Objectifs pédagogiques
+
+- Comprendre les mécanismes de désynchronisation des mots de passe
+- Configurer la synchronisation automatique via Jamf Connect
+- Gérer les scénarios de réinitialisation de mot de passe
+- Configurer les notifications utilisateur
+- Tester et valider la synchronisation
+
+## Le problème de désynchronisation
+
+### Chronologie typique sans Jamf Connect
+
+```
+Lundi : Utilisateur change son mot de passe Azure AD (expiration 90j)
+                    ↓
+Mardi matin : Utilisateur redémarre son Mac
+                    ↓
+Login Window macOS : demande l'ancien mot de passe (local non mis à jour)
+                    ↓
+❌ Utilisateur ne peut pas se connecter
+→ Appel au helpdesk
+→ Intervention IT (reset mot de passe local + synchronisation manuelle)
+→ Coût : 30 min IT + frustration utilisateur
+```
+
+### Solution Jamf Connect
+
+```
+Lundi : Utilisateur change son mot de passe Azure AD
+                    ↓
+Jamf Connect Menu Bar App détecte la différence (intervalle configurable)
+                    ↓
+Notification macOS : "Votre mot de passe Microsoft a changé.
+                      Cliquez pour synchroniser."
+                    ↓
+Utilisateur entre le nouveau mot de passe Azure AD
+                    ↓
+✅ Mot de passe macOS mis à jour automatiquement
+✅ Trousseau macOS mis à jour
+✅ Plus de désynchronisation
+```
+
+## Configuration de la synchronisation
+
+### PLIST Jamf Connect — Paramètres de synchronisation
+
+```xml
+<!-- com.jamf.connect.plist -->
+<dict>
+  <!-- Vérification automatique toutes les X secondes -->
+  <key>AutoCheckPassSync</key>
+  <true/>
+  
+  <key>AutoCheckPassSyncInterval</key>
+  <integer>3600</integer>  <!-- Toutes les heures -->
+  
+  <!-- Notification en cas de désynchronisation -->
+  <key>NotifyOnPasswordSync</key>
+  <true/>
+  
+  <key>PasswordSyncMsg</key>
+  <string>Votre mot de passe Microsoft a changé. Cliquez sur Synchroniser pour mettre à jour votre Mac.</string>
+  
+  <!-- Forcer la synchronisation (ne laisse pas le choix) -->
+  <key>ForcePassSync</key>
+  <false/>  <!-- true si vous voulez forcer immédiatement -->
+  
+  <!-- Délai avant blocage si non synchronisé -->
+  <key>PassSyncTimeout</key>
+  <integer>86400</integer>  <!-- 24 heures -->
+  
+  <!-- Mise à jour du trousseau -->
+  <key>UpdateKeychainOnSync</key>
+  <true/>
+</dict>
+```
+
+### Synchronisation du Trousseau macOS
+
+Le trousseau macOS stocke les mots de passe des apps, Wi-Fi, etc. Quand le mot de passe du compte change, le trousseau doit aussi être mis à jour pour éviter des popups de sécurité.
+
+```xml
+<key>UpdateKeychainOnSync</key>
+<true/>
+
+<key>KeychainSyncMethod</key>
+<string>automatic</string>
+<!-- Options: automatic, prompt, none -->
+```
+
+> **Problème courant** : Si le trousseau n'est pas mis à jour, l'utilisateur reçoit des alertes "Mise à jour du trousseau" pour chaque application qui tente d'y accéder.
+
+## Scénarios de réinitialisation de mot de passe
+
+### Scénario 1 — Expiration normale (90 jours)
+
+```
+Configuration Azure AD : expiration tous les 90 jours
+→ 14 jours avant : Azure AD affiche un avertissement dans Microsoft 365
+→ Jour J : mot de passe expiré, l'utilisateur change via aka.ms/sspr
+
+Sur le Mac :
+→ Jamf Connect détecte le nouveau mot de passe (dans l'heure)
+→ Notification : "Votre mot de passe a changé, cliquez pour synchroniser"
+→ Utilisateur entre le nouveau mot de passe → synchronisé
+```
+
+### Scénario 2 — Réinitialisation par le helpdesk
+
+```
+Utilisateur a oublié son mot de passe Azure AD
+→ Helpdesk réinitialise dans Azure AD
+→ Nouveau mot de passe temporaire communiqué à l'utilisateur
+→ Utilisateur change le mot de passe temporaire sur aka.ms/sspr ou au login Microsoft 365
+
+Sur le Mac :
+→ Jamf Connect détecte le changement
+→ Notification synchronisation
+→ Si le Mac est verrouillé depuis longtemps → Jamf Connect Login redemande le mot de passe Azure AD
+```
+
+### Scénario 3 — Mac hors ligne pendant le changement
+
+```
+Utilisateur en déplacement change son mot de passe Azure AD
+→ Le Mac est éteint ou hors ligne pendant 3 jours
+
+Retour au bureau, Mac allumé :
+→ Jamf Connect Login screen
+→ Utilisateur entre son NOUVEAU mot de passe Azure AD
+→ Authentification réussie avec Azure AD (connexion internet OK)
+→ Mot de passe local macOS mis à jour automatiquement
+→ Pas de blocage ✅ (grâce au fallback Azure AD au login)
+```
+
+## Notifications et UX
+
+### Personnaliser les messages de notification
+
+```xml
+<key>NotifyOnPasswordSync</key>
+<true/>
+
+<key>PasswordSyncMsg</key>
+<string>Votre mot de passe de connexion d'entreprise a été modifié.
+Synchronisez votre Mac maintenant pour éviter tout problème de connexion.
+
+En cas de problème : support@votreentreprise.com</string>
+
+<!-- Personnaliser le bouton -->
+<key>PasswordSyncButtonTitle</key>
+<string>Synchroniser maintenant</string>
+
+<!-- Permettre de reporter -->
+<key>AllowPasswordSyncDismiss</key>
+<true/>
+
+<key>PasswordSyncDismissCount</key>
+<integer>3</integer>  <!-- Max 3 fois "Plus tard" -->
+```
+
+## Test et validation
+
+### Test manuel de synchronisation
+
+```bash
+# 1. Vérifier l'état actuel
+defaults read com.jamf.connect | grep -i pass
+
+# 2. Simuler un changement de mot de passe
+# → Changer le mot de passe Azure AD dans le portail Microsoft
+# → Attendre ou déclencher manuellement
+
+# 3. Dans Jamf Connect Menu Bar App :
+# → Cliquer sur l'icône → "Sync Password"
+# → Entrer le nouveau mot de passe Azure AD
+# → Vérifier : "Password synchronized successfully"
+
+# 4. Vérifier que le mot de passe local est mis à jour
+su - $(whoami)
+# → Tenter de se connecter avec l'ancien mot de passe → doit échouer
+# → Avec le nouveau → doit réussir
+```
+
+### Monitoring en masse (Jamf Pro)
+
+```bash
+# Extension Attribute pour vérifier l'état de sync Jamf Connect
+#!/bin/bash
+SYNC_STATUS=$(defaults read com.jamf.connect LastSyncStatus 2>/dev/null)
+if [ "$SYNC_STATUS" = "0" ]; then
+    echo "Synchronized"
+elif [ -z "$SYNC_STATUS" ]; then
+    echo "Unknown"
+else
+    echo "Out of sync"
+fi
+```
+
+→ Créer une Smart Group Jamf Pro basée sur cet attribut pour cibler les Mac désynchronisés.
+
+## Politique de mots de passe recommandée
+
+Coordonnez votre politique Azure AD avec Jamf Connect :
+
+| Paramètre Azure AD | Valeur recommandée | Impact Jamf Connect |
+|-------------------|-------------------|---------------------|
+| Expiration mot de passe | 90 jours | Sync déclenchée tous les 90j |
+| Notification avant expiration | 14 jours | Utilisateur averti à temps |
+| Self-service reset (SSPR) | Activé | Utilisateur autonome |
+| MFA requis | Oui | Sécurité renforcée |
+| Complexité | 8+ car, 3 types | Politique macOS alignée |
+
+## Exemple concret — Réduction des tickets helpdesk
+
+**Avant Jamf Connect** : 50 tickets/mois "Mac ne démarre plus" liés à la désynchronisation de mot de passe.
+
+**Après Jamf Connect** :
+```
+Mois 1 : 50 tickets → 15 tickets (déploiement incomplet)
+Mois 2 : 15 tickets → 3 tickets (couverture 90%)
+Mois 3 : 3 tickets → 0 ticket (couverture 100%)
+
+Economie : 50 × 30 min helpdesk × 10€/h = 2500€/mois
+ROI Jamf Connect atteint en 2-3 mois sur les seules économies helpdesk
+```
+
+## Résumé
+
+La synchronisation des mots de passe Jamf Connect élimine l'un des principaux problèmes de la gestion macOS en entreprise. La configuration est simple (PLIST déployé via Jamf Pro), l'expérience utilisateur est fluide (notification → entrée nouveau MDP → synchronisé), et l'impact sur le helpdesk est immédiat. C'est souvent l'argument ROI le plus simple pour justifier l'investissement Jamf Connect.
