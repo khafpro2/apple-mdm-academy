@@ -3,13 +3,14 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Menu, X, BookOpen, GraduationCap, Trophy, Search, Command, Layers, ChevronRight } from 'lucide-react';
+import { Menu, X, BookOpen, GraduationCap, Trophy, Search, Command, Layers, ChevronRight, Terminal } from 'lucide-react';
 import clsx from 'clsx';
 import { search, type SearchResult } from '@/lib/search';
 
 const NAV_LINKS = [
   { href: '/parcours',      label: 'Parcours',       icon: GraduationCap },
   { href: '/modules',       label: 'Modules',        icon: Layers },
+  { href: '/labs',          label: 'Labs',           icon: Terminal },
   { href: '/ressources',    label: 'Ressources',     icon: BookOpen },
   { href: '/certifications',label: 'Certifications', icon: Trophy },
 ];
