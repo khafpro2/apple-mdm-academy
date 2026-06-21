@@ -18,8 +18,8 @@ const JAMF_COURSES = [
   {
     number: '100',
     title: 'Jamf 100 Course',
-    badge: 'Jamf Certified Associate',
-    badgeShort: 'Associate',
+    badge: 'Jamf 100 Course',
+    badgeShort: 'Jamf 100',
     badgeImage: '/images/certifications/jamf/jamf-100.png',
     level: 'Débutant',
     levelKey: 'beginner',
@@ -28,7 +28,7 @@ const JAMF_COURSES = [
     price: 'Gratuit',
     available: 'Disponible maintenant',
     description:
-      'Introduction autonome et gratuite à Jamf Pro, macOS, iOS et tvOS. Couvre les fondamentaux de la gestion Apple en entreprise. Passez l\'examen Jamf Certified Associate pour obtenir votre badge numérique Credly.',
+      'Introduction autonome et gratuite à Jamf Pro, macOS, iOS et tvOS. Couvre les fondamentaux de la gestion Apple en entreprise. Réussissez le cours et passez l\'examen pour obtenir votre badge numérique Credly.',
     topics: [
       'Architecture & fondamentaux Jamf Pro',
       'Enrôlement macOS & iOS/iPadOS/tvOS',
@@ -38,7 +38,7 @@ const JAMF_COURSES = [
       'Apple Business Manager (ABM) & ADE',
     ],
     prereqs: 'Aucun prérequis — accessible à tous',
-    certName: 'Jamf Certified Associate — Jamf Pro',
+    certName: 'Jamf 100 Course',
     officialUrl: 'https://www.jamf.com/fr/formation/formation-100/',
     catalogUrl: 'https://learn.jamf.com/en-US/bundle/jamf-100-course-current/page/Welcome.html',
     prepUrl: '/cours/certification-jamf-100',
@@ -63,8 +63,8 @@ const JAMF_COURSES = [
   {
     number: '200',
     title: 'Jamf 200 Course',
-    badge: 'Jamf Certified Tech',
-    badgeShort: 'Tech',
+    badge: 'Jamf 200 Course',
+    badgeShort: 'Jamf 200',
     badgeImage: '/images/certifications/jamf/jamf-200.png',
     level: 'Intermédiaire',
     levelKey: 'intermediate',
@@ -82,8 +82,8 @@ const JAMF_COURSES = [
       'ADE avancé & Enrollment Customization',
       'Patch Management & sécurité macOS',
     ],
-    prereqs: 'Jamf 100 recommandé',
-    certName: 'Jamf Certified Tech — Jamf Pro',
+    prereqs: 'Jamf 100 Course recommandé',
+    certName: 'Jamf 200 Course',
     officialUrl: 'https://www.jamf.com/fr/formation/formation-200/',
     catalogUrl: 'https://account.jamf.com/training-courses/jamf-200-course/available',
     prepUrl: '/cours/certification-jamf-200',
@@ -108,8 +108,8 @@ const JAMF_COURSES = [
   {
     number: '300',
     title: 'Jamf 300 Course',
-    badge: 'Jamf Certified Admin',
-    badgeShort: 'Admin',
+    badge: 'Jamf 300 Course',
+    badgeShort: 'Jamf 300',
     badgeImage: '/images/certifications/jamf/jamf-300.png',
     level: 'Avancé',
     levelKey: 'advanced',
@@ -118,7 +118,7 @@ const JAMF_COURSES = [
     price: 'Payant',
     available: 'Sessions planifiées',
     description:
-      'Niveau administrateur expert : API Jamf Pro v2, scripting avancé (zsh/Python), Extension Attributes, workflows Zero-Touch complexes et intégrations LDAP/SSO. Prochaine étape après la certification Jamf Certified Tech.',
+      'Niveau avancé : API Jamf Pro v2, scripting avancé (zsh/Python), Extension Attributes, workflows Zero-Touch complexes et intégrations LDAP/SSO. Prochaine étape recommandée après le Jamf 200 Course.',
     topics: [
       'API Jamf Pro v2 REST & webhooks',
       'Scripting avancé zsh, Python & Bash',
@@ -127,8 +127,8 @@ const JAMF_COURSES = [
       'Workflows Zero-Touch avancés',
       'LDAP, identité & Single Sign-On',
     ],
-    prereqs: 'Jamf Certified Tech (Jamf 200)',
-    certName: 'Jamf Certified Admin — Jamf Pro',
+    prereqs: 'Jamf 200 Course recommandé',
+    certName: 'Jamf 300 Course',
     officialUrl: 'https://www.jamf.com/fr/formation/formation-300/',
     catalogUrl: 'https://account.jamf.com/training-courses/jamf-300-course/available',
     prepUrl: '/cours/certification-jamf-170',
@@ -153,8 +153,8 @@ const JAMF_COURSES = [
   {
     number: '400',
     title: 'Jamf 400 Course',
-    badge: 'Jamf Certified Expert',
-    badgeShort: 'Expert',
+    badge: 'Jamf 400 Course',
+    badgeShort: 'Jamf 400',
     badgeImage: '/images/certifications/jamf/jamf-400.png',
     level: 'Expert',
     levelKey: 'expert',
@@ -172,8 +172,8 @@ const JAMF_COURSES = [
       'LDAP avancé & gestion d\'identité enterprise',
       'Challenge-based exam — scénarios réels',
     ],
-    prereqs: 'Jamf Certified Admin (Jamf 300)',
-    certName: 'Jamf Certified Expert — Jamf Pro',
+    prereqs: 'Jamf 300 Course recommandé',
+    certName: 'Jamf 400 Course',
     officialUrl: 'https://www.jamf.com/fr/formation/formation-400/',
     catalogUrl: 'https://account.jamf.com/training-courses/jamf-400-course/available',
     prepUrl: '/cours/certification-jamf-200',
@@ -353,7 +353,7 @@ export default function CertificationsPage() {
           </Link>
         </div>
         <p className="text-xs text-gray-500 mb-8">
-          Progression officielle Jamf — du niveau associé à l&apos;expert, avec badges numériques Credly.
+          Progression officielle Jamf — du Jamf 100 Course au Jamf 400 Course, avec badges numériques Credly.
           Cours disponibles en anglais, allemand, espagnol, français, japonais et chinois traditionnel.
         </p>
 
@@ -426,9 +426,15 @@ export default function CertificationsPage() {
                   </div>
                   <div>
                     <h3 className="font-bold text-white text-sm leading-tight">{course.title}</h3>
-                    <p className={`text-xs mt-1 font-semibold ${course.color.accent}`}>
-                      {course.badge}
-                    </p>
+                    <Link
+                      href={course.officialUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`inline-flex items-center gap-1 text-xs mt-1 font-medium ${course.color.accent} hover:underline underline-offset-2`}
+                    >
+                      <ExternalLink size={9} />
+                      jamf.com/training
+                    </Link>
                     {course.credly && (
                       <span className="inline-flex items-center gap-1 mt-1 text-[10px] text-gray-600">
                         <GraduationCap size={9} />

@@ -1639,8 +1639,8 @@ const module9Courses: Course[] = [
   {
     id: 'cert-jamf-100',
     slug: 'certification-jamf-100',
-    title: 'Jamf Certified Tech (Jamf 100)',
-    description: 'Préparer l\'examen Jamf 100 pour obtenir la certification Jamf Certified Tech et valider les fondamentaux Jamf Pro.',
+    title: 'Jamf 100 Course — Guide de préparation',
+    description: 'Préparer le Jamf 100 Course : fondamentaux Jamf Pro, enrôlement, profils, politiques et inventaire.',
     moduleId: 'module-9',
     moduleTitle: 'Certifications',
     level: 'Débutant',
@@ -1667,8 +1667,8 @@ const module9Courses: Course[] = [
   {
     id: 'cert-jamf-170',
     slug: 'certification-jamf-170',
-    title: 'Jamf Certified Admin (Jamf 170)',
-    description: 'Préparer le Jamf 170 pour la certification Jamf Certified Admin : scripting, API, automatisation et gestion avancée.',
+    title: 'Jamf 170 Course — Guide de préparation',
+    description: 'Préparer le Jamf 170 Course : administration avancée macOS, automatisation, scripting Bash, packaging et sécurité.',
     moduleId: 'module-9',
     moduleTitle: 'Certifications',
     level: 'Avancé',
@@ -1695,8 +1695,8 @@ const module9Courses: Course[] = [
   {
     id: 'cert-jamf-200',
     slug: 'certification-jamf-200',
-    title: 'Jamf Certified Expert (Jamf 200)',
-    description: 'Préparer le Jamf 200 pour atteindre le niveau Jamf Certified Expert : architecture, sécurité, Zero Trust et projets complexes.',
+    title: 'Jamf 200 Course — Guide de préparation',
+    description: 'Préparer le Jamf 200 Course : architecture avancée, haute disponibilité, LDAP, PKI, gestion multi-sites et sécurité enterprise.',
     moduleId: 'module-9',
     moduleTitle: 'Certifications',
     level: 'Expert',
