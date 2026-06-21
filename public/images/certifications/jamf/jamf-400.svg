@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="bg400" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#EA580C"/>
+      <stop offset="100%" style="stop-color:#7C2D12"/>
+    </linearGradient>
+    <filter id="shadow400">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#EA580C" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+  <polygon points="100,8 185,52 185,148 100,192 15,148 15,52" fill="url(#bg400)" filter="url(#shadow400)"/>
+  <polygon points="100,18 175,58 175,142 100,182 25,142 25,58" fill="none" stroke="#FB923C" stroke-width="1.5" opacity="0.6"/>
+  <text x="100" y="82" font-family="Arial Black, sans-serif" font-size="42" font-weight="900" fill="white" text-anchor="middle" dominant-baseline="middle">J</text>
+  <line x1="60" y1="95" x2="140" y2="95" stroke="#FB923C" stroke-width="1" opacity="0.7"/>
+  <text x="100" y="118" font-family="Arial, sans-serif" font-size="28" font-weight="800" fill="white" text-anchor="middle" dominant-baseline="middle">400</text>
+  <text x="100" y="148" font-family="Arial, sans-serif" font-size="10" font-weight="600" fill="#FED7AA" text-anchor="middle" letter-spacing="2">COURSE</text>
+  <circle cx="100" cy="28" r="3" fill="#FB923C" opacity="0.8"/>
+  <circle cx="100" cy="172" r="3" fill="#FB923C" opacity="0.8"/>
+</svg>
