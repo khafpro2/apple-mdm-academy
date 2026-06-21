@@ -1,78 +1,86 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 280" width="280" height="280">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" width="320" height="320">
   <defs>
+    <!-- Dégradés violet Jamf 100 -->
     <linearGradient id="bg100" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#9333EA"/>
-      <stop offset="45%" style="stop-color:#7C3AED"/>
-      <stop offset="100%" style="stop-color:#5B21B6"/>
+      <stop offset="0%" style="stop-color:#A855F7"/>
+      <stop offset="50%" style="stop-color:#7C3AED"/>
+      <stop offset="100%" style="stop-color:#4C1D95"/>
     </linearGradient>
-    <linearGradient id="ring100a" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#DDD6FE;stop-opacity:0.9"/>
-      <stop offset="100%" style="stop-color:#8B5CF6;stop-opacity:0.3"/>
-    </linearGradient>
-    <radialGradient id="shine100" cx="30%" cy="25%" r="55%">
-      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:0.22"/>
+    <linearGradient id="shine100" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:0.18"/>
+      <stop offset="60%" style="stop-color:#FFFFFF;stop-opacity:0.04"/>
       <stop offset="100%" style="stop-color:#FFFFFF;stop-opacity:0"/>
-    </radialGradient>
-    <filter id="drop100" x="-15%" y="-15%" width="130%" height="130%">
-      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#6D28D9" flood-opacity="0.55"/>
+    </linearGradient>
+    <linearGradient id="ring100" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#E9D5FF;stop-opacity:0.8"/>
+      <stop offset="100%" style="stop-color:#7C3AED;stop-opacity:0.2"/>
+    </linearGradient>
+    <filter id="shadow100">
+      <feDropShadow dx="0" dy="10" stdDeviation="16" flood-color="#4C1D95" flood-opacity="0.6"/>
     </filter>
     <filter id="glow100">
-      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
       <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
+    <clipPath id="hex100">
+      <polygon points="160,16 276,82 276,214 160,280 44,214 44,82"/>
+    </clipPath>
   </defs>
 
-  <!-- Ombre portée -->
-  <polygon points="140,14 244,72 244,188 140,246 36,188 36,72"
-    fill="#4C1D95" opacity="0.35" transform="translate(0,10)" filter="url(#drop100)"/>
+  <!-- Ombre -->
+  <polygon points="160,16 276,82 276,214 160,280 44,214 44,82"
+    fill="#3B0764" opacity="0.4" transform="translate(0,14)" filter="url(#shadow100)"/>
 
-  <!-- Hexagone principal -->
-  <polygon points="140,14 244,72 244,188 140,246 36,188 36,72"
+  <!-- Corps principal -->
+  <polygon points="160,16 276,82 276,214 160,280 44,214 44,82"
     fill="url(#bg100)"/>
 
-  <!-- Brillance surface -->
-  <polygon points="140,14 244,72 244,188 140,246 36,188 36,72"
+  <!-- Reflet surface -->
+  <polygon points="160,16 276,82 276,214 160,280 44,214 44,82"
     fill="url(#shine100)"/>
 
   <!-- Anneau extérieur -->
-  <polygon points="140,24 234,78 234,182 140,236 46,182 46,78"
-    fill="none" stroke="url(#ring100a)" stroke-width="2"/>
+  <polygon points="160,28 264,90 264,206 160,268 56,206 56,90"
+    fill="none" stroke="url(#ring100)" stroke-width="2.5"/>
 
-  <!-- Anneau intérieur fin -->
-  <polygon points="140,38 220,86 220,174 140,222 60,174 60,86"
-    fill="none" stroke="#A78BFA" stroke-width="1" opacity="0.35"/>
+  <!-- Anneau intérieur décoratif -->
+  <polygon points="160,44 248,98 248,198 160,252 72,198 72,98"
+    fill="none" stroke="#C4B5FD" stroke-width="1" opacity="0.25"/>
 
-  <!-- Logo Jamf "J" stylisé -->
-  <g transform="translate(140, 100)" filter="url(#glow100)">
-    <rect x="-7" y="-26" width="14" height="46" rx="7" fill="white" opacity="0.97"/>
-    <path d="M-7,14 Q-20,20 -20,32 Q-20,44 -7,46 Q0,47 7,43"
-      fill="none" stroke="white" stroke-width="13" stroke-linecap="round" opacity="0.97"/>
-    <rect x="-20" y="-26" width="27" height="13" rx="6.5" fill="white" opacity="0.97"/>
+  <!-- Logo JAMF stylisé — J blanc -->
+  <g transform="translate(160, 110)" filter="url(#glow100)">
+    <!-- Barre verticale du J -->
+    <rect x="-9" y="-32" width="18" height="52" rx="9" fill="white" opacity="0.96"/>
+    <!-- Courbe bas du J -->
+    <path d="M-9,14 Q-26,22 -26,38 Q-26,56 -9,58 Q0,60 9,54"
+      fill="none" stroke="white" stroke-width="16" stroke-linecap="round" opacity="0.96"/>
+    <!-- Empattement haut -->
+    <rect x="-24" y="-32" width="34" height="16" rx="8" fill="white" opacity="0.96"/>
   </g>
 
   <!-- Séparateur -->
-  <line x1="84" y1="148" x2="196" y2="148" stroke="#C4B5FD" stroke-width="1.5" opacity="0.5"/>
+  <line x1="96" y1="170" x2="224" y2="170" stroke="#DDD6FE" stroke-width="1.5" opacity="0.4"/>
 
-  <!-- Numéro -->
-  <text x="140" y="178" font-family="'Arial Black', Arial, sans-serif"
-    font-size="34" font-weight="900" fill="white" text-anchor="middle"
-    dominant-baseline="middle" letter-spacing="3">100</text>
+  <!-- Numéro 100 -->
+  <text x="160" y="202" font-family="'Arial Black', 'Impact', Arial, sans-serif"
+    font-size="40" font-weight="900" fill="white" text-anchor="middle"
+    dominant-baseline="middle" letter-spacing="4" opacity="0.97">100</text>
 
   <!-- Label COURSE -->
-  <text x="140" y="208" font-family="Arial, sans-serif"
-    font-size="9.5" font-weight="700" fill="#DDD6FE" text-anchor="middle"
-    letter-spacing="5" opacity="0.85">COURSE</text>
+  <text x="160" y="233" font-family="Arial, Helvetica, sans-serif"
+    font-size="10" font-weight="700" fill="#E9D5FF" text-anchor="middle"
+    letter-spacing="6" opacity="0.9">COURSE</text>
 
-  <!-- Label certification -->
-  <text x="140" y="228" font-family="Arial, sans-serif"
-    font-size="7" font-weight="600" fill="#C4B5FD" text-anchor="middle"
-    letter-spacing="1" opacity="0.7">CERTIFIED ASSOCIATE</text>
+  <!-- Sous-titre certification -->
+  <text x="160" y="252" font-family="Arial, Helvetica, sans-serif"
+    font-size="7.5" font-weight="600" fill="#C4B5FD" text-anchor="middle"
+    letter-spacing="1.5" opacity="0.75">CERTIFIED ASSOCIATE</text>
 
-  <!-- Points décoratifs -->
-  <circle cx="140" cy="20" r="4" fill="#C4B5FD" opacity="0.85" filter="url(#glow100)"/>
-  <circle cx="140" cy="240" r="4" fill="#C4B5FD" opacity="0.85"/>
-  <circle cx="48" cy="84" r="3" fill="#A78BFA" opacity="0.6"/>
-  <circle cx="232" cy="84" r="3" fill="#A78BFA" opacity="0.6"/>
-  <circle cx="48" cy="176" r="3" fill="#A78BFA" opacity="0.6"/>
-  <circle cx="232" cy="176" r="3" fill="#A78BFA" opacity="0.6"/>
+  <!-- Points décoratifs aux sommets -->
+  <circle cx="160" cy="22" r="5" fill="#E9D5FF" opacity="0.9" filter="url(#glow100)"/>
+  <circle cx="160" cy="274" r="4.5" fill="#C4B5FD" opacity="0.8"/>
+  <circle cx="56" cy="96" r="3.5" fill="#A78BFA" opacity="0.65"/>
+  <circle cx="264" cy="96" r="3.5" fill="#A78BFA" opacity="0.65"/>
+  <circle cx="56" cy="200" r="3.5" fill="#A78BFA" opacity="0.65"/>
+  <circle cx="264" cy="200" r="3.5" fill="#A78BFA" opacity="0.65"/>
 </svg>
