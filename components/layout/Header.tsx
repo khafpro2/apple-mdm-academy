@@ -4,6 +4,9 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Menu, X, BookOpen, GraduationCap, Trophy, Search, Command, Layers, ChevronRight, Terminal } from 'lucide-react';
+import dynamic from 'next/dynamic';
+
+const AuthButton = dynamic(() => import('./AuthButton'), { ssr: false });
 import clsx from 'clsx';
 import { search, type SearchResult } from '@/lib/search';
 
@@ -236,6 +239,11 @@ export default function Header() {
                 Commencer
               </Link>
 
+              {/* Auth — UserButton si connecté, SignInButton sinon */}
+              <div className="hidden sm:flex">
+                <AuthButton />
+              </div>
+
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
                 className="md:hidden p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/8 transition-colors"
@@ -267,7 +275,7 @@ export default function Header() {
                   {label}
                 </Link>
               ))}
-              <div className="pt-2 pb-1">
+              <div className="pt-2 pb-1 space-y-2">
                 <Link
                   href="/parcours"
                   className="flex items-center justify-center gap-2 px-4 py-3 text-sm font-bold rounded-xl bg-indigo-600 text-white hover:bg-indigo-500 transition-colors"
@@ -275,6 +283,9 @@ export default function Header() {
                   <GraduationCap size={16} />
                   Commencer la formation
                 </Link>
+                <div className="flex justify-center py-1">
+                  <AuthButton />
+                </div>
               </div>
             </nav>
           </div>
