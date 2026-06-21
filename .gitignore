@@ -40,3 +40,5 @@ Thumbs.db
 # Cache
 .eslintcache
 .turbo/
+playwright-report/
+test-results/
