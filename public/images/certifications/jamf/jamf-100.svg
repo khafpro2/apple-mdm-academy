@@ -1,26 +1,78 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 280" width="280" height="280">
   <defs>
     <linearGradient id="bg100" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#7C3AED"/>
-      <stop offset="100%" style="stop-color:#4C1D95"/>
+      <stop offset="0%" style="stop-color:#9333EA"/>
+      <stop offset="45%" style="stop-color:#7C3AED"/>
+      <stop offset="100%" style="stop-color:#5B21B6"/>
     </linearGradient>
-    <filter id="shadow100">
-      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#7C3AED" flood-opacity="0.4"/>
+    <linearGradient id="ring100a" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#DDD6FE;stop-opacity:0.9"/>
+      <stop offset="100%" style="stop-color:#8B5CF6;stop-opacity:0.3"/>
+    </linearGradient>
+    <radialGradient id="shine100" cx="30%" cy="25%" r="55%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:0.22"/>
+      <stop offset="100%" style="stop-color:#FFFFFF;stop-opacity:0"/>
+    </radialGradient>
+    <filter id="drop100" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#6D28D9" flood-opacity="0.55"/>
+    </filter>
+    <filter id="glow100">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
   </defs>
-  <!-- Hexagone externe -->
-  <polygon points="100,8 185,52 185,148 100,192 15,148 15,52" fill="url(#bg100)" filter="url(#shadow100)"/>
-  <!-- Hexagone interne (bordure) -->
-  <polygon points="100,18 175,58 175,142 100,182 25,142 25,58" fill="none" stroke="#A78BFA" stroke-width="1.5" opacity="0.6"/>
-  <!-- Logo Jamf J stylisé -->
-  <text x="100" y="82" font-family="Arial Black, sans-serif" font-size="42" font-weight="900" fill="white" text-anchor="middle" dominant-baseline="middle">J</text>
-  <!-- Ligne décorative -->
-  <line x1="60" y1="95" x2="140" y2="95" stroke="#A78BFA" stroke-width="1" opacity="0.7"/>
-  <!-- Numéro de cours -->
-  <text x="100" y="118" font-family="Arial, sans-serif" font-size="28" font-weight="800" fill="white" text-anchor="middle" dominant-baseline="middle">100</text>
-  <!-- Label course -->
-  <text x="100" y="148" font-family="Arial, sans-serif" font-size="10" font-weight="600" fill="#DDD6FE" text-anchor="middle" letter-spacing="2">COURSE</text>
+
+  <!-- Ombre portée -->
+  <polygon points="140,14 244,72 244,188 140,246 36,188 36,72"
+    fill="#4C1D95" opacity="0.35" transform="translate(0,10)" filter="url(#drop100)"/>
+
+  <!-- Hexagone principal -->
+  <polygon points="140,14 244,72 244,188 140,246 36,188 36,72"
+    fill="url(#bg100)"/>
+
+  <!-- Brillance surface -->
+  <polygon points="140,14 244,72 244,188 140,246 36,188 36,72"
+    fill="url(#shine100)"/>
+
+  <!-- Anneau extérieur -->
+  <polygon points="140,24 234,78 234,182 140,236 46,182 46,78"
+    fill="none" stroke="url(#ring100a)" stroke-width="2"/>
+
+  <!-- Anneau intérieur fin -->
+  <polygon points="140,38 220,86 220,174 140,222 60,174 60,86"
+    fill="none" stroke="#A78BFA" stroke-width="1" opacity="0.35"/>
+
+  <!-- Logo Jamf "J" stylisé -->
+  <g transform="translate(140, 100)" filter="url(#glow100)">
+    <rect x="-7" y="-26" width="14" height="46" rx="7" fill="white" opacity="0.97"/>
+    <path d="M-7,14 Q-20,20 -20,32 Q-20,44 -7,46 Q0,47 7,43"
+      fill="none" stroke="white" stroke-width="13" stroke-linecap="round" opacity="0.97"/>
+    <rect x="-20" y="-26" width="27" height="13" rx="6.5" fill="white" opacity="0.97"/>
+  </g>
+
+  <!-- Séparateur -->
+  <line x1="84" y1="148" x2="196" y2="148" stroke="#C4B5FD" stroke-width="1.5" opacity="0.5"/>
+
+  <!-- Numéro -->
+  <text x="140" y="178" font-family="'Arial Black', Arial, sans-serif"
+    font-size="34" font-weight="900" fill="white" text-anchor="middle"
+    dominant-baseline="middle" letter-spacing="3">100</text>
+
+  <!-- Label COURSE -->
+  <text x="140" y="208" font-family="Arial, sans-serif"
+    font-size="9.5" font-weight="700" fill="#DDD6FE" text-anchor="middle"
+    letter-spacing="5" opacity="0.85">COURSE</text>
+
+  <!-- Label certification -->
+  <text x="140" y="228" font-family="Arial, sans-serif"
+    font-size="7" font-weight="600" fill="#C4B5FD" text-anchor="middle"
+    letter-spacing="1" opacity="0.7">CERTIFIED ASSOCIATE</text>
+
   <!-- Points décoratifs -->
-  <circle cx="100" cy="28" r="3" fill="#A78BFA" opacity="0.8"/>
-  <circle cx="100" cy="172" r="3" fill="#A78BFA" opacity="0.8"/>
+  <circle cx="140" cy="20" r="4" fill="#C4B5FD" opacity="0.85" filter="url(#glow100)"/>
+  <circle cx="140" cy="240" r="4" fill="#C4B5FD" opacity="0.85"/>
+  <circle cx="48" cy="84" r="3" fill="#A78BFA" opacity="0.6"/>
+  <circle cx="232" cy="84" r="3" fill="#A78BFA" opacity="0.6"/>
+  <circle cx="48" cy="176" r="3" fill="#A78BFA" opacity="0.6"/>
+  <circle cx="232" cy="176" r="3" fill="#A78BFA" opacity="0.6"/>
 </svg>

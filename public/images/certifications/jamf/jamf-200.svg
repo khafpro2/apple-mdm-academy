@@ -1,19 +1,67 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 280" width="280" height="280">
   <defs>
     <linearGradient id="bg200" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" style="stop-color:#2563EB"/>
+      <stop offset="45%" style="stop-color:#1D4ED8"/>
       <stop offset="100%" style="stop-color:#1E3A8A"/>
     </linearGradient>
-    <filter id="shadow200">
-      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#2563EB" flood-opacity="0.4"/>
+    <linearGradient id="ring200a" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#BFDBFE;stop-opacity:0.9"/>
+      <stop offset="100%" style="stop-color:#3B82F6;stop-opacity:0.3"/>
+    </linearGradient>
+    <radialGradient id="shine200" cx="30%" cy="25%" r="55%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:0.22"/>
+      <stop offset="100%" style="stop-color:#FFFFFF;stop-opacity:0"/>
+    </radialGradient>
+    <filter id="drop200" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#1E3A8A" flood-opacity="0.55"/>
+    </filter>
+    <filter id="glow200">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
   </defs>
-  <polygon points="100,8 185,52 185,148 100,192 15,148 15,52" fill="url(#bg200)" filter="url(#shadow200)"/>
-  <polygon points="100,18 175,58 175,142 100,182 25,142 25,58" fill="none" stroke="#60A5FA" stroke-width="1.5" opacity="0.6"/>
-  <text x="100" y="82" font-family="Arial Black, sans-serif" font-size="42" font-weight="900" fill="white" text-anchor="middle" dominant-baseline="middle">J</text>
-  <line x1="60" y1="95" x2="140" y2="95" stroke="#60A5FA" stroke-width="1" opacity="0.7"/>
-  <text x="100" y="118" font-family="Arial, sans-serif" font-size="28" font-weight="800" fill="white" text-anchor="middle" dominant-baseline="middle">200</text>
-  <text x="100" y="148" font-family="Arial, sans-serif" font-size="10" font-weight="600" fill="#BFDBFE" text-anchor="middle" letter-spacing="2">COURSE</text>
-  <circle cx="100" cy="28" r="3" fill="#60A5FA" opacity="0.8"/>
-  <circle cx="100" cy="172" r="3" fill="#60A5FA" opacity="0.8"/>
+
+  <polygon points="140,14 244,72 244,188 140,246 36,188 36,72"
+    fill="#1E3A8A" opacity="0.35" transform="translate(0,10)" filter="url(#drop200)"/>
+  <polygon points="140,14 244,72 244,188 140,246 36,188 36,72"
+    fill="url(#bg200)"/>
+  <polygon points="140,14 244,72 244,188 140,246 36,188 36,72"
+    fill="url(#shine200)"/>
+  <polygon points="140,24 234,78 234,182 140,236 46,182 46,78"
+    fill="none" stroke="url(#ring200a)" stroke-width="2"/>
+  <polygon points="140,38 220,86 220,174 140,222 60,174 60,86"
+    fill="none" stroke="#60A5FA" stroke-width="1" opacity="0.35"/>
+
+  <g transform="translate(140, 100)" filter="url(#glow200)">
+    <rect x="-7" y="-26" width="14" height="46" rx="7" fill="white" opacity="0.97"/>
+    <path d="M-7,14 Q-20,20 -20,32 Q-20,44 -7,46 Q0,47 7,43"
+      fill="none" stroke="white" stroke-width="13" stroke-linecap="round" opacity="0.97"/>
+    <rect x="-20" y="-26" width="27" height="13" rx="6.5" fill="white" opacity="0.97"/>
+  </g>
+
+  <!-- Chevrons décoratifs — niveau Tech (2 chevrons) -->
+  <polyline points="118,54 128,46 138,54" fill="none" stroke="#93C5FD" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>
+  <polyline points="124,60 134,52 144,60" fill="none" stroke="#BFDBFE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
+
+  <line x1="84" y1="148" x2="196" y2="148" stroke="#93C5FD" stroke-width="1.5" opacity="0.5"/>
+
+  <text x="140" y="178" font-family="'Arial Black', Arial, sans-serif"
+    font-size="34" font-weight="900" fill="white" text-anchor="middle"
+    dominant-baseline="middle" letter-spacing="3">200</text>
+
+  <text x="140" y="208" font-family="Arial, sans-serif"
+    font-size="9.5" font-weight="700" fill="#BFDBFE" text-anchor="middle"
+    letter-spacing="5" opacity="0.85">COURSE</text>
+
+  <text x="140" y="228" font-family="Arial, sans-serif"
+    font-size="7" font-weight="600" fill="#93C5FD" text-anchor="middle"
+    letter-spacing="1" opacity="0.7">CERTIFIED TECH</text>
+
+  <circle cx="140" cy="20" r="4" fill="#93C5FD" opacity="0.85" filter="url(#glow200)"/>
+  <circle cx="140" cy="240" r="4" fill="#93C5FD" opacity="0.85"/>
+  <circle cx="48" cy="84" r="3" fill="#60A5FA" opacity="0.6"/>
+  <circle cx="232" cy="84" r="3" fill="#60A5FA" opacity="0.6"/>
+  <circle cx="48" cy="176" r="3" fill="#60A5FA" opacity="0.6"/>
+  <circle cx="232" cy="176" r="3" fill="#60A5FA" opacity="0.6"/>
 </svg>

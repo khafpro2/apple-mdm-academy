@@ -1,182 +1,296 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { ChevronRight, Trophy, Clock, BookOpen, ExternalLink, Star, Award } from 'lucide-react';
+import {
+  ChevronRight, Trophy, Clock, BookOpen, ExternalLink,
+  Star, Award, CheckCircle2, ArrowRight, GraduationCap, Zap,
+} from 'lucide-react';
 import { MODULES, getAllCourses } from '@/lib/courses';
 
 export const metadata = {
-  title: 'Certifications professionnelles — Apple, Jamf & Microsoft',
+  title: 'Certifications professionnelles — Apple, Jamf Pro & Microsoft',
   description:
-    'Préparez les certifications Apple, Jamf Pro (100, 200, 300, 400) et Microsoft avec des cours structurés, quiz et labs pratiques.',
+    'Préparez les certifications officielles Jamf Pro (100, 200, 300, 400), Apple et Microsoft avec des cours structurés, quiz et labs pratiques. Badges numériques Credly.',
 };
 
-// ─── Certifications Jamf Pro (catalogue officiel 2024) ────────────────────────
+// ─── Certifications Jamf Pro — données officielles jamf.com ────────────────────
 
 const JAMF_COURSES = [
   {
     number: '100',
     title: 'Jamf 100 Course',
-    badge: 'Jamf Certified Associate — Jamf Pro',
+    badge: 'Jamf Certified Associate',
+    badgeShort: 'Associate',
     badgeImage: '/images/certifications/jamf/jamf-100.svg',
     level: 'Débutant',
+    levelKey: 'beginner',
     format: 'Self-paced en ligne',
     duration: '6–8 heures',
+    price: 'Gratuit',
+    available: 'Disponible maintenant',
     description:
-      'Introduction aux fondamentaux de Jamf Pro et aux plateformes Apple. Couvre l\'enrôlement d\'appareils, la gestion de base des Mac et iPhone/iPad, et les concepts Zero-Touch.',
-    topics: ['Jamf Pro UI & navigation', 'Enrôlement macOS & iOS', 'Configuration Profiles', 'Smart Groups & Policies', 'Self Service', 'Apps & Books'],
+      'Formation autonome et gratuite d\'introduction à Jamf Pro, macOS, iOS et tvOS. Suivez l\'intégralité du cours, puis passez l\'examen Jamf Pro Associate pour obtenir votre badge numérique Credly.',
+    topics: [
+      'Principes fondamentaux de Jamf Pro',
+      'Enrôlement macOS & iOS/iPadOS',
+      'Configuration Profiles de base',
+      'Smart Groups & Policies',
+      'Self Service & Apps & Books',
+      'Gestion des utilisateurs et groupes',
+    ],
     prereqs: 'Aucun prérequis',
     certName: 'Jamf Certified Associate — Jamf Pro',
-    officialUrl: 'https://www.jamf.com/training/100-course/',
+    officialUrl: 'https://www.jamf.com/fr/formation/formation-100/',
+    catalogUrl: 'https://learn.jamf.com/en-US/bundle/jamf-100-course-current/page/Welcome.html',
     prepUrl: '/cours/certification-jamf-100',
+    examUrl: 'https://training.jamf.com/jamf-certified-associate-exam-english-en',
+    credly: true,
     color: {
       border: 'border-violet-500/30',
       bg: 'bg-violet-950/20',
-      badge: 'bg-violet-500/10 text-violet-400',
+      badge: 'bg-violet-500/15 text-violet-300',
       accent: 'text-violet-400',
-      btn: 'bg-violet-600/20 hover:bg-violet-600/30 border-violet-500/30 text-violet-300',
-      btnExt: 'bg-violet-600 hover:bg-violet-700 text-white',
-      glow: 'shadow-violet-500/10',
+      btn: 'bg-violet-600/15 hover:bg-violet-600/30 border-violet-500/30 text-violet-300',
+      btnExt: 'bg-violet-600 hover:bg-violet-500 text-white',
+      glow: 'hover:shadow-xl hover:shadow-violet-500/15',
       number: 'text-violet-400',
       dot: 'bg-violet-400',
+      ring: 'ring-violet-500/30',
+      levelColor: 'bg-emerald-500/15 text-emerald-400',
+      badgeRing: 'border-violet-500/40',
+      priceBadge: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/25',
     },
   },
   {
     number: '200',
     title: 'Jamf 200 Course',
-    badge: 'Jamf Certified Tech — Jamf Pro',
+    badge: 'Jamf Certified Tech',
+    badgeShort: 'Tech',
     badgeImage: '/images/certifications/jamf/jamf-200.svg',
     level: 'Intermédiaire',
-    format: '4 jours présentiel / virtuel',
+    levelKey: 'intermediate',
+    format: '4 jours — virtuel ou présentiel',
     duration: '32 heures',
+    price: 'Payant',
+    available: 'Sessions planifiées',
     description:
-      'Formation complète sur Jamf Pro en entreprise : déploiement macOS/iOS, gestion avancée des profils, sécurité, packaging et scripting Bash. Inclut l\'examen de certification.',
-    topics: ['Enrôlement ADE avancé', 'Packaging & déploiement', 'Scripting Bash', 'Sécurité macOS', 'Patch Management', 'Jamf Pro API'],
+      'Cours centré sur l\'entreprise couvrant Jamf Pro, macOS et iOS en profondeur. Environnement d\'apprentissage pratique basé sur des exemples. Inclut l\'examen Jamf Pro Tech et le badge Credly.',
+    topics: [
+      'Configuration avancée de Jamf Pro',
+      'Scripting zsh & automatisation',
+      'Enrôlement ADE & packages',
+      'App Installers & Apple Business Manager',
+      'Profils de configuration, déclarations & PLIST',
+      'Sécurité macOS & Patch Management',
+    ],
     prereqs: 'Jamf 100 recommandé',
     certName: 'Jamf Certified Tech — Jamf Pro',
-    officialUrl: 'https://www.jamf.com/training/200-course/',
+    officialUrl: 'https://www.jamf.com/fr/formation/formation-200/',
+    catalogUrl: 'https://account.jamf.com/training-courses/jamf-200-course/available',
     prepUrl: '/cours/certification-jamf-200',
+    examUrl: 'https://training.jamf.com',
+    credly: true,
     color: {
       border: 'border-blue-500/30',
       bg: 'bg-blue-950/20',
-      badge: 'bg-blue-500/10 text-blue-400',
+      badge: 'bg-blue-500/15 text-blue-300',
       accent: 'text-blue-400',
-      btn: 'bg-blue-600/20 hover:bg-blue-600/30 border-blue-500/30 text-blue-300',
-      btnExt: 'bg-blue-600 hover:bg-blue-700 text-white',
-      glow: 'shadow-blue-500/10',
+      btn: 'bg-blue-600/15 hover:bg-blue-600/30 border-blue-500/30 text-blue-300',
+      btnExt: 'bg-blue-600 hover:bg-blue-500 text-white',
+      glow: 'hover:shadow-xl hover:shadow-blue-500/15',
       number: 'text-blue-400',
       dot: 'bg-blue-400',
+      ring: 'ring-blue-500/30',
+      levelColor: 'bg-blue-500/15 text-blue-400',
+      badgeRing: 'border-blue-500/40',
+      priceBadge: 'bg-amber-500/15 text-amber-300 border-amber-500/25',
     },
   },
   {
     number: '300',
     title: 'Jamf 300 Course',
-    badge: 'Jamf Certified Admin — Jamf Pro',
+    badge: 'Jamf Certified Admin',
+    badgeShort: 'Admin',
     badgeImage: '/images/certifications/jamf/jamf-300.svg',
     level: 'Avancé',
-    format: '4 jours présentiel / virtuel',
+    levelKey: 'advanced',
+    format: '4 jours — virtuel ou présentiel',
     duration: '32 heures',
+    price: 'Payant',
+    available: 'Sessions planifiées',
     description:
-      'Niveau expert en administration Jamf Pro : scripting avancé (zsh), API Jamf Pro v2, workflows automatisés, extension attributes, reporting avancé et gestion multi-site.',
-    topics: ['API Jamf Pro v2', 'Scripting avancé (zsh)', 'Extension Attributes', 'Smart Groups dynamiques', 'Workflows Zero-Touch', 'LDAP & identité'],
-    prereqs: 'Jamf Certified Tech (200)',
+      'Niveau administrateur expert : scripting avancé, API Jamf Pro v2, workflows complexes et gestion enterprise. Prochaine étape après la certification Jamf Certified Tech.',
+    topics: [
+      'API Jamf Pro v2 & intégrations',
+      'Scripting avancé (zsh, Python)',
+      'Extension Attributes & inventaire',
+      'Smart Groups & ciblage avancé',
+      'Workflows Zero-Touch avancés',
+      'LDAP, identité & SSO',
+    ],
+    prereqs: 'Jamf Certified Tech (Jamf 200)',
     certName: 'Jamf Certified Admin — Jamf Pro',
-    officialUrl: 'https://www.jamf.com/training/300-course/',
+    officialUrl: 'https://www.jamf.com/fr/formation/formation-300/',
+    catalogUrl: 'https://account.jamf.com/training-courses/jamf-300-course/available',
     prepUrl: '/cours/certification-jamf-170',
+    examUrl: 'https://training.jamf.com',
+    credly: true,
     color: {
       border: 'border-green-500/30',
       bg: 'bg-green-950/20',
-      badge: 'bg-green-500/10 text-green-400',
+      badge: 'bg-green-500/15 text-green-300',
       accent: 'text-green-400',
-      btn: 'bg-green-600/20 hover:bg-green-600/30 border-green-500/30 text-green-300',
-      btnExt: 'bg-green-600 hover:bg-green-700 text-white',
-      glow: 'shadow-green-500/10',
+      btn: 'bg-green-600/15 hover:bg-green-600/30 border-green-500/30 text-green-300',
+      btnExt: 'bg-green-600 hover:bg-green-500 text-white',
+      glow: 'hover:shadow-xl hover:shadow-green-500/15',
       number: 'text-green-400',
       dot: 'bg-green-400',
+      ring: 'ring-green-500/30',
+      levelColor: 'bg-amber-500/15 text-amber-400',
+      badgeRing: 'border-green-500/40',
+      priceBadge: 'bg-amber-500/15 text-amber-300 border-amber-500/25',
     },
   },
   {
     number: '400',
     title: 'Jamf 400 Course',
-    badge: 'Jamf Certified Expert — Jamf Pro',
+    badge: 'Jamf Certified Expert',
+    badgeShort: 'Expert',
     badgeImage: '/images/certifications/jamf/jamf-400.svg',
     level: 'Expert',
+    levelKey: 'expert',
     format: '4 jours — challenge-based',
     duration: '32 heures',
+    price: 'Payant',
+    available: 'Sessions planifiées',
     description:
-      'Formation challenge-based graduate-level : installation Jamf Pro, MySQL/API avancé, scripting complexe, LDAP, préférences et packaging expert. Examen challenge-based inclus.',
-    topics: ['Installation Jamf Pro', 'MySQL & reporting', 'API avancée', 'Scripting complexe', 'LDAP avancé', 'Challenge-based exam'],
-    prereqs: 'Jamf Certified Admin (300)',
+      'Formation graduate-level challenge-based : installation avancée de Jamf Pro, MySQL, API complexe, scripting expert et packaging avancé. Examen challenge-based pour les professionnels Jamf chevronnés.',
+    topics: [
+      'Installation & architecture Jamf Pro',
+      'MySQL & reporting avancé',
+      'API & intégrations complexes',
+      'Scripting expert & automatisation',
+      'LDAP avancé & identité',
+      'Challenge-based exam',
+    ],
+    prereqs: 'Jamf Certified Admin (Jamf 300)',
     certName: 'Jamf Certified Expert — Jamf Pro',
-    officialUrl: 'https://www.jamf.com/training/400-course/',
+    officialUrl: 'https://www.jamf.com/fr/formation/formation-400/',
+    catalogUrl: 'https://account.jamf.com/training-courses/jamf-400-course/available',
     prepUrl: '/cours/certification-jamf-200',
+    examUrl: 'https://training.jamf.com',
+    credly: true,
     color: {
       border: 'border-orange-500/30',
       bg: 'bg-orange-950/20',
-      badge: 'bg-orange-500/10 text-orange-400',
+      badge: 'bg-orange-500/15 text-orange-300',
       accent: 'text-orange-400',
-      btn: 'bg-orange-600/20 hover:bg-orange-600/30 border-orange-500/30 text-orange-300',
-      btnExt: 'bg-orange-600 hover:bg-orange-700 text-white',
-      glow: 'shadow-orange-500/10',
+      btn: 'bg-orange-600/15 hover:bg-orange-600/30 border-orange-500/30 text-orange-300',
+      btnExt: 'bg-orange-600 hover:bg-orange-500 text-white',
+      glow: 'hover:shadow-xl hover:shadow-orange-500/15',
       number: 'text-orange-400',
       dot: 'bg-orange-400',
+      ring: 'ring-orange-500/30',
+      levelColor: 'bg-red-500/15 text-red-400',
+      badgeRing: 'border-orange-500/40',
+      priceBadge: 'bg-red-500/15 text-red-300 border-red-500/25',
     },
   },
-];
+] as const;
 
-// ─── Autres certifications ─────────────────────────────────────────────────────
+// ─── Certifications Apple & Microsoft ─────────────────────────────────────────
 
 const OTHER_CERTS = [
   {
-    id: 'Apple Device Support',
+    id: 'apple-device-support',
+    name: 'Apple Device Support',
     provider: 'Apple',
-    emoji: '🍎',
-    color: 'border-gray-600/30 bg-gray-900/30',
-    badge: 'bg-gray-500/10 text-gray-400',
-    description: 'Valide les compétences de support et dépannage des appareils Apple pour les professionnels IT.',
+    badgeImage: '/images/certifications/apple/apple-device-support.svg',
+    badgeBg: 'bg-gray-800/50',
+    badgeBorder: 'border-gray-600/40',
+    color: 'border-gray-600/30 bg-gray-900/40 hover:border-gray-500/40',
+    badge: 'bg-gray-700/40 text-gray-300',
+    description:
+      'Valide les compétences de support et dépannage des appareils Apple (Mac, iPhone, iPad). Reconnu pour les rôles Help Desk & Support IT. Examen Pearson VUE.',
     url: '/cours/certification-apple-device-support',
     officialUrl: 'https://www.apple.com/education/k12/it/training/',
     level: 'Intermédiaire',
+    levelColor: 'bg-blue-500/15 text-blue-400',
+    topics: ['Support macOS', 'Support iOS/iPadOS', 'Dépannage', 'Sécurité Apple'],
+    duration: '2h — Pearson VUE',
   },
   {
-    id: 'Apple Deployment and Management',
+    id: 'apple-deployment',
+    name: 'Apple Deployment and Management',
     provider: 'Apple',
-    emoji: '🍎',
-    color: 'border-gray-600/30 bg-gray-900/30',
-    badge: 'bg-gray-500/10 text-gray-400',
-    description: 'Certifie les compétences en déploiement, gestion MDM et Apple Business Manager.',
+    badgeImage: '/images/certifications/apple/apple-deployment.svg',
+    badgeBg: 'bg-gray-900/50',
+    badgeBorder: 'border-gray-700/40',
+    color: 'border-gray-600/30 bg-gray-900/40 hover:border-gray-500/40',
+    badge: 'bg-gray-700/40 text-gray-300',
+    description:
+      'Certifie les compétences en déploiement MDM, Apple Business Manager et gestion des appareils Apple en entreprise. Indispensable pour les administrateurs IT. Examen Pearson VUE.',
     url: '/cours/certification-apple-deployment',
     officialUrl: 'https://www.apple.com/education/k12/it/training/',
     level: 'Avancé',
+    levelColor: 'bg-amber-500/15 text-amber-400',
+    topics: ['ABM & ADE', 'MDM Configuration', 'Apps & Books', 'Zero-Touch Deployment'],
+    duration: '2h — Pearson VUE',
   },
   {
-    id: 'Microsoft MD-102',
+    id: 'md-102',
+    name: 'Microsoft MD-102',
     provider: 'Microsoft',
-    emoji: '🪟',
-    color: 'border-cyan-600/30 bg-cyan-950/20',
+    badgeImage: '/images/certifications/microsoft/md-102.svg',
+    badgeBg: 'bg-cyan-950/30',
+    badgeBorder: 'border-cyan-600/30',
+    color: 'border-cyan-600/25 bg-cyan-950/15 hover:border-cyan-500/35',
     badge: 'bg-cyan-500/10 text-cyan-400',
-    description: 'Microsoft 365 Certified: Endpoint Administrator Associate — gestion des endpoints avec Intune.',
+    description:
+      'Microsoft 365 Certified: Endpoint Administrator Associate. Gestion des endpoints Windows, macOS et mobiles avec Microsoft Intune. Inclut la gestion des appareils Apple.',
     url: '/cours/certification-md-102',
     officialUrl: 'https://learn.microsoft.com/certifications/endpoint-administrator/',
     level: 'Avancé',
+    levelColor: 'bg-amber-500/15 text-amber-400',
+    topics: ['Microsoft Intune', 'Gestion macOS', 'Gestion iOS/iPadOS', 'Conditional Access'],
+    duration: '3h — Pearson VUE',
   },
   {
-    id: 'Microsoft MS-102',
+    id: 'ms-102',
+    name: 'Microsoft MS-102',
     provider: 'Microsoft',
-    emoji: '🪟',
-    color: 'border-cyan-600/30 bg-cyan-950/20',
-    badge: 'bg-cyan-500/10 text-cyan-400',
-    description: 'Microsoft 365 Certified: Enterprise Administrator Expert — administration Microsoft 365.',
+    badgeImage: '/images/certifications/microsoft/ms-102.svg',
+    badgeBg: 'bg-violet-950/30',
+    badgeBorder: 'border-violet-600/30',
+    color: 'border-violet-600/25 bg-violet-950/15 hover:border-violet-500/35',
+    badge: 'bg-violet-500/10 text-violet-400',
+    description:
+      'Microsoft 365 Certified: Enterprise Administrator Expert. Administration avancée de Microsoft 365, sécurité, conformité, gouvernance et identité avec Entra ID.',
     url: '/cours/certification-ms-102',
     officialUrl: 'https://learn.microsoft.com/certifications/microsoft-365-enterprise-adminstrator/',
     level: 'Expert',
+    levelColor: 'bg-red-500/15 text-red-400',
+    topics: ['Microsoft 365 Admin', 'Entra ID', 'Sécurité & conformité', 'Gouvernance'],
+    duration: '3h — Pearson VUE',
   },
-];
+] as const;
 
-const LEVEL_COLORS: Record<string, string> = {
-  'Débutant': 'bg-emerald-500/15 text-emerald-400',
-  'Intermédiaire': 'bg-blue-500/15 text-blue-400',
-  'Avancé': 'bg-amber-500/15 text-amber-400',
-  'Expert': 'bg-red-500/15 text-red-400',
-};
+// ─── Composant badge niveau ────────────────────────────────────────────────────
+
+function LevelBadge({ level }: { level: string }) {
+  const map: Record<string, string> = {
+    'Débutant':     'bg-emerald-500/15 text-emerald-400 border-emerald-500/20',
+    'Intermédiaire':'bg-blue-500/15 text-blue-400 border-blue-500/20',
+    'Avancé':       'bg-amber-500/15 text-amber-400 border-amber-500/20',
+    'Expert':       'bg-red-500/15 text-red-400 border-red-500/20',
+  };
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border ${map[level] ?? 'bg-gray-500/15 text-gray-400 border-gray-500/20'}`}>
+      {level}
+    </span>
+  );
+}
+
+// ─── Page ──────────────────────────────────────────────────────────────────────
 
 export default function CertificationsPage() {
   const certModule = MODULES.find((m) => m.id === 'module-9');
@@ -186,37 +300,47 @@ export default function CertificationsPage() {
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
 
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-xs text-gray-500 mb-8">
+      <nav className="flex items-center gap-2 text-xs text-gray-500 mb-8">
         <Link href="/" className="hover:text-gray-300 transition-colors">Accueil</Link>
         <ChevronRight size={12} />
         <span className="text-gray-300">Certifications</span>
-      </div>
+      </nav>
 
-      {/* Header */}
-      <div className="mb-12">
+      {/* ── Header ──────────────────────────────────────────────────────────── */}
+      <div className="mb-14">
         <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
+          <div className="p-2.5 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
             <Trophy className="text-yellow-400" size={22} />
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-white">
             Certifications professionnelles
           </h1>
         </div>
-        <p className="text-sm text-gray-400 max-w-2xl leading-relaxed">
-          Préparez les certifications officielles Apple, Jamf Pro et Microsoft reconnues dans l&apos;industrie.
-          Chaque parcours de formation est aligné sur le contenu officiel des examens.
+        <p className="text-sm text-gray-400 max-w-2xl leading-relaxed mb-6">
+          Préparez les certifications officielles Jamf Pro, Apple et Microsoft reconnues dans l&apos;industrie.
+          Chaque parcours est aligné sur le contenu officiel des examens avec quiz et labs pratiques.
         </p>
+
         {/* Stats */}
-        <div className="flex flex-wrap gap-6 mt-6 text-xs text-gray-500">
-          <span className="flex items-center gap-1.5"><Award size={13} className="text-yellow-400" />9 certifications couvertes</span>
-          <span className="flex items-center gap-1.5"><Star size={13} className="text-violet-400" />4 niveaux Jamf Pro officiels</span>
-          <span className="flex items-center gap-1.5"><BookOpen size={13} className="text-blue-400" />Badges Credly officiels</span>
+        <div className="flex flex-wrap gap-3 sm:gap-6">
+          {[
+            { icon: <Award size={13} className="text-yellow-400" />, label: '8 certifications couvertes' },
+            { icon: <Star size={13} className="text-violet-400" />, label: '4 niveaux Jamf Pro officiels' },
+            { icon: <BookOpen size={13} className="text-blue-400" />, label: 'Badges numériques Credly' },
+            { icon: <Zap size={13} className="text-green-400" />, label: 'Aligné sur le catalogue officiel' },
+          ].map(({ icon, label }) => (
+            <span key={label} className="flex items-center gap-1.5 text-xs text-gray-500">
+              {icon} {label}
+            </span>
+          ))}
         </div>
       </div>
 
-      {/* ── Section Jamf Pro ─────────────────────────────────────────────── */}
+      {/* ── Section Jamf Pro ─────────────────────────────────────────────────── */}
       <section className="mb-16">
-        <div className="flex items-center gap-3 mb-2">
+
+        {/* En-tête section */}
+        <div className="flex flex-wrap items-center gap-3 mb-2">
           <h2 className="text-lg font-bold text-white">Jamf Pro — Parcours certifiant officiel</h2>
           <Link
             href="https://trainingcatalog.jamf.com/page/fr-fr"
@@ -224,64 +348,82 @@ export default function CertificationsPage() {
             rel="noopener noreferrer"
             className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300 transition-colors"
           >
-            <ExternalLink size={12} />
-            Jamf Training Catalog
+            <ExternalLink size={11} />
+            Catalogue Jamf
           </Link>
         </div>
-        <p className="text-sm text-gray-500 mb-7">
+        <p className="text-xs text-gray-500 mb-8">
           Progression officielle Jamf — du niveau associé à l&apos;expert, avec badges numériques Credly.
+          Cours disponibles en anglais, allemand, espagnol, français, japonais et chinois traditionnel.
         </p>
 
-        {/* Progression flow — desktop */}
-        <div className="hidden lg:flex items-center gap-2 mb-8 overflow-x-auto pb-2">
+        {/* Barre de progression — desktop */}
+        <div className="hidden md:flex items-center gap-1.5 mb-8 overflow-x-auto pb-2 scrollbar-none">
           {JAMF_COURSES.map((course, i) => (
-            <div key={course.number} className="flex items-center gap-2 flex-shrink-0">
-              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold ${course.color.border} ${course.color.bg} ${course.color.number}`}>
+            <div key={course.number} className="flex items-center gap-1.5 flex-shrink-0">
+              <Link
+                href={course.officialUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`group flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all ${course.color.border} ${course.color.bg} ${course.color.number} hover:opacity-80`}
+              >
+                <span className="w-5 h-5 rounded-full border flex items-center justify-center text-[10px] font-bold flex-shrink-0"
+                  style={{ borderColor: 'currentColor', opacity: 0.6 }}>
+                  {i + 1}
+                </span>
                 <span>Jamf {course.number}</span>
-                <span className="text-gray-500 font-normal">→ {course.certName.split(' — ')[0].replace('Jamf Certified ', '')}</span>
-              </div>
+                <span className="text-gray-500 font-normal hidden lg:inline">→ {course.badge}</span>
+                <ExternalLink size={9} className="opacity-0 group-hover:opacity-60 transition-opacity" />
+              </Link>
               {i < JAMF_COURSES.length - 1 && (
-                <ChevronRight size={14} className="text-gray-600 flex-shrink-0" />
+                <ChevronRight size={14} className="text-gray-700 flex-shrink-0" />
               )}
             </div>
           ))}
         </div>
 
-        {/* Cards Jamf */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
+        {/* Grille cartes Jamf */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
           {JAMF_COURSES.map((course) => {
             const relatedCourses = allCourses.filter((c) =>
               c.certificationRelated.some((cr) => cr.includes(`Jamf ${course.number}`))
             );
             return (
-              <div
+              <article
                 key={course.number}
-                className={`flex flex-col rounded-2xl border p-5 transition-all hover:shadow-lg ${course.color.border} ${course.color.bg} ${course.color.glow}`}
+                className={`group flex flex-col rounded-2xl border p-5 transition-all duration-200 ${course.color.border} ${course.color.bg} ${course.color.glow}`}
               >
-                {/* Badge + niveau */}
-                <div className="flex items-start justify-between mb-4">
-                  <div className={`px-2 py-0.5 rounded-full text-xs font-semibold ${course.color.badge}`}>
+                {/* Header : numéro + niveau */}
+                <div className="flex items-center justify-between mb-4">
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${course.color.badge}`}>
                     Jamf {course.number}
-                  </div>
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${LEVEL_COLORS[course.level]}`}>
-                    {course.level}
                   </span>
+                  <LevelBadge level={course.level} />
                 </div>
 
-                {/* Badge image + titre */}
+                {/* Badge image + nom certification */}
                 <div className="flex items-center gap-3 mb-4">
-                  <div className={`w-14 h-14 flex-shrink-0 rounded-xl overflow-hidden border ${course.color.border} bg-black/20 p-1`}>
+                  <div className={`relative w-16 h-16 flex-shrink-0 rounded-xl overflow-hidden border ${course.color.badgeRing} bg-black/30 p-1 transition-transform duration-200 group-hover:scale-105`}>
                     <Image
                       src={course.badgeImage}
-                      alt={`Badge ${course.title}`}
-                      width={56}
-                      height={56}
-                      className="w-full h-full object-contain"
+                      alt={`Badge officiel ${course.title}`}
+                      width={64}
+                      height={64}
+                      className="w-full h-full object-contain drop-shadow-md"
+                      priority
                     />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <h3 className="font-bold text-white text-sm leading-tight">{course.title}</h3>
-                    <p className={`text-xs mt-0.5 ${course.color.accent}`}>{course.badge.split('Jamf Certified ')[1] || course.badge}</p>
+                    <p className={`text-xs mt-0.5 font-semibold ${course.color.accent}`}>
+                      {course.badge}
+                    </p>
+                    {course.credly && (
+                      <span className="inline-flex items-center gap-1 mt-1 text-[10px] text-gray-600">
+                        <GraduationCap size={9} />
+                        Badge Credly
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -292,38 +434,52 @@ export default function CertificationsPage() {
 
                 {/* Topics */}
                 <div className="mb-4">
-                  <p className="text-xs text-gray-600 mb-2 font-medium uppercase tracking-wider">Sujets couverts</p>
-                  <ul className="space-y-1">
+                  <p className="text-[10px] text-gray-600 mb-2 font-semibold uppercase tracking-widest">
+                    Sujets couverts
+                  </p>
+                  <ul className="space-y-1.5">
                     {course.topics.slice(0, 4).map((topic) => (
-                      <li key={topic} className="flex items-center gap-1.5 text-xs text-gray-400">
-                        <span className={`w-1 h-1 rounded-full flex-shrink-0 ${course.color.dot}`} />
+                      <li key={topic} className="flex items-center gap-2 text-xs text-gray-400">
+                        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${course.color.dot}`} />
                         {topic}
                       </li>
                     ))}
                     {course.topics.length > 4 && (
-                      <li className="text-xs text-gray-600">+{course.topics.length - 4} autres...</li>
+                      <li className="flex items-center gap-2 text-xs text-gray-600">
+                        <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-gray-700" />
+                        +{course.topics.length - 4} sujets supplémentaires
+                      </li>
                     )}
                   </ul>
                 </div>
 
                 {/* Méta */}
-                <div className="flex items-center gap-3 text-xs text-gray-600 mb-4 pb-4 border-b border-white/5">
-                  <span className="flex items-center gap-1"><Clock size={10} />{course.duration}</span>
-                  <span className="text-gray-700">·</span>
-                  <span>{course.format}</span>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-600 mb-3 pb-3 border-b border-white/5">
+                  <span className="flex items-center gap-1">
+                    <Clock size={10} />
+                    {course.duration}
+                  </span>
+                  <span className="hidden sm:inline text-gray-700">·</span>
+                  <span className="truncate">{course.format}</span>
+                  <span className={`ml-auto px-2 py-0.5 rounded-full text-[10px] font-semibold border ${course.color.priceBadge}`}>
+                    {course.price}
+                  </span>
                 </div>
 
                 {/* Prérequis */}
-                <div className="mb-4">
+                <div className="mb-3">
                   <span className="text-xs text-gray-600">Prérequis : </span>
                   <span className="text-xs text-gray-400">{course.prereqs}</span>
                 </div>
 
                 {/* Cours liés */}
                 {relatedCourses.length > 0 && (
-                  <p className="text-xs text-gray-600 mb-4">
-                    {relatedCourses.length} cours préparatoires disponibles
-                  </p>
+                  <div className="flex items-center gap-1.5 mb-4">
+                    <CheckCircle2 size={11} className={course.color.accent} />
+                    <p className="text-xs text-gray-500">
+                      {relatedCourses.length} cours préparatoires disponibles
+                    </p>
+                  </div>
                 )}
 
                 {/* Boutons */}
@@ -332,84 +488,134 @@ export default function CertificationsPage() {
                     href={course.officialUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`flex items-center justify-center gap-2 w-full px-3 py-2 rounded-xl text-xs font-semibold transition-colors ${course.color.btnExt}`}
+                    className={`flex items-center justify-center gap-2 w-full px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${course.color.btnExt}`}
                   >
-                    <ExternalLink size={12} />
+                    <ExternalLink size={11} />
                     Voir la formation officielle
                   </Link>
                   <Link
                     href={course.prepUrl}
-                    className={`flex items-center justify-between w-full px-3 py-2 rounded-xl border text-xs transition-colors ${course.color.btn}`}
+                    className={`flex items-center justify-between w-full px-3 py-2 rounded-xl border text-xs transition-all ${course.color.btn}`}
                   >
                     <span>Cours de préparation</span>
-                    <ChevronRight size={13} />
+                    <ArrowRight size={11} />
                   </Link>
                 </div>
-              </div>
+              </article>
             );
           })}
         </div>
+
+        {/* Note Credly */}
+        <div className="mt-6 flex items-start gap-3 p-4 rounded-xl bg-white/3 border border-white/6">
+          <GraduationCap size={16} className="text-gray-400 flex-shrink-0 mt-0.5" />
+          <p className="text-xs text-gray-500 leading-relaxed">
+            <span className="text-gray-300 font-medium">Badges numériques Credly</span> — À la réussite de l&apos;examen,
+            Jamf délivre un badge numérique Credly partageable sur LinkedIn, votre CV et vos profils professionnels.
+            Les certifications sont valables 3 ans.{' '}
+            <Link
+              href="https://trainingcatalog.jamf.com/page/fr-fr"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-400 hover:text-white underline underline-offset-2 transition-colors"
+            >
+              Consulter le catalogue complet Jamf →
+            </Link>
+          </p>
+        </div>
       </section>
 
-      {/* ── Autres certifications ─────────────────────────────────────────── */}
+      {/* ── Apple & Microsoft ─────────────────────────────────────────────────── */}
       <section className="mb-14">
         <h2 className="text-lg font-bold text-white mb-2">Apple & Microsoft</h2>
-        <p className="text-sm text-gray-500 mb-6">
-          Certifications complémentaires pour compléter votre profil professionnel.
+        <p className="text-sm text-gray-500 mb-7">
+          Certifications complémentaires pour compléter votre profil IT professionnel.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {OTHER_CERTS.map((cert) => {
-            const relatedCourses = allCourses.filter((c) => c.certificationRelated.includes(cert.id));
+            const relatedCourses = allCourses.filter((c) =>
+              c.certificationRelated.includes(cert.name)
+            );
             return (
-              <div
+              <article
                 key={cert.id}
-                className={`flex flex-col rounded-xl border p-5 transition-all hover:border-white/15 ${cert.color}`}
+                className={`flex flex-col rounded-xl border p-5 transition-all ${cert.color}`}
               >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">{cert.emoji}</span>
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${cert.badge}`}>
-                      {cert.provider}
-                    </span>
-                  </div>
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${LEVEL_COLORS[cert.level]}`}>
-                    {cert.level}
+                <div className="flex items-start justify-between mb-4">
+                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${cert.badge}`}>
+                    {cert.provider}
                   </span>
+                  <LevelBadge level={cert.level} />
                 </div>
-                <h3 className="font-semibold text-white text-sm mb-2 leading-tight">{cert.id}</h3>
+
+                <div className="flex items-center gap-3 mb-4">
+                  <div className={`w-12 h-12 flex-shrink-0 rounded-xl overflow-hidden border ${cert.badgeBorder} ${cert.badgeBg} p-0.5`}>
+                    <Image
+                      src={cert.badgeImage}
+                      alt={`Badge ${cert.name}`}
+                      width={48}
+                      height={48}
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <h3 className="font-semibold text-white text-sm leading-tight">{cert.name}</h3>
+                </div>
+
                 <p className="text-xs text-gray-500 leading-relaxed mb-4 flex-1">{cert.description}</p>
+
+                <ul className="space-y-1 mb-4">
+                  {cert.topics.map((t) => (
+                    <li key={t} className="flex items-center gap-2 text-xs text-gray-500">
+                      <span className="w-1 h-1 rounded-full bg-gray-600 flex-shrink-0" />
+                      {t}
+                    </li>
+                  ))}
+                </ul>
+
+                <div className="flex items-center gap-1 text-xs text-gray-600 mb-4 pb-3 border-b border-white/5">
+                  <Clock size={10} />
+                  {cert.duration}
+                </div>
+
                 <div className="space-y-2 mt-auto">
                   <Link
                     href={cert.officialUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-1.5 w-full px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/8 text-xs text-gray-400 hover:text-white transition-colors"
+                    className="flex items-center justify-center gap-1.5 w-full px-3 py-2.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/8 text-xs text-gray-300 hover:text-white transition-all font-medium"
                   >
                     <ExternalLink size={11} />
                     Voir la certification officielle
                   </Link>
                   <Link
                     href={cert.url}
-                    className="flex items-center justify-between w-full px-3 py-2 rounded-lg border border-white/8 bg-white/3 text-xs text-gray-500 hover:text-white hover:border-white/15 transition-colors"
+                    className="flex items-center justify-between w-full px-3 py-2 rounded-lg border border-white/6 bg-white/3 text-xs text-gray-500 hover:text-white hover:border-white/12 transition-all"
                   >
-                    <span>{relatedCourses.length} cours préparatoires</span>
-                    <ChevronRight size={13} />
+                    <span>
+                      {relatedCourses.length > 0
+                        ? `${relatedCourses.length} cours préparatoires`
+                        : 'Cours de préparation'}
+                    </span>
+                    <ArrowRight size={11} />
                   </Link>
                 </div>
-              </div>
+              </article>
             );
           })}
         </div>
       </section>
 
-      {/* ── Cours de préparation Module 9 ────────────────────────────────── */}
+      {/* ── Guides de révision Module 9 ──────────────────────────────────────── */}
       {certModule && (
         <section>
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex flex-wrap items-center gap-3 mb-2">
             <h2 className="text-lg font-bold text-white">Guides de révision & examens blancs</h2>
+            <span className="text-xs text-gray-600 px-2 py-0.5 rounded-full bg-white/5 border border-white/8">
+              Module {certModule.order}
+            </span>
           </div>
-          <p className="text-sm text-gray-500 mb-6">
-            Module {certModule.order} — Guides de préparation avec questions d&apos;entraînement pour chaque certification.
+          <p className="text-sm text-gray-500 mb-7">
+            Guides de préparation avec questions d&apos;entraînement alignées sur les domaines officiels de chaque examen.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {certModule.courses.map((course) => (
@@ -418,17 +624,17 @@ export default function CertificationsPage() {
                 href={`/cours/${course.slug}`}
                 className="group flex flex-col p-4 rounded-xl border border-white/5 bg-[#161920] hover:border-yellow-500/30 hover:bg-[#1a1d28] transition-all"
               >
-                <div className="flex items-center gap-2 mb-2">
-                  <Trophy size={14} className="text-yellow-400" />
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${LEVEL_COLORS[course.level]}`}>
-                    {course.level}
-                  </span>
+                <div className="flex items-center gap-2 mb-3">
+                  <Trophy size={14} className="text-yellow-400 flex-shrink-0" />
+                  <LevelBadge level={course.level} />
                 </div>
                 <h3 className="text-sm font-semibold text-gray-200 group-hover:text-white mb-2 leading-snug">
                   {course.title}
                 </h3>
-                <p className="text-xs text-gray-500 line-clamp-2 mb-3 leading-relaxed">{course.description}</p>
-                <div className="mt-auto flex items-center gap-3 text-xs text-gray-600">
+                <p className="text-xs text-gray-500 line-clamp-2 mb-3 leading-relaxed flex-1">
+                  {course.description}
+                </p>
+                <div className="flex items-center gap-3 text-xs text-gray-600">
                   <span className="flex items-center gap-1"><Clock size={11} />{course.duration}</span>
                   <span className="flex items-center gap-1"><BookOpen size={11} />{course.lessons.length} leçons</span>
                 </div>
