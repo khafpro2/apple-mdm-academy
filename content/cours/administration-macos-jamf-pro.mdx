@@ -1,27 +1,102 @@
 ---
 title: "Administration macOS avec Jamf Pro"
-slug: "administration-macos-jamf-pro"
+description: "Maîtrisez l'administration complète de macOS avec Jamf Pro : enrôlement, profils, policies, Smart Groups, Self Service et Patch Management."
+module: "module-2"
+level: "intermédiaire"
+duration: "1h"
+tags: ["Jamf Pro", "macOS", "Administration", "MDM"]
 ---
 
-## Vue d'ensemble
+## Pourquoi ce module ?
 
-Ce module couvre l'administration complète de macOS avec Jamf Pro, du déploiement initial à la gestion quotidienne : enrôlement, profils de configuration, politiques, Smart Groups, Self Service et patch management.
+Jamf Pro est la solution MDM de référence pour la gestion des appareils Apple en entreprise. Ce module couvre l'ensemble du cycle d'administration macOS : de l'enrôlement initial jusqu'à la gestion avancée des politiques, en passant par les profils de configuration, les Smart Groups et le Patch Management.
+
+C'est le cœur de la pratique quotidienne d'un administrateur Jamf. La maîtrise de ces outils permet d'automatiser 90% des tâches d'administration et d'assurer une gestion cohérente à l'échelle d'un parc de milliers de Mac.
+
+## Ce que vous allez apprendre
+
+À la fin de ce module, vous serez capable de :
+
+- **Déployer** Jamf Pro et enrôler des Mac via ADE ou script
+- **Créer** des Configuration Profiles pour imposer des paramètres système
+- **Configurer** des Policies pour exécuter des scripts et installer des logiciels
+- **Construire** des Smart Groups pour cibler dynamiquement vos appareils
+- **Déployer** Self Service pour permettre aux utilisateurs d'agir en autonomie
+- **Gérer** les mises à jour système avec Patch Management
+
+## Jamf Pro — Architecture et concepts fondamentaux
+
+### La communication MDM
+
+Jamf Pro communique avec les appareils macOS via deux canaux :
+
+```
+Mac <──── APNs Push ────> Jamf Pro Server
+Mac <──── HTTPS ──────> Jamf Pro Server
+Mac <──── Jamf Binary ─> /usr/local/bin/jamf
+```
+
+**APNs (Apple Push Notification Service)** : déclenche les actions MDM (installation profils, commandes)
+**HTTPS** : transfert de données (inventaire, logs, packages)
+**Binary Jamf** : exécute les scripts, policies et opérations locales
+
+### Les trois types d'objets Jamf Pro
+
+| Objet | Rôle | Exemple |
+|---|---|---|
+| **Configuration Profile** | Impose des paramètres système | Désactiver le Bluetooth, configurer le Wi-Fi |
+| **Policy** | Exécute des actions | Installer une app, lancer un script |
+| **Smart Group** | Cible dynamique d'appareils | "Tous les Mac sans FileVault" |
+
+## Flux d'administration type
+
+```
+Achat appareil → ABM/ADE → Enrôlement Jamf Pro
+                                    │
+                      ┌─────────────┼─────────────┐
+                      │             │             │
+               Config Profiles   Policies    Smart Groups
+               (paramètres)    (actions)    (ciblage)
+                      │             │             │
+                      └─────────────┴─────────────┘
+                                    │
+                              Self Service
+                         (autonomie utilisateur)
+```
+
+## Compétences clés par cours
+
+**Introduction à Jamf Pro** : architecture, interface, navigation, objets principaux
+
+**Enrôlement macOS** : ADE via ABM, enrôlement par invitation, script d'enrôlement, PreStage Enrollment
+
+**Configuration Profiles** : payloads disponibles, création, déploiement, priorité et scope
+
+**Policies** : triggers (récurrent, login, event), scripts, packages, restart actions, scope
+
+**Smart Groups** : critères statiques vs dynamiques, nested groups, opérateurs AND/OR/NOT
+
+**Self Service** : personnalisation, catégories, notifications, branding
+
+**Patch Management** : sources de patches, définitions, politiques de mises à jour
+
+**Reporting** : inventaire, rapports avancés, Advanced Search, export CSV
+
+## Certifications préparées
+
+Ce module couvre les domaines essentiels des formations Jamf 100 Course et Jamf 200 Course.
 
 ## Cours de ce module
 
 1. [Introduction à Jamf Pro](/cours/introduction-jamf-pro)
-2. [Enrôlement macOS avec Jamf](/cours/enrolement-macos-jamf)
-3. [Configuration Profiles](/cours/configuration-profiles-jamf)
+2. [Enrôlement macOS avec Jamf Pro](/cours/enrolement-macos-jamf)
+3. [Configuration Profiles macOS](/cours/configuration-profiles-jamf)
 4. [Policies Jamf Pro](/cours/policies-jamf-pro)
-5. [Smart Groups](/cours/smart-groups-jamf)
-6. [Self Service](/cours/self-service-jamf)
-7. [Patch Management](/cours/patch-management-jamf)
-8. [Reporting et conformité](/cours/reporting-conformite-jamf)
-
-## Prérequis
-
-Module 1 (Fondations Apple Enterprise) recommandé, ou expérience équivalente avec ABM/ADE.
+5. [Smart Groups et ciblage dynamique](/cours/smart-groups-jamf)
+6. [Self Service — Portail utilisateur](/cours/self-service-jamf)
+7. [Patch Management avec Jamf Pro](/cours/patch-management-jamf)
+8. [Reporting et conformité Jamf Pro](/cours/reporting-conformite-jamf)
 
 ## Durée estimée
 
-16 heures de formation + labs pratiques.
+**8–10 heures** de contenu + labs pratiques en environnement simulé

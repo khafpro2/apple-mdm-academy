@@ -1,27 +1,116 @@
 ---
-title: "Android Enterprise avec Intune"
-slug: "android-enterprise-intune"
+title: "Android Enterprise avec Microsoft Intune"
+description: "Gérez les appareils Android en entreprise avec Intune : Work Profile, Fully Managed, COPE, COSU, politiques de conformité et sécurité Android."
+module: "module-8"
+level: "intermédiaire"
+duration: "1h"
+tags: ["Android", "Intune", "Android Enterprise", "BYOD", "MDM"]
 ---
 
-## Vue d'ensemble
+## Pourquoi ce module ?
 
-Ce module couvre la gestion des appareils Android en entreprise avec Microsoft Intune et Android Enterprise : Work Profile, Fully Managed, Dedicated Devices, COPE, déploiement d'applications et sécurité.
+Dans la plupart des entreprises, le parc mobile est mixte : des iPhone et iPad Apple, mais aussi des smartphones et tablettes Android. Microsoft Intune gère les deux écosystèmes depuis une console unifiée, et Android Enterprise est le framework Google qui standardise cette gestion.
+
+Ce module complète naturellement le Module 7 (Intune Apple) en vous donnant les compétences pour gérer l'intégralité d'un parc mobile — quel que soit le système d'exploitation des appareils.
+
+## Ce que vous allez apprendre
+
+- **Comprendre** les différents modes de gestion Android Enterprise
+- **Déployer** Android Work Profile pour les scénarios BYOD
+- **Configurer** des appareils Fully Managed (COBO) pour l'entreprise
+- **Implémenter** le mode COPE pour les appareils personnels professionnels
+- **Sécuriser** des Dedicated Devices pour les usages kiosque
+- **Appliquer** les politiques de conformité et de sécurité Android
+
+## Android Enterprise — Les modes de gestion
+
+Android Enterprise définit 4 profils de déploiement selon le niveau de contrôle et la propriété des appareils :
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    PROPRIÉTÉ DE L'APPAREIL                  │
+│         Personnel (BYOD)              Entreprise            │
+├────────────────────────┬────────────────────────────────────┤
+│                        │                                    │
+│   Work Profile (WP)    │  Fully Managed   │  Dedicated      │
+│   ──────────────────   │  (COBO)          │  (COSU)         │
+│   • Conteneur pro      │  ──────────────  │  ──────────────  │
+│   • Données séparées   │  • Contrôle      │  • Kiosque      │
+│   • Privacy préservée  │    total         │  • Une seule    │
+│   • L'utilisateur peut │  • Apps IT       │    application  │
+│     effacer le profil  │    uniquement    │  • Point de     │
+│                        │                  │    vente / info │
+│                        │  COPE            │                 │
+│                        │  ──────────────  │                 │
+│                        │  • Profil perso  │                 │
+│                        │  • Profil pro    │                 │
+│                        │  • Contrôle IT   │                 │
+│                        │    sur le tout   │                 │
+└────────────────────────┴────────────────────────────────────┘
+```
+
+## Comparaison des modes
+
+| Mode | Propriété | Contrôle IT | Privacy | Cas d'usage |
+|---|---|---|---|---|
+| **Work Profile** | Perso | Conteneur pro | Élevée | BYOD employés |
+| **Fully Managed** | Entreprise | Total | Faible | Smartphones pro |
+| **COPE** | Entreprise | Élevé | Partielle | Mobile hybride |
+| **Dedicated** | Entreprise | Total | Aucune | Kiosque, POS |
+
+## Architecture Android Enterprise avec Intune
+
+```
+Google Play Managed
+        │
+        └── Managed Google Play ←→ Microsoft Intune
+                                        │
+                              ┌─────────┼─────────┐
+                              │         │         │
+                         Work Profile  COBO     COSU
+                              │         │         │
+                         Apps pro    Apps IT   App unique
+                         isolées     seulement  en kiosque
+```
+
+**Intégration Google :**
+Intune se connecte à Google via un compte Google Workspace ou un compte Google dédié. Cette liaison permet d'accéder au Managed Google Play et de distribuer des applications sans compte Google Play personnel.
+
+## Scénario BYOD — Work Profile en pratique
+
+```
+Smartphone personnel de l'employé
+├── Zone personnelle (non gérée par IT)
+│   ├── Photos personnelles
+│   ├── WhatsApp, Instagram
+│   └── Données personnelles (IT n'y a pas accès)
+│
+└── Work Profile (géré par Intune)
+    ├── Microsoft Outlook (email pro)
+    ├── Microsoft Teams
+    ├── App métier
+    └── Données chiffrées (IT peut effacer uniquement ce profil)
+```
+
+L'employé voit une icône distincte sur les apps du Work Profile. En cas de départ, IT efface uniquement le Work Profile sans toucher aux données personnelles.
 
 ## Cours de ce module
 
 1. [Introduction à Android Enterprise](/cours/introduction-android-enterprise)
 2. [Android Work Profile (BYOD)](/cours/android-work-profile)
-3. [Android Fully Managed (COBO)](/cours/android-fully-managed)
-4. [Android Dedicated Devices (Kiosque)](/cours/android-dedicated-devices)
-5. [Android COPE](/cours/android-cope)
-6. [Déploiement d'applications Android](/cours/deploiement-apps-android)
-7. [Politiques de conformité Android](/cours/politiques-conformite-android)
-8. [Sécurité Android avec Intune](/cours/securite-android-intune)
+3. [Android Fully Managed Devices (COBO)](/cours/android-fully-managed)
+4. [Android COPE — Corporate Owned Personally Enabled](/cours/android-cope)
+5. [Android Dedicated Devices (COSU)](/cours/android-dedicated-devices)
+6. [Politiques de conformité Android](/cours/politiques-conformite-android)
+7. [Sécurité Android avec Microsoft Intune](/cours/securite-android-intune)
 
 ## Prérequis
 
-Module Microsoft Intune pour Apple (ou expérience Intune équivalente).
+- Module 7 (Microsoft Intune Apple) recommandé
+- Tenant Microsoft Intune actif
+- Compte Google Workspace ou Google dédié pour l'intégration Play
 
 ## Durée estimée
 
-14 heures de formation + labs pratiques.
+**8–10 heures** de contenu + labs Android  
+**Certification préparée :** Microsoft MD-102 (Endpoint Administrator)

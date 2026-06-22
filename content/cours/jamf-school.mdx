@@ -1,25 +1,99 @@
 ---
-title: "Jamf School"
-slug: "jamf-school"
+title: "Jamf School — Gestion des appareils éducatifs"
+description: "Déployez et administrez des iPad, Mac et Apple TV en milieu scolaire avec Jamf School : classes, Shared iPad, apps pédagogiques et sécurité."
+module: "module-5"
+level: "intermédiaire"
+duration: "45 min"
+tags: ["Jamf School", "iPad", "Éducation", "K-12", "Shared iPad"]
 ---
 
-## Vue d'ensemble
+## Pourquoi ce module ?
 
-Ce module couvre la gestion des appareils Apple en milieu éducatif avec Jamf School : déploiement d'iPad, classes virtuelles, Shared iPad, applications pédagogiques et sécurité en milieu scolaire.
+L'éducation représente l'un des plus grands marchés Apple dans le monde. Des millions d'iPad sont déployés dans des établissements scolaires, et Jamf School est la solution MDM conçue spécifiquement pour ce contexte — avec des fonctionnalités que Jamf Pro n'a pas : gestion des classes en temps réel, Shared iPad natif, et intégration Apple School Manager.
+
+Ce module s'adresse aux administrateurs IT des établissements scolaires (primaire, collège, lycée) et aux responsables IT des collectivités gérant des parcs éducatifs.
+
+## Ce que vous allez apprendre
+
+- **Configurer** Jamf School pour un établissement scolaire
+- **Déployer** des iPad en mode Shared iPad pour la mutualisation
+- **Gérer** les classes, enseignants et élèves depuis la console
+- **Distribuer** des applications pédagogiques depuis Apple School Manager
+- **Appliquer** des restrictions adaptées au contexte scolaire
+- **Sécuriser** l'environnement numérique des élèves
+
+## Jamf Pro vs Jamf School — Quelle différence ?
+
+| Fonctionnalité | Jamf Pro | Jamf School |
+|---|---|---|
+| Gestion de classes en temps réel | ✗ | ✓ |
+| Shared iPad natif | ✗ | ✓ |
+| Interface simplifiée pour enseignants | ✗ | ✓ |
+| Apple School Manager natif | ✓ (via ABM) | ✓ (natif) |
+| Gestion avancée macOS | ✓ | Limitée |
+| API REST complète | ✓ | Limitée |
+| Prix | Plus élevé | Adapté éducation |
+
+Jamf School est optimisé pour les iPads éducatifs ; Jamf Pro est recommandé si l'établissement gère aussi des Mac en grande quantité.
+
+## Shared iPad — Fonctionnement
+
+Shared iPad permet à plusieurs élèves d'utiliser le même iPad avec leur propre espace de travail :
+
+```
+iPad Shared (64 Go minimum)
+├── Espace élève A (compte ASM)
+│   ├── Apps installées
+│   ├── Données iCloud Drive
+│   └── Photos / Documents
+├── Espace élève B
+└── Espace élève C
+
+À la connexion : chargement auto du profil depuis iCloud
+À la déconnexion : données sauvegardées, espace libéré
+```
+
+**Prérequis Shared iPad :**
+- iPad avec Apple Silicon ou iPad de 6e génération minimum
+- Compte Managed Apple Account (Apple School Manager)
+- Au moins 32 Go de stockage disponible
+- iPadOS 13.4 ou ultérieur
+
+## Workflow éducatif type
+
+```
+Rentrée scolaire
+    │
+    ├── Import CSV élèves → Apple School Manager
+    │
+    ├── Création classes → Jamf School
+    │
+    ├── Assignation iPad → Élèves ou Shared
+    │
+    ├── Distribution apps → Apps & Books via ASM
+    │
+    └── Pendant l'année :
+            ├── Enseignant : contrôle classe (Focus, Mute, App Lock)
+            ├── Élève : accès à ses apps et données
+            └── Admin : rapports d'utilisation, mises à jour
+```
 
 ## Cours de ce module
 
 1. [Présentation de Jamf School](/cours/presentation-jamf-school)
-2. [Gestion des iPad](/cours/gestion-ipad-jamf-school)
-3. [Classes et utilisateurs](/cours/classes-utilisateurs-jamf-school)
-4. [Shared iPad](/cours/shared-ipad-jamf-school)
+2. [Gestion des iPad avec Jamf School](/cours/gestion-ipad-jamf-school)
+3. [Classes, enseignants et utilisateurs](/cours/classes-utilisateurs-jamf-school)
+4. [Shared iPad — iPad partagé](/cours/shared-ipad-jamf-school)
 5. [Applications pédagogiques](/cours/apps-pedagogiques-jamf-school)
 6. [Sécurité en milieu scolaire](/cours/securite-milieu-scolaire)
 
 ## Prérequis
 
-Notions de base en gestion MDM Apple (Module 1 recommandé).
+- Bases de gestion MDM (Module 1 recommandé)
+- Compte Apple School Manager (gratuit pour les établissements)
+- Accès Jamf School (trial disponible sur jamf.com/school)
 
 ## Durée estimée
 
-10 heures de formation + labs pratiques.
+**6–8 heures** de contenu + labs pratiques  
+**Public cible :** Administrateurs IT des établissements scolaires K-12 et collectivités

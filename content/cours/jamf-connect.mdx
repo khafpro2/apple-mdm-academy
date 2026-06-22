@@ -1,24 +1,102 @@
 ---
-title: "Jamf Connect"
-slug: "jamf-connect"
+title: "Jamf Connect — Identité cloud pour macOS"
+description: "Intégrez macOS avec Microsoft Entra ID et Okta via Jamf Connect : Platform SSO, authentification cloud, Zero Trust et synchronisation des identités."
+module: "module-6"
+level: "avancé"
+duration: "1h"
+tags: ["Jamf Connect", "Entra ID", "SSO", "Platform SSO", "Zero Trust"]
 ---
 
-## Vue d'ensemble
+## Pourquoi ce module ?
 
-Ce module couvre Jamf Connect, la solution de gestion d'identité cloud pour macOS : intégration Microsoft Entra ID, authentification OIDC, Single Sign-On, synchronisation des mots de passe et architecture Zero Trust.
+Dans la quasi-totalité des entreprises modernes, les identités sont gérées dans le cloud — Microsoft Entra ID (Azure AD), Okta, Google Workspace. Mais macOS, historiquement, vivait en dehors de ces systèmes : comptes locaux, Active Directory on-prem, gestion manuelle des mots de passe.
+
+Jamf Connect résout ce problème fondamental : il connecte l'identité macOS directement à votre fournisseur d'identité cloud, sans serveur on-prem, sans binding AD, et avec une expérience utilisateur moderne.
+
+## Ce que vous allez apprendre
+
+- **Intégrer** macOS avec Microsoft Entra ID ou Okta via Jamf Connect
+- **Déployer** Platform SSO macOS 13+ pour une authentification native
+- **Configurer** le Single Sign-On pour les applications web et natives
+- **Implémenter** la synchronisation des mots de passe entre le compte local et l'IdP
+- **Appliquer** une stratégie Zero Trust avec accès conditionnel
+- **Diagnostiquer** les problèmes d'authentification Jamf Connect
+
+## Le problème de l'identité macOS sans Jamf Connect
+
+```
+Situation classique (sans Jamf Connect)
+────────────────────────────────────────
+Utilisateur :  1 compte Microsoft 365
+               1 compte macOS local (autre mot de passe)
+               1 compte VPN
+               1 compte app métier
+               → 4 mots de passe à gérer
+
+Résultat :     Mots de passe oubliés, réinitialisations fréquentes,
+               tickets Help Desk, shadow IT, risques de sécurité
+```
+
+```
+Avec Jamf Connect + Platform SSO
+──────────────────────────────────
+Utilisateur :  1 compte Entra ID
+               → Déverrouille le Mac avec ses identifiants Microsoft
+               → SSO automatique vers toutes les apps
+               → Plus de rupture d'authentification
+
+Résultat :     Expérience fluide, sécurité renforcée,
+               -60% de tickets liés aux mots de passe
+```
+
+## Platform SSO macOS 13+ — Révolution silencieuse
+
+Introduit dans macOS Ventura (13.0), Platform SSO est une extension système native qui remplace le mécanisme d'authentification macOS traditionnel par une authentification via un fournisseur d'identité cloud.
+
+```
+Avant Platform SSO          Après Platform SSO
+──────────────────          ──────────────────
+Login screen macOS          Login screen macOS
+    │                           │
+    ▼                           ▼
+Compte local               Entra ID (OAuth 2.0)
+    │                           │
+    ▼                           ▼
+App nécessite login         SSO transparent
+(email/password)            (token Entra ID partagé)
+```
+
+**Avantages Platform SSO :**
+- Authentification biométrique Touch ID → token Entra ID
+- Propagation automatique des changements de mot de passe
+- Compatibilité Conditional Access Entra ID
+- Aucun binding Active Directory nécessaire
+
+## Jamf Connect vs alternatives
+
+| Solution | Entra ID | On-prem AD | SSO natif | Complexity |
+|---|---|---|---|---|
+| **Jamf Connect** | ✓ Natif | Via LDAP | Platform SSO | Faible |
+| Binding AD | ✗ | ✓ | ✗ | Élevée |
+| NoMAD (ancien) | Limité | ✓ | ✗ | Moyenne |
+| Script maison | Complexe | ✓ | ✗ | Très élevée |
 
 ## Cours de ce module
 
 1. [Introduction à Jamf Connect](/cours/introduction-jamf-connect)
-2. [Intégration Microsoft Entra ID](/cours/jamf-connect-microsoft-entra)
-3. [Single Sign-On](/cours/single-sign-on-jamf-connect)
+2. [Intégration Microsoft Entra ID profonde](/cours/jamf-connect-microsoft-entra)
+3. [Single Sign-On avec Jamf Connect](/cours/single-sign-on-jamf-connect)
 4. [Synchronisation des mots de passe](/cours/synchronisation-mots-de-passe)
 5. [Zero Trust avec Jamf Connect](/cours/zero-trust-jamf-connect)
 
 ## Prérequis
 
-Module 2 (Administration macOS avec Jamf Pro) et notions Microsoft Entra ID recommandés.
+- Module 2 complet (Jamf Pro)
+- Compte Microsoft Entra ID (tenant Azure) ou Okta
+- macOS 13+ recommandé pour Platform SSO
+- Jamf Connect 2.x (licence requise)
 
 ## Durée estimée
 
-10 heures de formation + labs pratiques.
+**6–8 heures** de contenu + labs pratiques  
+**Certification préparée :** Jamf 300 Course

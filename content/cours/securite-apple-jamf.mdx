@@ -1,25 +1,95 @@
 ---
 title: "Sécurité Apple avec Jamf"
-slug: "securite-apple-jamf"
+description: "Jamf Protect, Jamf Security Cloud, FileVault, Gatekeeper, CIS Benchmarks macOS et détection de menaces pour les professionnels de la sécurité Apple."
+module: "module-4"
+level: "avancé"
+duration: "1h"
+tags: ["Jamf Protect", "Sécurité", "CIS", "MITRE", "macOS"]
 ---
 
-## Vue d'ensemble
+## Pourquoi ce module ?
 
-Ce module couvre la sécurité macOS avec la suite Jamf : Jamf Protect (EDR), Jamf Security Cloud, FileVault, Gatekeeper, conformité CIS Benchmarks et détection des menaces.
+macOS est souvent perçu, à tort, comme un système naturellement sécurisé ne nécessitant aucune gestion spécifique. En réalité, les menaces ciblant macOS ont considérablement augmenté ces dernières années, et les exigences de conformité (ISO 27001, SOC 2, RGPD) s'appliquent pleinement aux parcs Apple.
+
+Ce module vous donne les outils pour sécuriser un parc macOS de façon professionnelle et mesurable, en utilisant les solutions Jamf dédiées à la sécurité.
+
+## Ce que vous allez apprendre
+
+- **Déployer** Jamf Protect pour la détection et réponse aux menaces macOS
+- **Configurer** Jamf Security Cloud pour une protection réseau Zero Trust
+- **Implémenter** FileVault avec gestion des clés de récupération via Jamf
+- **Auditer** Gatekeeper et XProtect pour la sécurité applicative
+- **Appliquer** les CIS Benchmarks macOS avec Jamf Protect
+- **Détecter** et répondre aux incidents de sécurité sur macOS
+
+## Panorama des menaces macOS
+
+Les principales catégories de menaces ciblant macOS en 2024 :
+
+| Catégorie | Exemples | Protection Jamf |
+|---|---|---|
+| **Adware / PUP** | Adload, Shlayer | Jamf Protect Analytics |
+| **Ransomware** | KeRanger, EvilQuest | Behavioral detection |
+| **Cryptominers** | XMRig via app piratée | Process monitoring |
+| **Spyware** | Silver Sparrow | Jamf Protect + MDM |
+| **Supply chain** | Dépendances compromises | Gatekeeper + Notarization |
+| **Insider threat** | Exfiltration de données | Jamf Security Cloud |
+
+## Architecture de sécurité Jamf
+
+```
+                    ┌─────────────────────┐
+                    │    Jamf Pro (MDM)   │
+                    │  Configuration &    │
+                    │  Enforcement        │
+                    └──────────┬──────────┘
+                               │
+           ┌───────────────────┼───────────────────┐
+           │                   │                   │
+    ┌──────▼──────┐   ┌────────▼────────┐  ┌──────▼──────────┐
+    │ Jamf Protect│   │ Jamf Security   │  │  Jamf Connect   │
+    │ (Endpoint)  │   │ Cloud (Network) │  │  (Identity)     │
+    │             │   │                 │  │                 │
+    │ • Analytics │   │ • Private Access│  │ • SSO/PSSO      │
+    │ • Telemetry │   │ • Safe Internet │  │ • Zero Trust    │
+    │ • Incidents │   │ • Threat Intel  │  │ • MFA           │
+    └─────────────┘   └─────────────────┘  └─────────────────┘
+```
+
+## CIS Benchmarks macOS — ce que ça signifie
+
+Le Center for Internet Security publie des recommandations de durcissement pour macOS. Jamf Protect permet d'auditer automatiquement la conformité de chaque Mac par rapport à ces benchmarks :
+
+```
+CIS macOS Sonoma Benchmark — Niveau 1 (recommandé)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✓ 1.1 — Vérifier les mises à jour automatiques
+✓ 1.2 — Vérifier la mise à jour des données de sécurité
+✓ 2.1 — Désactiver AirDrop en entreprise
+✗ 2.6 — Activer le pare-feu macOS       ← Non conforme
+✗ 3.1 — Audit logs configurés           ← Non conforme
+...
+Score de conformité : 43/50 contrôles (86%)
+```
+
+Jamf Protect génère des rapports de conformité CIS et peut remédier automatiquement certains écarts via des scripts Jamf Pro.
 
 ## Cours de ce module
 
-1. [Jamf Protect — Introduction](/cours/jamf-protect-introduction)
+1. [Introduction à Jamf Protect](/cours/jamf-protect-introduction)
 2. [Jamf Security Cloud](/cours/jamf-security-cloud)
-3. [FileVault — Gestion Jamf](/cours/filevault-gestion-jamf)
-4. [Gatekeeper et XProtect](/cours/gatekeeper-xprotect-jamf)
-5. [CIS Benchmarks macOS](/cours/cis-benchmarks-macos)
-6. [Threat Detection et Compliance](/cours/threat-detection-compliance)
+3. [FileVault — Chiffrement macOS avec Jamf](/cours/filevault-gestion-jamf)
+4. [Gatekeeper, XProtect et sécurité applicative](/cours/gatekeeper-xprotect-jamf)
+5. [CIS Benchmarks macOS avec Jamf Protect](/cours/cis-benchmarks-macos)
+6. [Détection de menaces et Compliance](/cours/threat-detection-compliance)
 
 ## Prérequis
 
-Module 2 (Administration macOS avec Jamf Pro) complété.
+- Module 2 complet (Administration macOS avec Jamf Pro)
+- Notions de base en sécurité informatique
+- Accès Jamf Protect (trial disponible sur jamf.com)
 
 ## Durée estimée
 
-12 heures de formation + labs pratiques.
+**8–10 heures** de contenu + labs de sécurité simulés  
+**Certifications préparées :** Jamf 200 Course (sécurité), Jamf 270 Course (Jamf Protect)

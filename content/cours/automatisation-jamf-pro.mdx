@@ -1,25 +1,121 @@
 ---
 title: "Automatisation Jamf Pro"
-slug: "automatisation-jamf-pro"
+description: "API REST v2, scripting Bash/Python, packaging avancé, workflows Zero-Touch et remédiation automatique avec Jamf Pro."
+module: "module-3"
+level: "avancé"
+duration: "1h"
+tags: ["Jamf Pro", "API", "Bash", "Automatisation", "Zero-Touch"]
 ---
 
-## Vue d'ensemble
+## Pourquoi ce module ?
 
-Ce module avancé couvre l'automatisation complète avec Jamf Pro : API REST, scripting Bash, packaging macOS avec pkgbuild/productbuild, workflows Zero-Touch et remédiation automatique.
+L'administration manuelle atteint ses limites dès que le parc dépasse quelques dizaines d'appareils. Ce module vous donne les outils pour automatiser l'ensemble du cycle de vie des Mac : de l'enrôlement Zero-Touch à la remédiation automatique des non-conformités, en passant par l'API REST Jamf Pro et le scripting avancé.
+
+Les compétences de ce module correspondent au niveau avancé de la Jamf 200 Course et expert de la Jamf 300 Course. Ce sont les compétences les plus demandées sur le marché pour les ingénieurs Jamf.
+
+## Ce que vous allez apprendre
+
+À la fin de ce module, vous serez capable de :
+
+- **Exploiter** l'API REST Jamf Pro v2 pour automatiser n'importe quelle opération
+- **Écrire** des scripts Bash robustes adaptés à l'environnement Jamf
+- **Créer** et distribuer des packages PKG de qualité production
+- **Concevoir** un workflow Zero-Touch complet avec des PreStage Enrollment
+- **Implémenter** la remédiation automatique des politiques non conformes
+- **Gérer** les mises à jour macOS de façon sécurisée et contrôlée
+
+## Pourquoi automatiser avec Jamf ?
+
+```
+Sans automatisation          Avec automatisation Jamf
+─────────────────────        ───────────────────────────
+Enrôlement : 2h/Mac          Enrôlement : 0 min (Zero-Touch)
+Maj logiciel : manuel        Maj logiciel : policy récurrente
+Audit : rapport manuel       Audit : API + reporting auto
+Remédiation : ticket IT      Remédiation : script Jamf auto
+```
+
+Un ingénieur Jamf expert peut gérer 5 000+ Mac sans augmenter les effectifs grâce à l'automatisation.
+
+## L'API REST Jamf Pro v2
+
+Jamf Pro expose une API REST complète documentée via Swagger. Elle permet de :
+
+```bash
+# Obtenir un token d'authentification Bearer
+TOKEN=$(curl -s -X POST \
+  "https://jamf.example.com/api/v1/auth/token" \
+  -H "Authorization: Basic $(echo -n 'user:password' | base64)" \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['token'])")
+
+# Lister tous les Mac
+curl -s -H "Authorization: Bearer $TOKEN" \
+  "https://jamf.example.com/api/v1/computers-preview" \
+  | python3 -m json.tool
+```
+
+L'API v2 supporte aussi les webhooks pour les intégrations temps réel avec Slack, JIRA ou ServiceNow.
+
+## Architecture d'un workflow Zero-Touch
+
+```
+Achat Mac → Assigné à ABM
+    │
+    ▼
+ADE → PreStage Enrollment Jamf Pro
+    │
+    ▼
+Jamf Pro : Policy "Onboarding"
+    ├── 1. Installer les apps critiques
+    ├── 2. Configurer les profils
+    ├── 3. Activer FileVault
+    └── 4. Notifier l'utilisateur
+    │
+    ▼
+Mac 100% configuré sans intervention IT
+```
+
+## Scripting Bash pour Jamf — Bonnes pratiques
+
+```bash
+#!/bin/bash
+# Template de script Jamf Pro production-ready
+
+# Paramètres Jamf (positions 4, 5, 6)
+JAMF_PARAM4="$4"  # URL du serveur applicatif
+JAMF_PARAM5="$5"  # Mode debug
+JAMF_PARAM6="$6"  # Option supplémentaire
+
+# Logging centralisé
+LOG_FILE="/var/log/jamf-custom.log"
+log() { echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" | tee -a "$LOG_FILE"; }
+
+# Gestion d'erreurs
+set -e
+trap 'log "ERREUR ligne $LINENO — exit $?"' ERR
+
+log "Début du script"
+# ... votre logique ici
+log "Script terminé avec succès"
+exit 0
+```
 
 ## Cours de ce module
 
-1. [API Jamf Pro](/cours/api-jamf-pro)
-2. [Scripting Bash avec Jamf](/cours/scripting-bash-jamf)
-3. [Packaging avancé](/cours/packaging-avance-jamf)
-4. [Workflows Zero-Touch](/cours/workflows-zero-touch)
+1. [API Jamf Pro REST v2](/cours/api-jamf-pro)
+2. [Scripting Bash pour Jamf Pro](/cours/scripting-bash-jamf)
+3. [Packaging avancé avec Jamf Pro](/cours/packaging-avance-jamf)
+4. [Workflows Zero-Touch Deployment](/cours/workflows-zero-touch)
 5. [Remédiation automatique](/cours/remediation-automatique-jamf)
 6. [Gestion des mises à jour macOS](/cours/gestion-mises-a-jour-macos)
 
 ## Prérequis
 
-Module 2 (Administration macOS avec Jamf Pro) complété. Bases de scripting Bash recommandées.
+- Avoir suivi le Module 2 (Administration macOS avec Jamf Pro)
+- Bases de scripting Bash ou ligne de commande
+- Accès à un Jamf Pro Cloud Trial recommandé pour pratiquer
 
 ## Durée estimée
 
-14 heures de formation + labs pratiques.
+**10–12 heures** de contenu + labs avancés  
+**Certifications préparées :** Jamf 200 Course, Jamf 300 Course

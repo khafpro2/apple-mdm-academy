@@ -1,27 +1,117 @@
 ---
 title: "Microsoft Intune pour Apple"
-slug: "microsoft-intune-apple"
+description: "Gérez les Mac, iPhone et iPad avec Microsoft Intune : ADE, compliance policies, Conditional Access, Microsoft Defender et configuration avancée."
+module: "module-7"
+level: "intermédiaire"
+duration: "1h"
+tags: ["Intune", "Microsoft", "macOS", "iOS", "MDM", "MD-102"]
 ---
 
-## Vue d'ensemble
+## Pourquoi ce module ?
 
-Ce module couvre la gestion complète des appareils Apple avec Microsoft Intune dans un environnement Microsoft 365 : intégration ABM, ADE, gestion macOS et iOS, conformité, accès conditionnel et Microsoft Defender.
+De nombreuses entreprises utilisent déjà Microsoft 365 et cherchent à centraliser la gestion de leurs appareils — Windows ET Apple — dans une seule plateforme. Microsoft Intune répond à ce besoin : c'est une solution MDM cloud-native intégrée à l'écosystème Microsoft, qui gère nativement macOS, iOS et iPadOS.
+
+Ce module est particulièrement pertinent pour les administrateurs IT travaillant dans des environnements Microsoft qui doivent gérer des appareils Apple, ainsi que pour ceux préparant la certification MD-102 (Endpoint Administrator).
+
+## Ce que vous allez apprendre
+
+- **Connecter** Apple Business Manager à Microsoft Intune via ADE
+- **Enrôler** des Mac et des iPhone/iPad avec Intune
+- **Déployer** des profils de configuration spécifiques macOS/iOS
+- **Configurer** des Compliance Policies et agir via Conditional Access
+- **Déployer** Microsoft Defender for Endpoint sur Apple
+- **Analyser** la conformité avec Endpoint Analytics
+
+## Intune dans l'écosystème Microsoft
+
+```
+Microsoft 365 / Entra ID
+        │
+        ├── Microsoft Intune (MDM)
+        │       ├── Windows 11 ──── gestion native
+        │       ├── macOS ────────── via MDM Apple protocol
+        │       ├── iOS/iPadOS ───── via MDM Apple protocol
+        │       └── Android ──────── via Android Enterprise
+        │
+        ├── Microsoft Defender for Endpoint
+        │       └── Protection unifiée Windows + Apple + Android
+        │
+        ├── Microsoft Purview (DLP)
+        │       └── Protection des données sur tous les appareils
+        │
+        └── Conditional Access (Entra ID)
+                └── Accès conditionnel basé sur la conformité
+```
+
+## Intune vs Jamf Pro pour Apple
+
+| Critère | Intune | Jamf Pro |
+|---|---|---|
+| Intégration Microsoft 365 | ✓ Native | Via connecteur |
+| Fonctionnalités macOS avancées | Intermédiaire | Expert |
+| API et scripting | PowerShell/Graph | REST v2 + Bash |
+| Coût (Microsoft 365 E3+) | Inclus | Licence séparée |
+| Ideal pour | Environnements M365 | Parcs Apple purs |
+| Co-management possible | ✓ | ✓ |
+
+Le **co-management Jamf + Intune** est une architecture de plus en plus courante : Jamf Pro gère les spécificités Apple, Intune gère la conformité Entra ID et l'accès conditionnel.
+
+## Flux d'enrôlement ADE avec Intune
+
+```
+Apple Business Manager
+    │
+    └── Token ADE → Microsoft Intune
+                        │
+                        ├── Enrollment Profile (macOS ou iOS)
+                        │
+                        ▼
+                   Appareil allumé
+                        │
+                        ├── ADE détecte le profil Intune
+                        ├── Enrôlement automatique
+                        ├── Installation du portail d'entreprise
+                        └── Déploiement des politiques
+```
+
+## Compliance et Conditional Access
+
+La puissance d'Intune réside dans l'intégration avec Conditional Access d'Entra ID :
+
+```
+Appareil macOS
+    │
+    ├── Intune évalue la conformité :
+    │       ✓ macOS version >= 13.0
+    │       ✓ Chiffrement FileVault activé
+    │       ✓ Password complexe configuré
+    │       ✗ Antivirus manquant → NON CONFORME
+    │
+    └── Conditional Access bloque :
+            ✗ Accès Microsoft 365
+            ✗ Accès SharePoint
+            → Notification : "Mettez votre appareil en conformité"
+```
 
 ## Cours de ce module
 
 1. [Intune et Apple Business Manager](/cours/intune-apple-business-manager)
-2. [Enrôlement ADE avec Intune](/cours/enrolement-ade-intune)
-3. [Gestion macOS avec Intune](/cours/gestion-macos-intune)
+2. [Enrôlement ADE avec Microsoft Intune](/cours/enrolement-ade-intune)
+3. [Gestion macOS avec Microsoft Intune](/cours/gestion-macos-intune)
 4. [Gestion iPhone et iPad avec Intune](/cours/gestion-iphone-ipad-intune)
-5. [Profils de configuration Intune pour Apple](/cours/profils-configuration-intune-apple)
-6. [Politiques de conformité Intune pour Apple](/cours/compliance-policies-intune-apple)
-7. [Accès conditionnel pour Apple](/cours/conditional-access-apple-intune)
-8. [Microsoft Defender for Endpoint sur Mac](/cours/microsoft-defender-apple)
+5. [Compliance Policies pour appareils Apple](/cours/compliance-policies-intune-apple)
+6. [Conditional Access pour appareils Apple](/cours/conditional-access-apple-intune)
+7. [Microsoft Defender for Endpoint Apple](/cours/microsoft-defender-apple)
+8. [Profils de configuration avancés Intune](/cours/profils-configuration-intune-apple)
 
 ## Prérequis
 
-Module 1 (Fondations Apple Enterprise). Notions Microsoft 365 recommandées.
+- Licence Microsoft Intune (incluse dans Microsoft 365 E3/E5 ou Intune standalone)
+- Tenant Microsoft Entra ID configuré
+- Apple Business Manager connecté (Module 1)
+- Notions de base MDM recommandées
 
 ## Durée estimée
 
-16 heures de formation + labs pratiques.
+**10–12 heures** de contenu + labs Intune  
+**Certification préparée :** Microsoft MD-102 (Endpoint Administrator)
