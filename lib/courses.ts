@@ -1581,6 +1581,34 @@ const module8Courses: Course[] = [
 
 const module9Courses: Course[] = [
   {
+    id: 'cert-overview',
+    slug: 'certifications',
+    title: 'Vue d\'ensemble des certifications',
+    description: 'Guide complet des certifications professionnelles Apple, Jamf Pro et Microsoft — comment se préparer, quel parcours suivre, par où commencer.',
+    moduleId: 'module-9',
+    moduleTitle: 'Certifications',
+    level: 'Débutant',
+    status: 'À jour',
+    lastUpdated: '2025-05-01',
+    duration: '30 min',
+    objectives: [
+      'Identifier les certifications Apple, Jamf et Microsoft disponibles',
+      'Comprendre le parcours certifiant recommandé selon son profil',
+      'Connaître les prérequis et le format de chaque examen',
+      'Planifier sa stratégie de certification',
+    ],
+    prerequisites: [],
+    lessons: [
+      { id: 'l1', title: 'Certifications Apple', duration: '8 min', description: 'Apple Device Support, Apple Deployment and Management.' },
+      { id: 'l2', title: 'Certifications Jamf', duration: '10 min', description: 'Jamf 100, 170, 200 — parcours et format.' },
+      { id: 'l3', title: 'Certifications Microsoft', duration: '8 min', description: 'MD-102, MS-102 — endpoint et enterprise.' },
+      { id: 'l4', title: 'Stratégie de certification', duration: '4 min', description: 'Quel ordre, quelle priorité selon votre rôle.' },
+    ],
+    tools: ['Apple Business Manager', 'Jamf Pro', 'Microsoft Intune'],
+    certificationRelated: ['Jamf 100 Course', 'Apple Deployment and Management', 'Microsoft MD-102'],
+    order: 0,
+  },
+  {
     id: 'cert-apple-device-support',
     slug: 'certification-apple-device-support',
     title: 'Apple Certified Support Professional',
