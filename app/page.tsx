@@ -185,8 +185,8 @@ export default function HomePage() {
             </Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {MODULES.map((module) => (
-              <ModuleCard key={module.id} module={module} />
+            {MODULES.map((module, i) => (
+              <ModuleCard key={module.id} module={module} index={i} />
             ))}
           </div>
         </div>
