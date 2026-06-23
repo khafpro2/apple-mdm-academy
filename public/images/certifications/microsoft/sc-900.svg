@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" width="320" height="320">
+  <defs>
+    <linearGradient id="bgSC900" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FB923C"/>
+      <stop offset="45%" style="stop-color:#F97316"/>
+      <stop offset="100%" style="stop-color:#7C2D12"/>
+    </linearGradient>
+    <linearGradient id="shineSC900" x1="15%" y1="0%" x2="85%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:0.22"/>
+      <stop offset="55%" style="stop-color:#FFFFFF;stop-opacity:0.04"/>
+      <stop offset="100%" style="stop-color:#FFFFFF;stop-opacity:0"/>
+    </linearGradient>
+    <filter id="shadowSC900">
+      <feDropShadow dx="0" dy="10" stdDeviation="16" flood-color="#431407" flood-opacity="0.65"/>
+    </filter>
+    <filter id="glowSC900">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <polygon points="160,14 278,82 278,214 160,282 42,214 42,82"
+    fill="#431407" opacity="0.4" transform="translate(0,14)" filter="url(#shadowSC900)"/>
+  <polygon points="160,14 278,82 278,214 160,282 42,214 42,82"
+    fill="url(#bgSC900)"/>
+  <polygon points="160,14 278,82 278,214 160,282 42,214 42,82"
+    fill="url(#shineSC900)"/>
+  <polygon points="160,24 268,88 268,210 160,272 52,210 52,88"
+    fill="none" stroke="#FED7AA" stroke-width="2" opacity="0.55"/>
+  <polygon points="160,38 254,96 254,202 160,258 66,202 66,96"
+    fill="none" stroke="#FFEDD5" stroke-width="1" opacity="0.18"/>
+
+  <text x="160" y="64" font-family="'Arial', Helvetica, sans-serif"
+    font-size="9" font-weight="700" fill="#FFEDD5" text-anchor="middle"
+    letter-spacing="5" opacity="0.65">MICROSOFT</text>
+
+  <!-- Symbole : Bouclier minimal (fondamentaux sécurité) -->
+  <g transform="translate(160, 144)" filter="url(#glowSC900)">
+    <!-- Bouclier -->
+    <path d="M0,-48 L44,-28 L44,6 Q44,38 0,52 Q-44,38 -44,6 L-44,-28 Z"
+      fill="none" stroke="white" stroke-width="5" stroke-linejoin="round" opacity="0.92"/>
+    <!-- Remplissage léger -->
+    <path d="M0,-48 L44,-28 L44,6 Q44,38 0,52 Q-44,38 -44,6 L-44,-28 Z"
+      fill="white" opacity="0.12"/>
+    <!-- Coche intérieure -->
+    <path d="M-18,2 L-6,16 L20,-12"
+      fill="none" stroke="white" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.95"/>
+  </g>
+
+  <line x1="96" y1="200" x2="224" y2="200" stroke="#FED7AA" stroke-width="1" opacity="0.30"/>
+
+  <text x="160" y="226" font-family="'Arial Black', 'Impact', Arial, sans-serif"
+    font-size="34" font-weight="900" fill="white" text-anchor="middle"
+    dominant-baseline="middle" letter-spacing="2" opacity="0.96">SC-900</text>
+
+  <text x="160" y="252" font-family="Arial, Helvetica, sans-serif"
+    font-size="8.5" font-weight="700" fill="#FFEDD5" text-anchor="middle"
+    letter-spacing="4" opacity="0.88">SECURITY</text>
+
+  <text x="160" y="268" font-family="Arial, Helvetica, sans-serif"
+    font-size="7" font-weight="600" fill="#FED7AA" text-anchor="middle"
+    letter-spacing="2" opacity="0.70">FUNDAMENTALS</text>
+
+  <circle cx="160" cy="19" r="5" fill="#FFEDD5" opacity="0.90" filter="url(#glowSC900)"/>
+  <circle cx="160" cy="277" r="4.5" fill="#FED7AA" opacity="0.80"/>
+  <circle cx="48" cy="92" r="3" fill="#FB923C" opacity="0.60"/>
+  <circle cx="272" cy="92" r="3" fill="#FB923C" opacity="0.60"/>
+  <circle cx="48" cy="208" r="3" fill="#FB923C" opacity="0.60"/>
+  <circle cx="272" cy="208" r="3" fill="#FB923C" opacity="0.60"/>
+</svg>

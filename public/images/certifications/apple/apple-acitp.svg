@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" width="320" height="320">
+  <defs>
+    <linearGradient id="bgACITP" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6B7280"/>
+      <stop offset="45%" style="stop-color:#374151"/>
+      <stop offset="100%" style="stop-color:#111827"/>
+    </linearGradient>
+    <linearGradient id="shineACITP" x1="15%" y1="0%" x2="85%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:0.20"/>
+      <stop offset="55%" style="stop-color:#FFFFFF;stop-opacity:0.04"/>
+      <stop offset="100%" style="stop-color:#FFFFFF;stop-opacity:0"/>
+    </linearGradient>
+    <filter id="shadowACITP">
+      <feDropShadow dx="0" dy="10" stdDeviation="18" flood-color="#030712" flood-opacity="0.7"/>
+    </filter>
+    <filter id="glowACITP">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <polygon points="160,14 278,82 278,214 160,282 42,214 42,82"
+    fill="#030712" opacity="0.4" transform="translate(0,14)" filter="url(#shadowACITP)"/>
+  <polygon points="160,14 278,82 278,214 160,282 42,214 42,82"
+    fill="url(#bgACITP)"/>
+  <polygon points="160,14 278,82 278,214 160,282 42,214 42,82"
+    fill="url(#shineACITP)"/>
+  <polygon points="160,24 268,88 268,210 160,272 52,210 52,88"
+    fill="none" stroke="#6B7280" stroke-width="2" opacity="0.55"/>
+  <polygon points="160,38 254,96 254,202 160,258 66,202 66,96"
+    fill="none" stroke="#D1D5DB" stroke-width="1" opacity="0.15"/>
+
+  <text x="160" y="64" font-family="'Arial', Helvetica, sans-serif"
+    font-size="9" font-weight="700" fill="#E5E7EB" text-anchor="middle"
+    letter-spacing="5" opacity="0.65">APPLE</text>
+
+  <!-- Symbole : double hexagone concentrique — combinaison 2 certifications -->
+  <g transform="translate(160, 148)" filter="url(#glowACITP)">
+    <!-- Hexagone extérieur -->
+    <polygon points="0,-46 40,-23 40,23 0,46 -40,23 -40,-23"
+      fill="none" stroke="white" stroke-width="4.5" opacity="0.90"/>
+    <!-- Hexagone intérieur -->
+    <polygon points="0,-28 24,-14 24,14 0,28 -24,14 -24,-14"
+      fill="none" stroke="white" stroke-width="3" opacity="0.75"/>
+    <!-- Point central -->
+    <circle cx="0" cy="0" r="6" fill="white" opacity="0.90"/>
+    <!-- 6 rayons des sommets ext vers int -->
+    <line x1="0" y1="-46" x2="0" y2="-28" stroke="white" stroke-width="1.5" opacity="0.50"/>
+    <line x1="40" y1="-23" x2="24" y2="-14" stroke="white" stroke-width="1.5" opacity="0.50"/>
+    <line x1="40" y1="23" x2="24" y2="14" stroke="white" stroke-width="1.5" opacity="0.50"/>
+    <line x1="0" y1="46" x2="0" y2="28" stroke="white" stroke-width="1.5" opacity="0.50"/>
+    <line x1="-40" y1="23" x2="-24" y2="14" stroke="white" stroke-width="1.5" opacity="0.50"/>
+    <line x1="-40" y1="-23" x2="-24" y2="-14" stroke="white" stroke-width="1.5" opacity="0.50"/>
+  </g>
+
+  <line x1="96" y1="196" x2="224" y2="196" stroke="#6B7280" stroke-width="1" opacity="0.25"/>
+
+  <text x="160" y="220" font-family="'Arial Black', 'Impact', Arial, sans-serif"
+    font-size="25" font-weight="900" fill="white" text-anchor="middle"
+    dominant-baseline="middle" letter-spacing="2" opacity="0.95">ACITP</text>
+
+  <text x="160" y="248" font-family="Arial, Helvetica, sans-serif"
+    font-size="8.5" font-weight="700" fill="#E5E7EB" text-anchor="middle"
+    letter-spacing="4" opacity="0.85">IT PROFESSIONAL</text>
+
+  <text x="160" y="265" font-family="Arial, Helvetica, sans-serif"
+    font-size="7" font-weight="600" fill="#9CA3AF" text-anchor="middle"
+    letter-spacing="2" opacity="0.68">CERTIFIED EXPERT</text>
+
+  <circle cx="160" cy="19" r="5" fill="#D1D5DB" opacity="0.90" filter="url(#glowACITP)"/>
+  <circle cx="160" cy="277" r="4.5" fill="#6B7280" opacity="0.80"/>
+  <circle cx="48" cy="92" r="3" fill="#4B5563" opacity="0.55"/>
+  <circle cx="272" cy="92" r="3" fill="#4B5563" opacity="0.55"/>
+  <circle cx="48" cy="208" r="3" fill="#4B5563" opacity="0.55"/>
+  <circle cx="272" cy="208" r="3" fill="#4B5563" opacity="0.55"/>
+</svg>

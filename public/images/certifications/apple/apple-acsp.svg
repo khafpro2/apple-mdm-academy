@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" width="320" height="320">
+  <defs>
+    <linearGradient id="bgACSP" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#9CA3AF"/>
+      <stop offset="45%" style="stop-color:#6B7280"/>
+      <stop offset="100%" style="stop-color:#374151"/>
+    </linearGradient>
+    <linearGradient id="shineACSP" x1="15%" y1="0%" x2="85%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:0.18"/>
+      <stop offset="55%" style="stop-color:#FFFFFF;stop-opacity:0.04"/>
+      <stop offset="100%" style="stop-color:#FFFFFF;stop-opacity:0"/>
+    </linearGradient>
+    <filter id="shadowACSP">
+      <feDropShadow dx="0" dy="10" stdDeviation="18" flood-color="#111827" flood-opacity="0.6"/>
+    </filter>
+    <filter id="glowACSP">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Ombre -->
+  <polygon points="160,14 278,82 278,214 160,282 42,214 42,82"
+    fill="#111827" opacity="0.35" transform="translate(0,14)" filter="url(#shadowACSP)"/>
+
+  <!-- Corps principal -->
+  <polygon points="160,14 278,82 278,214 160,282 42,214 42,82"
+    fill="url(#bgACSP)"/>
+
+  <!-- Reflet -->
+  <polygon points="160,14 278,82 278,214 160,282 42,214 42,82"
+    fill="url(#shineACSP)"/>
+
+  <!-- Anneau extérieur -->
+  <polygon points="160,24 268,88 268,210 160,272 52,210 52,88"
+    fill="none" stroke="#9CA3AF" stroke-width="2" opacity="0.5"/>
+
+  <!-- Anneau intérieur décoratif -->
+  <polygon points="160,38 254,96 254,202 160,258 66,202 66,96"
+    fill="none" stroke="#D1D5DB" stroke-width="1" opacity="0.18"/>
+
+  <!-- Label APPLE -->
+  <text x="160" y="64" font-family="'Arial', Helvetica, sans-serif"
+    font-size="9" font-weight="700" fill="#E5E7EB" text-anchor="middle"
+    letter-spacing="5" opacity="0.65">APPLE</text>
+
+  <!-- Symbole : casque audio (headset) -->
+  <g transform="translate(160, 148)" filter="url(#glowACSP)">
+    <!-- Arc du casque -->
+    <path d="M-36,0 Q-36,-50 0,-50 Q36,-50 36,0"
+      fill="none" stroke="white" stroke-width="6" stroke-linecap="round" opacity="0.95"/>
+    <!-- Oreillette gauche -->
+    <rect x="-44" y="-8" width="16" height="26" rx="8"
+      fill="white" opacity="0.95"/>
+    <!-- Oreillette droite -->
+    <rect x="28" y="-8" width="16" height="26" rx="8"
+      fill="white" opacity="0.95"/>
+    <!-- Micro -->
+    <path d="M28,18 Q28,36 16,40"
+      fill="none" stroke="white" stroke-width="4" stroke-linecap="round" opacity="0.85"/>
+    <circle cx="12" cy="42" r="4" fill="white" opacity="0.85"/>
+  </g>
+
+  <!-- Séparateur -->
+  <line x1="96" y1="196" x2="224" y2="196" stroke="#9CA3AF" stroke-width="1" opacity="0.25"/>
+
+  <!-- Code ACSP -->
+  <text x="160" y="224" font-family="'Arial Black', 'Impact', Arial, sans-serif"
+    font-size="32" font-weight="900" fill="white" text-anchor="middle"
+    dominant-baseline="middle" letter-spacing="4" opacity="0.95">ACSP</text>
+
+  <!-- Label SUPPORT PRO -->
+  <text x="160" y="250" font-family="Arial, Helvetica, sans-serif"
+    font-size="8.5" font-weight="700" fill="#E5E7EB" text-anchor="middle"
+    letter-spacing="4" opacity="0.88">SUPPORT</text>
+
+  <!-- Sublabel -->
+  <text x="160" y="266" font-family="Arial, Helvetica, sans-serif"
+    font-size="7" font-weight="600" fill="#9CA3AF" text-anchor="middle"
+    letter-spacing="2" opacity="0.7">PROFESSIONAL</text>
+
+  <!-- Points décoratifs sommets -->
+  <circle cx="160" cy="19" r="4.5" fill="#E5E7EB" opacity="0.85" filter="url(#glowACSP)"/>
+  <circle cx="160" cy="277" r="4" fill="#9CA3AF" opacity="0.75"/>
+  <circle cx="48" cy="92" r="3" fill="#6B7280" opacity="0.6"/>
+  <circle cx="272" cy="92" r="3" fill="#6B7280" opacity="0.6"/>
+  <circle cx="48" cy="208" r="3" fill="#6B7280" opacity="0.6"/>
+  <circle cx="272" cy="208" r="3" fill="#6B7280" opacity="0.6"/>
+</svg>

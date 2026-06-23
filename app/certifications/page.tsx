@@ -2,7 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import {
   ChevronRight, Trophy, Clock, BookOpen, ExternalLink,
-  Star, Award, CheckCircle2, ArrowRight, GraduationCap, Zap,
+  Layers, BadgeCheck, ArrowRight, GraduationCap, CheckCircle,
 } from 'lucide-react';
 import { MODULES, getAllCourses } from '@/lib/courses';
 
@@ -204,7 +204,7 @@ const OTHER_CERTS = [
     id: 'apple-device-support',
     name: 'Apple Device Support',
     provider: 'Apple',
-    badgeImage: '/images/certifications/apple/apple-device-support.svg',
+    badgeImage: '/images/certifications/apple/apple-acsp.png',
     badgeBg: 'bg-gray-800/50',
     badgeBorder: 'border-gray-600/40',
     color: 'border-gray-600/30 bg-gray-900/40 hover:border-gray-500/40',
@@ -222,7 +222,7 @@ const OTHER_CERTS = [
     id: 'apple-deployment',
     name: 'Apple Deployment and Management',
     provider: 'Apple',
-    badgeImage: '/images/certifications/apple/apple-deployment.svg',
+    badgeImage: '/images/certifications/apple/apple-acitp.png',
     badgeBg: 'bg-gray-900/50',
     badgeBorder: 'border-gray-700/40',
     color: 'border-gray-600/30 bg-gray-900/40 hover:border-gray-500/40',
@@ -240,7 +240,7 @@ const OTHER_CERTS = [
     id: 'md-102',
     name: 'Microsoft MD-102',
     provider: 'Microsoft',
-    badgeImage: '/images/certifications/microsoft/md-102.svg',
+    badgeImage: '/images/certifications/microsoft/md-102.png',
     badgeBg: 'bg-cyan-950/30',
     badgeBorder: 'border-cyan-600/30',
     color: 'border-cyan-600/25 bg-cyan-950/15 hover:border-cyan-500/35',
@@ -258,7 +258,7 @@ const OTHER_CERTS = [
     id: 'ms-102',
     name: 'Microsoft MS-102',
     provider: 'Microsoft',
-    badgeImage: '/images/certifications/microsoft/ms-102.svg',
+    badgeImage: '/images/certifications/microsoft/ms-102.png',
     badgeBg: 'bg-violet-950/30',
     badgeBorder: 'border-violet-600/30',
     color: 'border-violet-600/25 bg-violet-950/15 hover:border-violet-500/35',
@@ -271,6 +271,42 @@ const OTHER_CERTS = [
     levelColor: 'bg-red-500/15 text-red-400',
     topics: ['Microsoft 365 Admin', 'Entra ID', 'Sécurité & conformité', 'Gouvernance'],
     duration: '3h — Pearson VUE',
+  },
+  {
+    id: 'sc-300',
+    name: 'Microsoft SC-300',
+    provider: 'Microsoft',
+    badgeImage: '/images/certifications/microsoft/sc-300.png',
+    badgeBg: 'bg-teal-950/30',
+    badgeBorder: 'border-teal-600/30',
+    color: 'border-teal-600/25 bg-teal-950/15 hover:border-teal-500/35',
+    badge: 'bg-teal-500/10 text-teal-400',
+    description:
+      'Microsoft Certified: Identity and Access Administrator Associate. Gestion des identités Entra ID, SSO, MFA, PIM et intégration avec Jamf Connect.',
+    url: '/certifications',
+    officialUrl: 'https://learn.microsoft.com/certifications/identity-and-access-administrator/',
+    level: 'Avancé',
+    levelColor: 'bg-amber-500/15 text-amber-400',
+    topics: ['Entra ID', 'SSO & MFA', 'PIM', 'Jamf Connect'],
+    duration: '3h — Pearson VUE',
+  },
+  {
+    id: 'sc-900',
+    name: 'Microsoft SC-900',
+    provider: 'Microsoft',
+    badgeImage: '/images/certifications/microsoft/sc-900.png',
+    badgeBg: 'bg-orange-950/30',
+    badgeBorder: 'border-orange-600/30',
+    color: 'border-orange-600/25 bg-orange-950/15 hover:border-orange-500/35',
+    badge: 'bg-orange-500/10 text-orange-400',
+    description:
+      'Microsoft Certified: Security, Compliance, and Identity Fundamentals. Introduction aux concepts de sécurité Microsoft 365, Entra ID et conformité cloud.',
+    url: '/certifications',
+    officialUrl: 'https://learn.microsoft.com/certifications/security-compliance-and-identity-fundamentals/',
+    level: 'Débutant',
+    levelColor: 'bg-emerald-500/15 text-emerald-400',
+    topics: ['Sécurité Microsoft', 'Conformité', 'Identité', 'Fondamentaux cloud'],
+    duration: '1h30 — Pearson VUE',
   },
 ] as const;
 
@@ -324,10 +360,10 @@ export default function CertificationsPage() {
         {/* Stats */}
         <div className="flex flex-wrap gap-3 sm:gap-6">
           {[
-            { icon: <Award size={13} className="text-yellow-400" />, label: '8 certifications couvertes' },
-            { icon: <Star size={13} className="text-violet-400" />, label: '4 niveaux Jamf Pro officiels' },
-            { icon: <BookOpen size={13} className="text-blue-400" />, label: 'Badges numériques Credly' },
-            { icon: <Zap size={13} className="text-green-400" />, label: 'Aligné sur le catalogue officiel' },
+            { icon: <Trophy size={13} className="text-yellow-400" />, label: '13 certifications couvertes' },
+            { icon: <Layers size={13} className="text-violet-400" />, label: '4 niveaux Jamf Pro officiels' },
+            { icon: <BadgeCheck size={13} className="text-blue-400" />, label: 'Badges numériques Credly' },
+            { icon: <ExternalLink size={13} className="text-green-400" />, label: 'Aligné sur le catalogue officiel' },
           ].map(({ icon, label }) => (
             <span key={label} className="flex items-center gap-1.5 text-xs text-gray-500">
               {icon} {label}
@@ -492,7 +528,7 @@ export default function CertificationsPage() {
                 {/* Cours liés */}
                 {relatedCourses.length > 0 && (
                   <div className="flex items-center gap-1.5 mb-4">
-                    <CheckCircle2 size={11} className={course.color.accent} />
+                    <CheckCircle size={11} className={course.color.accent} />
                     <p className="text-xs text-gray-500">
                       {relatedCourses.length} cours préparatoires disponibles
                     </p>
