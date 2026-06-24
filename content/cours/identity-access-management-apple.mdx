@@ -1,0 +1,40 @@
+---
+title: "Identity and Access Management"
+slug: "identity-access-management-apple"
+---
+
+## Introduction
+
+**IAM** sur Apple unifie qui est l'utilisateur (IdP cloud), comment il se connecte au Mac (Jamf Connect) et quelles apps/services il atteint (SSO, Platform SSO). La gestion moderne place l'identité au centre, pas le réseau.
+
+> **Sources** — [Apple Platform Deployment](https://support.apple.com/guide/deployment/welcome/web) · [Microsoft SC-300](https://learn.microsoft.com/credentials/certifications/exams/sc-300/)
+
+## Modèles d'identité
+
+- **Apple ID personnel** — usage perso ; éviter en entreprise
+- **Managed Apple Account (MAA)** — créé via ABM / fédération
+- **Compte IdP (Entra, Okta)** — source de vérité ; synchronisé vers Mac via Jamf Connect
+
+## Fédération ABM
+
+ABM peut fédérer avec Entra ID ou Google : les utilisateurs se connectent avec leurs credentials entreprise pour accéder aux services Apple (VPP, School Manager, etc.).
+
+## IAM + MDM : la jonction
+
+```
+IdP (Entra) ──► Jamf Connect ──► Session macOS
+       │                              │
+       └──► Conditional Access ◄── Conformité Jamf
+```
+
+L'identité **et** l'appareil doivent être valides pour l'accès complet.
+
+## Bonnes pratiques
+
+- Une seule source de vérité identité (éviter doubles comptes)
+- MFA obligatoire sur IdP cloud
+- Offboarding : révoquer IdP + wipe MDM le jour du départ
+
+## Résumé
+
+IAM moderne sur Apple = IdP cloud + Jamf Connect + conformité MDM — sans AD local ni Apple ID personnel dispersés.

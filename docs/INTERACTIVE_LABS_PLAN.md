@@ -234,3 +234,123 @@ Sprint 3 (V3.3) :
   ○ Labs PowerShell (Intune)
   ○ Sandboxing côté serveur optionnel (pour vraie exécution limitée)
 ```
+
+---
+
+## Roadmap labs par niveau — V3.5
+
+Simulation côté client — pas d'exécution réelle. Sources : [Jamf Learn](https://learn.jamf.com/home), [Apple Platform Deployment](https://support.apple.com/guide/deployment/welcome/web), [Microsoft Learn MD-102](https://learn.microsoft.com/credentials/certifications/exams/md-102/).
+
+### Débutant
+
+| Lab | Cours lié | Objectif | Statut |
+|-----|-----------|----------|--------|
+| **Self Service — lancer une Policy** | `self-service-jamf` | Simuler l'ouverture Self Service et déclenchement trigger Self Service | ○ Planifié |
+| **Smart Groups — critères de base** | `smart-groups-jamf` | Créer un critère OS version + vérifier appartenance simulée | ○ Planifié |
+| **FileVault — vérifier le statut** | `filevault-gestion-jamf` | `fdesetup status` et interpréter le résultat | ✅ Implémenté (`lab-filevault-status`) |
+
+### Intermédiaire
+
+| Lab | Cours lié | Objectif | Statut |
+|-----|-----------|----------|--------|
+| **Jamf Recon** | `reporting-conformite-jamf` | `sudo jamf recon` — forcer inventaire | ✅ Implémenté (`lab-jamf-inventory`) |
+| **Jamf API Bearer Token** | `api-jamf-pro` | `POST /v1/auth/token` avec curl | ✅ Implémenté (`lab-jamf-api-token`) |
+| **Inventaire Mac via API** | `api-jamf-pro` | `GET /api/v1/computers-inventory` avec Bearer Token | ✅ Implémenté (`lab-jamf-api-inventory`) |
+| **Patch Management — conformité** | `patch-management-jamf` | Identifier Mac non conformes via critère simulé | ○ Planifié |
+
+### Avancé
+
+| Lab | Cours lié | Objectif | Statut |
+|-----|-----------|----------|--------|
+| **DDM — declarative status** | `declarative-device-management` | `profiles status -type enrollment` (DDM) | ✅ Implémenté (`lab-ddm-status`) |
+| **MDM classique — profil enrollment** | `mdm-classique-vs-ddm` | `profiles show -type enrollment` | ✅ Implémenté (`lab-mdm-enrollment-profile`) |
+| **Jamf Protect — analytics** | `jamf-protect-introduction` | Filtrer Unified Logs (simulation) | ○ Planifié |
+| **JamfSync package sync** | `packaging-avance-jamf` | CLI `jamfsync sync` entre instances | ○ Planifié |
+| **OAuth API Jamf** | `api-jamf-pro` | Flux OAuth client credentials (simulation) | ○ Planifié |
+| **Troubleshooting APNs** | `introduction-jamf-pro` | `sudo jamf checkJSSConnection` + diagnostic certificat APNs | ○ Planifié |
+| **Smart Group troubleshooting** | `smart-groups-jamf` | Diagnostiquer groupe vide (EA, recon) | ○ Planifié |
+| **Policy non exécutée** | `policies-jamf-pro` | `jamf.log` + scope/trigger | ○ Planifié |
+| **FileVault escrow manquant** | `filevault-gestion-jamf` | Escrow absent malgré FV actif | ○ Planifié |
+
+---
+
+## Labs Jamf — Sprint 4 (V3.4) — Détail technique
+
+Labs inspirés de [Jamf Learn](https://learn.jamf.com/home), la [Documentation Jamf Pro](https://learn.jamf.com/r/fr-FR/jamf-pro-documentation-current/Jamf_Pro_Documentation) et la [Jamf Pro API Overview](https://developer.jamf.com/jamf-pro/docs/jamf-pro-api-overview). Simulation côté client — pas d'exécution réelle.
+
+| Lab | Cours lié | Objectif pédagogique | Statut |
+|-----|-----------|----------------------|--------|
+| **Jamf Pro API Bearer Token** | `api-jamf-pro` | `POST /v1/auth/token` avec curl et variables d'environnement | ✅ Implémenté (`lab-jamf-api-token`) |
+| **Récupérer l'inventaire Mac via API** | `api-jamf-pro` | `GET /api/v1/computers-inventory` avec Bearer Token | ✅ Implémenté (`lab-jamf-api-inventory`) |
+| **Jamf Recon** | `reporting-conformite-jamf` | `sudo jamf recon` — forcer la mise à jour inventaire | ✅ Implémenté (`lab-jamf-inventory`) |
+| **Smart Group troubleshooting** | `smart-groups-jamf` | Diagnostiquer un Smart Group vide (critères, EA, recon) | ○ Planifié |
+| **Policy non exécutée** | `policies-jamf-pro` | Lire `jamf.log`, vérifier scope/trigger/fréquence | ○ Planifié |
+| **FileVault escrow manquant** | `filevault-gestion-jamf` | `fdesetup status` + vérifier clé dans inventaire Jamf | ○ Planifié |
+| **JamfSync package sync** | `packaging-avance-jamf` | Simuler `jamfsync` CLI — sync package entre instances | ○ Planifié |
+
+### Lab 5 — Récupérer l'inventaire Mac via API ✅
+
+Implémenté : `lab-jamf-api-inventory` — `GET /api/v1/computers-inventory` avec Bearer Token.
+
+### Lab 6 — Smart Group troubleshooting (planifié)
+
+```typescript
+{
+  id: 'lab-smart-group-debug',
+  courseSlug: 'smart-groups-jamf',
+  title: 'Diagnostiquer un Smart Group vide',
+  objective: 'Vérifier inventaire, Extension Attribute et critères du groupe',
+  successCommands: [
+    'sudo jamf recon',
+    'jamf log | grep -i "smart group"',
+  ],
+}
+```
+
+### Lab 7 — Policy non exécutée (planifié)
+
+```typescript
+{
+  id: 'lab-policy-debug',
+  courseSlug: 'policies-jamf-pro',
+  title: 'Diagnostiquer une Policy qui ne s\'exécute pas',
+  objective: 'Analyser jamf.log et forcer un check-in policy',
+  successCommands: [
+    'sudo jamf policy -verbose',
+    'tail -50 /var/log/jamf.log',
+  ],
+}
+```
+
+### Lab 8 — FileVault escrow manquant (planifié)
+
+```typescript
+{
+  id: 'lab-filevault-escrow',
+  courseSlug: 'filevault-gestion-jamf',
+  title: 'Vérifier l\'escrow FileVault',
+  objective: 'Confirmer FileVault actif et absence de clé escrow côté Jamf',
+  successCommands: [
+    'fdesetup status',
+    'sudo profiles show -type enrollment',
+  ],
+}
+```
+
+### Lab 9 — JamfSync package sync (planifié)
+
+```typescript
+{
+  id: 'lab-jamfsync-packages',
+  courseSlug: 'packaging-avance-jamf',
+  title: 'Synchroniser un package avec JamfSync',
+  objective: 'Simuler la réplication d\'un package vers une instance distante',
+  successCommands: [
+    'jamfsync sync --package "GoogleChrome.pkg" --target https://jamf-prod.example.com',
+  ],
+  docReference: {
+    title: 'JamfSync — GitHub',
+    url: 'https://github.com/jamf/JamfSync',
+  },
+}
+```

@@ -2,43 +2,35 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import {
   ChevronRight, Clock, Calendar, Target, BookOpen,
-  Award, ArrowLeft, ArrowRight, CheckCircle, FileText,
-  Layers, Shield
+  Award, ArrowLeft, ArrowRight, CheckCircle, FileText, Terminal
 } from 'lucide-react';
-import {
-  getAllCourses, getCourseBySlug, getAdjacentCourses,
-  getModuleForCourse
-} from '@/lib/courses';
+import { getAllCourses, getCourseBySlug, getAdjacentCourses, getModuleForCourse } from '@/lib/courses';
 import { LevelBadge, StatusBadge, ToolBadge } from '@/components/ui/Badges';
 import { getMDXContent, hasMDXContent } from '@/lib/mdx';
 import { getQuizForCourse } from '@/lib/quizzes';
+import { getCertificationById } from '@/lib/certifications';
+import { getOfficialLinks, getJamfOfficialSourcesForCourse, getModernAppleSourcesForCourse, isJamfProDocumentedCourse, isJamfEnrichedCourse } from '@/lib/official-links';
+import { getLabsForCourse } from '@/lib/labs';
+import CertificationIcon from '@/components/certifications/CertificationIcon';
+import OfficialLinksPanel from '@/components/cours/OfficialLinksPanel';
+import JamfOfficialSourceBlock from '@/components/cours/JamfOfficialSourceBlock';
+import ModernAppleSourceBlock from '@/components/cours/ModernAppleSourceBlock';
+import ModuleIcon from '@/components/icons/ModuleIcon';
 import CourseInteractive from './CourseInteractive';
-import { Metadata } from 'next';
 
 export async function generateStaticParams() {
   return getAllCourses().map((c) => ({ slug: c.slug }));
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const course = getCourseBySlug(slug);
   return course
-    ? {
-        title: `${course.title} — MDM Academy`,
-        description: course.description,
-      }
+    ? { title: `${course.title} — MDM Academy`, description: course.description }
     : { title: 'Cours introuvable' };
 }
 
-export default async function CoursePage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+export default async function CoursePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const course = getCourseBySlug(slug);
   if (!course) notFound();
@@ -48,173 +40,125 @@ export default async function CoursePage({
   const mdxContent = getMDXContent(slug);
   const quizQuestions = getQuizForCourse(slug);
   const hasContent = hasMDXContent(slug);
-  const allCourses = getAllCourses();
-
-  // Progression dans le module
-  const moduleCoursesAll = courseModule?.courses ?? [];
-  const courseIndexInModule = moduleCoursesAll.findIndex((c) => c.slug === slug);
-  const coursePosInModule = courseIndexInModule + 1;
-
-  const formattedDate = new Date(course.lastUpdated).toLocaleDateString('fr-FR', {
-    day: 'numeric', month: 'long', year: 'numeric',
-  });
+  const officialLinks = getOfficialLinks(slug);
+  const jamfOfficialSources = getJamfOfficialSourcesForCourse(slug);
+  const modernAppleSources = getModernAppleSourcesForCourse(slug);
+  const showJamfDocNote = isJamfProDocumentedCourse(slug) || isJamfEnrichedCourse(slug);
+  const courseLabs = getLabsForCourse(slug);
 
   return (
-    <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-
+    <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-10">
       {/* Breadcrumb */}
-      <nav
-        className="flex items-center gap-1.5 text-xs text-gray-600 mb-6 sm:mb-8 flex-wrap"
-        aria-label="Fil d'Ariane"
-      >
-        <Link href="/" className="hover:text-gray-300 transition-colors">Accueil</Link>
+      <div className="flex items-center gap-2 text-xs text-[#5A6478] mb-8 flex-wrap">
+        <Link href="/" className="hover:text-gray-400">Accueil</Link>
         <ChevronRight size={11} />
-        <Link href="/parcours" className="hover:text-gray-300 transition-colors">Parcours</Link>
+        <Link href="/parcours" className="hover:text-gray-400">Parcours</Link>
         {courseModule && (
           <>
             <ChevronRight size={11} />
-            <Link
-              href={`/modules/${courseModule.slug}`}
-              className="hover:text-gray-300 transition-colors hidden sm:inline truncate max-w-[180px]"
-            >
-              {courseModule.title}
+            <Link href={`/modules/${courseModule.slug}`} className="hover:text-gray-400 hidden sm:inline">
+              {course.moduleTitle}
             </Link>
           </>
         )}
         <ChevronRight size={11} className="hidden sm:inline" />
-        <span className="text-gray-400 truncate max-w-[160px] sm:max-w-[250px]">{course.title}</span>
-      </nav>
+        <span className="text-gray-400 truncate max-w-[180px]">{course.title}</span>
+      </div>
 
-      {/* Barre de progression module */}
-      {courseModule && moduleCoursesAll.length > 1 && (
-        <div className="mb-6 sm:mb-8 p-3.5 sm:p-4 rounded-xl border border-white/6 bg-white/[0.015]">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <span className="text-base">{courseModule.icon}</span>
-              <span className="text-xs font-semibold text-gray-400 truncate max-w-[160px] sm:max-w-none">
-                {courseModule.title}
-              </span>
-            </div>
-            <span className="text-[10px] font-mono text-gray-600 shrink-0 ml-2">
-              {coursePosInModule}/{moduleCoursesAll.length}
-            </span>
-          </div>
-          {/* Barre de progression visuelle */}
-          <div className="flex gap-0.5 mt-2">
-            {moduleCoursesAll.map((c, i) => (
-              <Link
-                key={c.id}
-                href={`/cours/${c.slug}`}
-                title={c.title}
-                className={`flex-1 h-1 rounded-full transition-colors ${
-                  i < courseIndexInModule
-                    ? 'bg-emerald-500'
-                    : i === courseIndexInModule
-                    ? 'bg-indigo-500'
-                    : 'bg-white/10 hover:bg-white/20'
-                }`}
-              />
-            ))}
-          </div>
+      {/* Course header */}
+      <header className="mb-8">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-xs text-indigo-400 font-medium">{course.moduleTitle}</span>
         </div>
-      )}
-
-      {/* En-tête du cours */}
-      <header className="mb-8 sm:mb-10">
-        <p className="text-xs font-semibold text-indigo-400 uppercase tracking-widest mb-2">
-          {course.moduleTitle}
-        </p>
-
-        <h1 className="text-2xl sm:text-3xl font-bold text-white leading-tight tracking-tight mb-4">
+        <h1 className="text-2xl sm:text-3xl font-bold text-white mb-4 leading-tight tracking-tight">
           {course.title}
         </h1>
+        <p className="text-sm text-[#9AA2B4] leading-relaxed mb-5 max-w-2xl">{course.description}</p>
 
-        <p className="text-sm text-gray-400 leading-relaxed mb-5 max-w-2xl">
-          {course.description}
-        </p>
-
-        {/* Meta badges */}
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-4">
+        {/* Meta row */}
+        <div className="flex flex-wrap items-center gap-3 mb-5">
           <LevelBadge level={course.level} size="md" />
           <StatusBadge status={course.status} size="md" />
-          <span className="flex items-center gap-1.5 text-xs text-gray-500">
-            <Clock size={12} />{course.duration}
-          </span>
-          <span className="flex items-center gap-1.5 text-xs text-gray-500">
-            <BookOpen size={12} />{course.lessons.length} leçon{course.lessons.length !== 1 ? 's' : ''}
-          </span>
+          <div className="flex items-center gap-1.5 text-sm text-[#5A6478]">
+            <Clock size={13} />
+            <span>{course.duration}</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-sm text-[#5A6478]">
+            <BookOpen size={13} />
+            <span>{course.lessons.length} leçon{course.lessons.length > 1 ? 's' : ''}</span>
+          </div>
           {quizQuestions.length > 0 && (
-            <span className="flex items-center gap-1.5 text-xs text-indigo-400">
-              <Award size={12} />Quiz · {quizQuestions.length} question{quizQuestions.length !== 1 ? 's' : ''}
-            </span>
+            <div className="flex items-center gap-1.5 text-sm text-indigo-400/70">
+              <Award size={13} />
+              <span>Quiz {quizQuestions.length} questions</span>
+            </div>
           )}
-          <span className="flex items-center gap-1.5 text-xs text-gray-600">
-            <Calendar size={11} />Mis à jour le {formattedDate}
-          </span>
+          <div className="flex items-center gap-1.5 text-xs text-[#3A4156]">
+            <Calendar size={11} />
+            <span>{new Date(course.lastUpdated).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+          </div>
         </div>
 
-        {/* Outils */}
-        {course.tools.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {course.tools.map((tool) => <ToolBadge key={tool} tool={tool} />)}
-          </div>
-        )}
+        {/* Tools */}
+        <div className="flex flex-wrap gap-2">
+          {course.tools.map((tool) => <ToolBadge key={tool} tool={tool} />)}
+        </div>
       </header>
 
-      {/* Layout : contenu principal + sidebar */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-7">
+      {/* Content layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Main content */}
+        <div className="lg:col-span-2 space-y-6">
 
-        {/* Colonne principale */}
-        <div className="lg:col-span-2 space-y-4">
-
-          {/* Objectifs */}
-          <section className="rounded-2xl border border-white/8 bg-white/[0.02] p-4 sm:p-5">
+          {/* Objectives */}
+          <section className="rounded-2xl border border-white/7 bg-[#0D1117] p-5">
             <div className="flex items-center gap-2 mb-4">
-              <Target size={14} className="text-indigo-400 shrink-0" />
+              <Target size={15} className="text-indigo-400" />
               <h2 className="font-semibold text-white text-sm">Objectifs d&apos;apprentissage</h2>
             </div>
             <ul className="space-y-2.5">
               {course.objectives.map((obj, i) => (
                 <li key={i} className="flex items-start gap-3">
                   <CheckCircle size={13} className="text-emerald-400 shrink-0 mt-0.5" />
-                  <span className="text-sm text-gray-400 leading-relaxed">{obj}</span>
+                  <span className="text-sm text-[#9AA2B4] leading-relaxed">{obj}</span>
                 </li>
               ))}
             </ul>
           </section>
 
-          {/* Prérequis */}
+          {/* Prerequisites */}
           {course.prerequisites.length > 0 && (
-            <section className="rounded-2xl border border-white/8 bg-white/[0.02] p-4 sm:p-5">
-              <h2 className="font-semibold text-white text-sm mb-3">Prérequis recommandés</h2>
+            <section className="rounded-2xl border border-white/7 bg-[#0D1117] p-5">
+              <h2 className="font-semibold text-white text-sm mb-3">Prérequis</h2>
               <div className="flex flex-wrap gap-2">
                 {course.prerequisites.map((prereq) => {
-                  const found = allCourses.find((c) => c.slug === prereq);
+                  const found = getAllCourses().find((c) => c.slug === prereq);
                   return found ? (
                     <Link
                       key={prereq}
                       href={`/cours/${prereq}`}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/8 bg-white/[0.02] text-xs text-gray-400 hover:text-white hover:border-white/15 transition-colors"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/8 bg-white/3 text-xs text-gray-400 hover:text-white hover:border-white/15 transition-colors"
                     >
-                      <BookOpen size={10} />{found.title}
+                      <BookOpen size={11} />
+                      {found.title}
                     </Link>
                   ) : (
-                    <span key={prereq} className="px-3 py-1.5 rounded-xl border border-white/6 text-xs text-gray-600">
-                      {prereq}
-                    </span>
+                    <span key={prereq} className="px-3 py-1.5 rounded-xl border border-white/8 bg-white/3 text-xs text-gray-500">{prereq}</span>
                   );
                 })}
               </div>
             </section>
           )}
 
-          {/* Contenu MDX + quiz interactif */}
+          {/* MDX Content or Lesson List */}
           {hasContent && mdxContent ? (
-            <section className="rounded-2xl border border-white/8 bg-white/[0.02] p-4 sm:p-5 lg:p-6">
+            <section className="rounded-2xl border border-white/7 bg-[#0D1117] p-6">
               <div className="flex items-center gap-2 mb-5">
-                <FileText size={14} className="text-indigo-400" />
+                <FileText size={15} className="text-indigo-400" />
                 <h2 className="font-semibold text-white text-sm">Contenu du cours</h2>
               </div>
+              <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: '' }} />
+              {/* MDX rendered client-side */}
               <CourseInteractive
                 courseSlug={slug}
                 mdxContent={mdxContent.content}
@@ -233,35 +177,31 @@ export default async function CoursePage({
         </div>
 
         {/* Sidebar */}
-        <aside className="space-y-4">
-
-          {/* Infos rapides */}
-          <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-4">
-            <h3 className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-4">
-              Informations
-            </h3>
-            <dl className="space-y-3">
-              {[
-                { label: 'Durée',  value: course.duration },
-                { label: 'Leçons', value: `${course.lessons.length}` },
-              ].map(({ label, value }) => (
-                <div key={label} className="flex justify-between items-center">
-                  <dt className="text-gray-600 text-xs">{label}</dt>
-                  <dd className="text-gray-300 font-medium text-xs">{value}</dd>
-                </div>
-              ))}
+        <div className="space-y-4">
+          {/* Quick info */}
+          <div className="rounded-2xl border border-white/7 bg-[#0D1117] p-4 space-y-3">
+            <h3 className="text-[10px] font-semibold text-[#5A6478] uppercase tracking-widest">Informations</h3>
+            <dl className="space-y-2.5 text-sm">
               <div className="flex justify-between items-center">
-                <dt className="text-gray-600 text-xs">Niveau</dt>
+                <dt className="text-[#3A4156]">Durée</dt>
+                <dd className="text-gray-300 font-medium">{course.duration}</dd>
+              </div>
+              <div className="flex justify-between items-center">
+                <dt className="text-[#3A4156]">Niveau</dt>
                 <dd><LevelBadge level={course.level} /></dd>
               </div>
               <div className="flex justify-between items-center">
-                <dt className="text-gray-600 text-xs">Statut</dt>
+                <dt className="text-[#3A4156]">Leçons</dt>
+                <dd className="text-gray-300 font-medium">{course.lessons.length}</dd>
+              </div>
+              <div className="flex justify-between items-center">
+                <dt className="text-[#3A4156]">Statut</dt>
                 <dd><StatusBadge status={course.status} /></dd>
               </div>
               {quizQuestions.length > 0 && (
                 <div className="flex justify-between items-center">
-                  <dt className="text-gray-600 text-xs">Quiz</dt>
-                  <dd className="text-indigo-400 font-medium text-xs">{quizQuestions.length} questions</dd>
+                  <dt className="text-[#3A4156]">Quiz</dt>
+                  <dd className="text-indigo-400 font-medium">{quizQuestions.length} questions</dd>
                 </div>
               )}
             </dl>
@@ -269,121 +209,118 @@ export default async function CoursePage({
 
           {/* Certifications */}
           {course.certificationRelated.length > 0 && (
-            <div className="rounded-2xl border border-amber-500/15 bg-amber-500/4 p-4">
-              <div className="flex items-center gap-1.5 mb-3">
-                <Award size={12} className="text-amber-400" />
-                <h3 className="text-[10px] font-bold text-amber-500/70 uppercase tracking-widest">
-                  Certifications préparées
+            <div className="rounded-2xl border border-yellow-500/15 bg-yellow-500/5 p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Award size={13} className="text-yellow-400" />
+                <h3 className="text-[10px] font-semibold text-yellow-500/70 uppercase tracking-widest">Certifications</h3>
+              </div>
+              <ul className="space-y-2">
+                {course.certificationRelated.map((cert) => {
+                  const meta = getCertificationById(cert);
+                  return (
+                    <li key={cert}>
+                      <Link
+                        href={meta ? `/certifications#${meta.slug}` : '/certifications'}
+                        className="flex items-center gap-2 text-xs text-yellow-400/80 hover:text-yellow-300 transition-colors"
+                      >
+                        {meta && (
+                          <CertificationIcon
+                            src={meta.iconSrc}
+                            size={18}
+                            className="h-[18px] w-[18px]"
+                          />
+                        )}
+                        <span className="leading-snug">{cert}</span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+
+          {courseLabs.length > 0 && (
+            <div className="rounded-2xl border border-emerald-500/15 bg-emerald-500/5 p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Terminal size={13} className="text-emerald-400" />
+                <h3 className="text-[10px] font-semibold text-emerald-500/70 uppercase tracking-widest">
+                  Lab{courseLabs.length > 1 ? 's' : ''} interactif{courseLabs.length > 1 ? 's' : ''}
                 </h3>
               </div>
               <ul className="space-y-2">
-                {course.certificationRelated.map((cert) => (
-                  <li key={cert} className="flex items-start gap-2 text-xs text-amber-400/80">
-                    <span className="w-1 h-1 rounded-full bg-amber-500/50 mt-1.5 shrink-0" />
-                    {cert}
+                {courseLabs.map((lab) => (
+                  <li key={lab.id}>
+                    <Link
+                      href={`/labs/${lab.id}`}
+                      className="flex flex-col gap-0.5 text-xs text-emerald-400/80 hover:text-emerald-300 transition-colors"
+                    >
+                      <span className="font-medium leading-snug">{lab.title}</span>
+                      <span className="text-[10px] text-emerald-500/50">{lab.level} · +{lab.xpReward} XP</span>
+                    </Link>
                   </li>
                 ))}
               </ul>
-              <Link
-                href="/certifications"
-                className="mt-3 flex items-center gap-1 text-[10px] text-amber-500/60 hover:text-amber-400 transition-colors"
-              >
-                <Shield size={9} /> Voir toutes les certifications
-              </Link>
             </div>
           )}
+
+          <ModernAppleSourceBlock sources={modernAppleSources} />
+
+          <JamfOfficialSourceBlock sources={jamfOfficialSources} />
+
+          <OfficialLinksPanel links={officialLinks} showJamfNote={showJamfDocNote && jamfOfficialSources.length === 0 && modernAppleSources.length === 0} />
 
           {/* Module link */}
           {courseModule && (
             <Link
               href={`/modules/${courseModule.slug}`}
-              className="flex items-center gap-3 w-full px-4 py-3 rounded-2xl border border-white/8 bg-white/[0.02] hover:border-white/15 hover:bg-white/[0.04] transition-all group"
+              className="flex items-center gap-3 w-full px-4 py-3 rounded-2xl border border-white/7 bg-[#0D1117] text-xs text-[#5A6478] hover:text-gray-300 hover:border-white/12 transition-colors"
             >
-              <span className="text-xl">{courseModule.icon}</span>
-              <div className="min-w-0 flex-1">
-                <p className="text-[10px] text-gray-600 mb-0.5">Module parent</p>
-                <p className="text-xs font-medium text-gray-400 group-hover:text-white truncate transition-colors">
-                  {courseModule.title}
-                </p>
+              <ModuleIcon moduleSlug={courseModule.slug} size={24} className="h-6 w-6" />
+              <div className="min-w-0">
+                <p className="text-[10px] text-[#3A4156]">Module</p>
+                <p className="font-medium text-gray-400 truncate">{courseModule.title}</p>
               </div>
-              <ChevronRight size={12} className="text-gray-700 group-hover:text-gray-400 shrink-0" />
+              <ChevronRight size={12} className="ml-auto shrink-0" />
             </Link>
           )}
 
-          {/* Leçons (sidebar desktop) */}
-          {course.lessons.length > 0 && (
-            <div className="hidden lg:block rounded-2xl border border-white/8 bg-white/[0.02] p-4">
-              <div className="flex items-center gap-1.5 mb-3">
-                <Layers size={12} className="text-gray-500" />
-                <h3 className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">
-                  Leçons du cours
-                </h3>
-              </div>
-              <ol className="space-y-2">
-                {course.lessons.map((lesson, i) => (
-                  <li key={lesson.id} className="flex items-start gap-2.5">
-                    <span className="text-[10px] text-gray-700 font-mono mt-0.5 w-4 shrink-0">
-                      {String(i + 1).padStart(2, '0')}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-xs text-gray-400 leading-snug">{lesson.title}</p>
-                      <p className="text-[10px] text-gray-600 mt-0.5">{lesson.duration}</p>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-            </div>
-          )}
-
-          {/* Retour parcours */}
+          {/* Back to parcours */}
           <Link
             href="/parcours"
-            className="flex items-center justify-center gap-1.5 w-full px-4 py-2.5 rounded-xl border border-white/8 bg-white/[0.02] text-xs text-gray-500 hover:text-gray-300 hover:border-white/15 transition-colors"
+            className="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl border border-white/8 bg-[#0D1117] text-xs text-[#5A6478] hover:text-gray-300 hover:border-white/12 transition-colors"
           >
-            <ArrowLeft size={12} /> Retour au parcours
+            ← Retour au parcours
           </Link>
-        </aside>
+        </div>
       </div>
 
-      {/* Navigation prev/next */}
-      {(prev || next) && (
-        <nav
-          className="mt-10 sm:mt-12 pt-8 border-t border-white/6"
-          aria-label="Navigation cours"
-        >
-          <div className="flex flex-col sm:flex-row gap-3">
-            {prev ? (
-              <Link
-                href={`/cours/${prev.slug}`}
-                className="flex-1 flex items-center gap-3 p-4 rounded-2xl border border-white/8 bg-white/[0.02] hover:border-white/15 hover:bg-white/[0.04] transition-all group"
-              >
-                <ArrowLeft size={14} className="text-gray-600 group-hover:text-indigo-400 shrink-0 transition-colors" />
-                <div className="min-w-0">
-                  <p className="text-[10px] text-gray-600 mb-0.5">Cours précédent</p>
-                  <p className="text-sm font-medium text-gray-400 group-hover:text-white transition-colors truncate">
-                    {prev.title}
-                  </p>
-                </div>
-              </Link>
-            ) : <div className="flex-1 hidden sm:block" />}
-
-            {next && (
-              <Link
-                href={`/cours/${next.slug}`}
-                className="flex-1 flex items-center justify-end gap-3 p-4 rounded-2xl border border-white/8 bg-white/[0.02] hover:border-white/15 hover:bg-white/[0.04] transition-all group text-right"
-              >
-                <div className="min-w-0">
-                  <p className="text-[10px] text-gray-600 mb-0.5">Cours suivant</p>
-                  <p className="text-sm font-medium text-gray-400 group-hover:text-white transition-colors truncate">
-                    {next.title}
-                  </p>
-                </div>
-                <ArrowRight size={14} className="text-gray-600 group-hover:text-indigo-400 shrink-0 transition-colors" />
-              </Link>
-            )}
-          </div>
-        </nav>
-      )}
+      {/* Prev / Next navigation */}
+      <nav className="mt-10 flex flex-col sm:flex-row gap-3">
+        {prev && (
+          <Link
+            href={`/cours/${prev.slug}`}
+            className="flex-1 flex items-center gap-3 p-4 rounded-2xl border border-white/7 bg-[#0D1117] hover:border-white/12 hover:bg-[#131720] transition-all group"
+          >
+            <ArrowLeft size={15} className="text-[#3A4156] group-hover:text-indigo-400 shrink-0 transition-colors" />
+            <div className="min-w-0">
+              <p className="text-[10px] text-[#3A4156] mb-0.5">Cours précédent</p>
+              <p className="text-sm font-medium text-gray-400 group-hover:text-white transition-colors truncate">{prev.title}</p>
+            </div>
+          </Link>
+        )}
+        {next && (
+          <Link
+            href={`/cours/${next.slug}`}
+            className="flex-1 flex items-center justify-end gap-3 p-4 rounded-2xl border border-white/7 bg-[#0D1117] hover:border-white/12 hover:bg-[#131720] transition-all group text-right"
+          >
+            <div className="min-w-0">
+              <p className="text-[10px] text-[#3A4156] mb-0.5">Cours suivant</p>
+              <p className="text-sm font-medium text-gray-400 group-hover:text-white transition-colors truncate">{next.title}</p>
+            </div>
+            <ArrowRight size={15} className="text-[#3A4156] group-hover:text-indigo-400 shrink-0 transition-colors" />
+          </Link>
+        )}
+      </nav>
     </div>
   );
 }

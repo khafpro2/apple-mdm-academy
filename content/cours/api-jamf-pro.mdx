@@ -5,7 +5,40 @@ slug: "api-jamf-pro"
 
 ## Introduction
 
-Jamf Pro expose deux API : la **Classic API** (XML, `/JSSResource/`) héritée, et la **moderne API REST** (`/api/v1/`, `/api/preview/`) en JSON. L'API REST est celle à privilégier pour tous les nouveaux développements. Elle permet d'automatiser n'importe quelle action : créer des groupes, déployer des politiques, récupérer l'inventaire, gérer les utilisateurs — tout ce que l'UI fait, l'API le fait aussi.
+Jamf Pro expose deux API : la **Classic API** (XML, `/JSSResource/`) héritée, et la **Jamf Pro API REST** (`/api/`) en JSON. L'API REST est celle à privilégier pour tous les nouveaux développements. Elle permet d'automatiser n'importe quelle action : créer des groupes, déployer des politiques, récupérer l'inventaire, gérer les utilisateurs — tout ce que l'UI fait, l'API le fait aussi.
+
+> **Documentation officielle :** [Jamf Pro API Overview](https://developer.jamf.com/jamf-pro/docs/jamf-pro-api-overview) (developer.jamf.com, v11.29.0)
+
+## Vue d'ensemble — Jamf Pro API
+
+| Élément | Valeur |
+|---|---|
+| **Base URL** | `/api` |
+| **Documentation intégrée** | `/api/doc` (Swagger UI sur votre instance) |
+| **Authentification** | Bearer Token |
+| **Obtenir un token** | `POST /v1/auth/token` |
+| **Prolonger un token** | `POST /v1/auth/keep-alive` |
+| **Expiration du token** | **20 minutes** |
+
+### Méthodes HTTP supportées
+
+`GET` · `POST` · `PUT` · `PATCH` · `DELETE`
+
+### Codes de réponse HTTP courants
+
+| Code | Signification |
+|---|---|
+| **200** | Succès (lecture ou mise à jour) |
+| **201** | Ressource créée |
+| **204** | Succès sans contenu (suppression) |
+| **400** | Requête invalide |
+| **401** | Non authentifié (token absent ou expiré) |
+| **403** | Accès refusé (privilèges insuffisants) |
+| **404** | Ressource introuvable |
+| **409** | Conflit (ex. doublon) |
+| **500** | Erreur serveur |
+
+Sur votre instance Jamf Pro, ouvrez `https://votre-instance.jamfcloud.com/api/doc` pour explorer tous les endpoints disponibles avec les schémas de requête et réponse.
 
 ## Objectifs
 
@@ -18,7 +51,7 @@ Jamf Pro expose deux API : la **Classic API** (XML, `/JSSResource/`) héritée, 
 ## Authentification — Bearer Token
 
 ```bash
-# Obtenir un token (valide 30 minutes)
+# Obtenir un token (valide 20 minutes)
 TOKEN=$(curl -s -X POST \
   -u "api_user:api_password" \
   -H "Content-Type: application/json" \
@@ -201,10 +234,10 @@ if __name__ == "__main__":
 ## Explorer l'API avec Swagger
 
 ```
-https://votre-instance.jamfcloud.com/api
+https://votre-instance.jamfcloud.com/api/doc
 ```
 
-Swagger UI documente tous les endpoints disponibles avec les schémas de requête et réponse. Vous pouvez tester directement depuis le navigateur.
+Swagger UI (`/api/doc`) documente tous les endpoints disponibles avec les schémas de requête et réponse. Vous pouvez tester directement depuis le navigateur. La page racine `/api` redirige également vers cette documentation intégrée.
 
 ## Mini-lab : Audit complet via API
 

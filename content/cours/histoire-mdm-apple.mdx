@@ -1,0 +1,42 @@
+---
+title: "Histoire du MDM Apple"
+slug: "histoire-mdm-apple"
+---
+
+## Introduction
+
+La gestion des appareils Apple en entreprise a parcouru quinze ans d'évolution — des profils manuels iPhone OS 2 à l'ère **Declarative Device Management**. Comprendre cette trajectoire éclaire pourquoi la « gestion moderne » remplace progressivement le modèle impératif.
+
+> **Source officielle** — Concepts inspirés du livre blanc [La gestion moderne : l'avenir des solutions MDM](https://www.jamf.com/fr/ressources/livres-blancs/gestion-moderne-mdm/) (Jamf FR). MDM Academy ne reproduit pas le PDF.
+
+## Chronologie clé
+
+| Période | Étape | Impact |
+|---|---|---|
+| 2009–2012 | MDM iOS (profils, APNS) | Première gestion à distance iPhone/iPad |
+| 2013–2016 | Supervision, DEP, VPP | Enrôlement automatisé, contrôle renforcé |
+| 2017–2020 | macOS MDM mature, TCC, ABM | Mac au même niveau que iOS en entreprise |
+| 2021–2025 | DDM, cloud-first, identité | Gestion déclarative et autonomie appareil |
+
+## MDM impératif : le modèle fondateur
+
+Le serveur MDM envoie une commande via **APNS** → l'appareil se connecte → exécute (`InstallProfile`, `DeviceInformation`, etc.). Ce modèle **commande/réponse** a permis l'enterprise Apple à grande échelle, mais crée de la latence et une charge serveur importante.
+
+## Vers la gestion moderne
+
+Les organisations d'aujourd'hui font face à :
+- Équipes **hybrides et mobiles** (plus de confiance réseau implicite)
+- Attentes **Zero-Touch** et expérience utilisateur type Apple
+- Besoin de **conformité en temps réel**, pas au prochain check-in
+
+Apple répond avec **DDM**, l'identité cloud et des appareils capables d'**agir proactivement**.
+
+## Bonnes pratiques
+
+- Situez votre organisation sur la courbe MDM classique → moderne
+- Documentez les workflows encore 100 % impératifs
+- Planifiez une veille WWDC / Jamf Learn annuelle
+
+## Résumé
+
+L'histoire du MDM Apple est une progression vers plus d'autonomie côté appareil et moins de dépendance au polling serveur — fondation du parcours Gestion Moderne Apple.

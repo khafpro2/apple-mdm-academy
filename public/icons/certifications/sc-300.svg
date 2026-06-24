@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Pictogramme éditorial non officiel — Exam SC-300</title>
+  <rect width="64" height="64" rx="14" fill="#0C2230"/>
+  <circle cx="26" cy="26" r="9" fill="none" stroke="#67E8F9" stroke-width="2.5"/>
+  <path d="M32 32 46 46" stroke="#A5F3FC" stroke-width="2.5" stroke-linecap="round"/>
+  <circle cx="46" cy="46" r="4" fill="#0891B2" stroke="#CFFAFE" stroke-width="1.5"/>
+  <text x="32" y="56" fill="#ECFEFF" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="700" text-anchor="middle">SC-300</text>
+</svg>

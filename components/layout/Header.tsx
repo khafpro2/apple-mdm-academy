@@ -9,6 +9,7 @@ import dynamic from 'next/dynamic';
 const AuthButton = dynamic(() => import('./AuthButton'), { ssr: false });
 import clsx from 'clsx';
 import { search, type SearchResult } from '@/lib/search';
+import { Show, SignInButton, UserButton } from '@clerk/nextjs';
 
 const NAV_LINKS = [
   { href: '/parcours',      label: 'Parcours',       icon: GraduationCap },
@@ -142,7 +143,24 @@ function SearchModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-export default function Header() {
+function AuthControls() {
+  return (
+    <>
+      <Show when="signed-out">
+        <SignInButton mode="redirect">
+          <button className="px-3 py-2 text-xs font-semibold text-gray-300 hover:text-white transition-colors">
+            Connexion
+          </button>
+        </SignInButton>
+      </Show>
+      <Show when="signed-in">
+        <UserButton />
+      </Show>
+    </>
+  );
+}
+
+export default function Header({ authEnabled = false }: { authEnabled?: boolean }) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -180,7 +198,7 @@ export default function Header() {
               <div className="hidden sm:block">
                 <span className="text-sm font-bold text-white tracking-tight">Academy</span>
                 <span className="ml-1 text-[10px] font-medium text-indigo-400/80 bg-indigo-500/10 px-1.5 py-0.5 rounded-full border border-indigo-500/20">
-                  v2
+                  v3
                 </span>
               </div>
             </Link>
@@ -223,6 +241,7 @@ export default function Header() {
 
             {/* Mobile search + CTA + burger */}
             <div className="flex items-center gap-2">
+              {authEnabled && <AuthControls />}
               <button
                 onClick={() => setSearchOpen(true)}
                 className="sm:hidden p-2 rounded-lg text-gray-500 hover:text-gray-300 hover:bg-white/6 transition-colors"

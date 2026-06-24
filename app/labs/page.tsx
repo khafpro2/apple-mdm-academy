@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Terminal, ChevronRight, Trophy, Zap } from 'lucide-react';
 import { ALL_LABS } from '@/lib/labs';
+import { STATS } from '@/lib/courses';
 
 export const metadata = {
   title: 'Labs pratiques — MDM Academy',
@@ -43,7 +44,7 @@ export default function LabsPage() {
         {[
           { icon: Terminal, value: ALL_LABS.length.toString(), label: 'Labs disponibles' },
           { icon: Zap, value: `${ALL_LABS.reduce((s, l) => s + l.xpReward, 0)} XP`, label: 'XP à gagner' },
-          { icon: Trophy, value: '5', label: 'Certifications couvertes' },
+          { icon: Trophy, value: String(STATS.certifications), label: 'Certifications couvertes' },
         ].map(({ icon: Icon, value, label }) => (
           <div key={label} className="p-4 rounded-xl border border-white/8 bg-white/2 text-center">
             <Icon size={16} className="mx-auto text-indigo-400 mb-2" />

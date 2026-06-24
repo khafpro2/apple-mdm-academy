@@ -1,0 +1,40 @@
+---
+title: "Device Trust"
+slug: "device-trust-apple"
+---
+
+## Introduction
+
+**Device trust** évalue si un appareil mérite l'accès aux ressources entreprise — avant même que l'utilisateur s'authentifie. Sur Apple, cela combine conformité MDM, signaux OS et intégration IdP.
+
+> **Sources** — [Apple Platform Security](https://support.apple.com/guide/security/welcome/web) · [Microsoft SC-300](https://learn.microsoft.com/credentials/certifications/exams/sc-300/)
+
+## Signaux de confiance typiques
+
+| Signal | Source | Exemple |
+|---|---|---|
+| FileVault actif | Jamf inventaire | Clé escrow présente |
+| OS à jour | DDM / Smart Group | macOS ≥ version cible |
+| Pas de malware | Jamf Protect | Alertes = 0 |
+| Supervision | MDM | Appareil ADE |
+
+## Chaîne device trust
+
+```
+Mac conforme ──► Jamf Pro ──► Partner compliance ──► Entra ID
+                                              └──► Conditional Access autorise/refuse M365
+```
+
+## Conditional Access macOS
+
+Microsoft Entra peut exiger : appareil **compliant** (signal Jamf/Intune), **MFA**, et **localisation/risk** avant d'ouvrir Outlook ou SharePoint.
+
+## Bonnes pratiques
+
+- Définir le minimum viable : FileVault + OS patché + supervision
+- Communiquer aux utilisateurs les critères de blocage
+- Tester le parcours « appareil non conforme » avant production
+
+## Résumé
+
+Device trust transforme le Mac d'un simple terminal en **partenaire de sécurité** — la conformité appareil devient condition d'accès, pilier de la gestion moderne.

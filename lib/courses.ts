@@ -107,7 +107,7 @@ const module1Courses: Course[] = [
       { id: 'l5', title: 'Rôles et permissions', duration: '10 min', description: 'Administrateur, gestionnaire, People Manager.' },
     ],
     tools: ['Apple Business Manager'],
-    certificationRelated: ['Apple Deployment and Management', 'Jamf 100'],
+    certificationRelated: ['Apple Deployment and Management', 'Jamf 100 Course'],
     order: 2,
   },
   {
@@ -191,7 +191,7 @@ const module1Courses: Course[] = [
       { id: 'l4', title: 'Test et validation Zero-Touch', duration: '10 min', description: 'Workflow complet de bout en bout.' },
     ],
     tools: ['Apple Business Manager', 'Jamf Pro', 'Microsoft Intune', 'macOS', 'iOS', 'iPadOS'],
-    certificationRelated: ['Apple Deployment and Management', 'Jamf 100', 'Microsoft MD-102'],
+    certificationRelated: ['Apple Deployment and Management', 'Jamf 100 Course', 'Microsoft 365 Certified: Endpoint Administrator Associate'],
     order: 5,
   },
   {
@@ -252,7 +252,7 @@ const module2Courses: Course[] = [
       { id: 'l4', title: 'Premiers objets et paramètres', duration: '10 min', description: 'Categories, Buildings, Departments, Sites.' },
     ],
     tools: ['Jamf Pro', 'Apple Business Manager', 'macOS'],
-    certificationRelated: ['Jamf 100', 'Jamf 200'],
+    certificationRelated: ['Jamf 100 Course', 'Jamf 200 Course'],
     order: 1,
   },
   {
@@ -280,7 +280,7 @@ const module2Courses: Course[] = [
       { id: 'l4', title: 'Inventaire et vérification', duration: '20 min', description: 'Recon, JAMF Helper, inventory data.' },
     ],
     tools: ['Jamf Pro', 'Apple Business Manager', 'macOS'],
-    certificationRelated: ['Jamf 100', 'Jamf 200'],
+    certificationRelated: ['Jamf 100 Course', 'Jamf 200 Course'],
     order: 2,
   },
   {
@@ -308,7 +308,7 @@ const module2Courses: Course[] = [
       { id: 'l4', title: 'Scope et déploiement ciblé', duration: '15 min', description: 'Smart Groups, exclusions, précédence.' },
     ],
     tools: ['Jamf Pro', 'macOS'],
-    certificationRelated: ['Jamf 100', 'Jamf 200'],
+    certificationRelated: ['Jamf 100 Course', 'Jamf 200 Course'],
     order: 3,
   },
   {
@@ -336,7 +336,7 @@ const module2Courses: Course[] = [
       { id: 'l4', title: 'Scripts Bash dans les Policies', duration: '20 min', description: 'Paramètres, before/after, logs.' },
     ],
     tools: ['Jamf Pro', 'macOS'],
-    certificationRelated: ['Jamf 100', 'Jamf 170', 'Jamf 200'],
+    certificationRelated: ['Jamf 100 Course', 'Jamf 170 Course', 'Jamf 200 Course'],
     order: 4,
   },
   {
@@ -364,7 +364,7 @@ const module2Courses: Course[] = [
       { id: 'l4', title: 'Smart Groups de conformité', duration: '10 min', description: 'Groupes basés sur FileVault, OS version, compliance.' },
     ],
     tools: ['Jamf Pro', 'macOS'],
-    certificationRelated: ['Jamf 100', 'Jamf 200'],
+    certificationRelated: ['Jamf 100 Course', 'Jamf 200 Course'],
     order: 5,
   },
   {
@@ -392,7 +392,7 @@ const module2Courses: Course[] = [
       { id: 'l4', title: 'Catégories et accès par groupe', duration: '10 min', description: 'Organisation, smart group scope.' },
     ],
     tools: ['Jamf Pro', 'macOS', 'iOS', 'iPadOS'],
-    certificationRelated: ['Jamf 100'],
+    certificationRelated: ['Jamf 100 Course'],
     order: 6,
   },
   {
@@ -420,7 +420,7 @@ const module2Courses: Course[] = [
       { id: 'l4', title: 'Reporting et tableau de bord', duration: '10 min', description: 'Dashboard patch, rapports de conformité.' },
     ],
     tools: ['Jamf Pro', 'macOS'],
-    certificationRelated: ['Jamf 200'],
+    certificationRelated: ['Jamf 200 Course'],
     order: 7,
   },
   {
@@ -448,7 +448,7 @@ const module2Courses: Course[] = [
       { id: 'l4', title: 'Dashboard de conformité', duration: '10 min', description: 'Widgets, KPI, vue d\'ensemble parc.' },
     ],
     tools: ['Jamf Pro', 'macOS'],
-    certificationRelated: ['Jamf 200'],
+    certificationRelated: ['Jamf 200 Course'],
     order: 8,
   },
 ];
@@ -465,23 +465,25 @@ const module3Courses: Course[] = [
     moduleTitle: 'Automatisation Jamf Pro',
     level: 'Avancé',
     status: 'À jour',
-    lastUpdated: '2025-04-01',
+    lastUpdated: '2025-06-21',
     duration: '1h 30min',
     objectives: [
-      'Comprendre la Classic API et la Jamf Pro API (v1)',
-      'Authentifier les appels API avec Bearer Token',
-      'Lire, créer et modifier des objets via API',
+      'Comprendre la Classic API et la Jamf Pro API REST (base /api)',
+      'Authentifier les appels API avec Bearer Token (POST /v1/auth/token)',
+      'Utiliser la documentation intégrée (/api/doc) et developer.jamf.com',
+      'Maîtriser les méthodes HTTP et interpréter les codes de réponse',
       'Construire des scripts d\'automatisation Python/Bash',
     ],
     prerequisites: ['reporting-conformite-jamf'],
     lessons: [
-      { id: 'l1', title: 'Classic API vs Jamf Pro API', duration: '20 min', description: 'Architecture, endpoints, documentation.' },
-      { id: 'l2', title: 'Authentification Bearer Token', duration: '20 min', description: 'Token, refresh, expiration, best practices.' },
-      { id: 'l3', title: 'CRUD via API', duration: '30 min', description: 'GET, POST, PUT, DELETE : exemples pratiques.' },
-      { id: 'l4', title: 'Scripts d\'automatisation', duration: '20 min', description: 'Bash + curl, Python + requests, exemples réels.' },
+      { id: 'l1', title: 'Classic API vs Jamf Pro API', duration: '20 min', description: 'Base URL /api, Classic API XML, REST JSON, /api/doc.' },
+      { id: 'l2', title: 'Authentification Bearer Token', duration: '20 min', description: 'POST /v1/auth/token, keep-alive, expiration 20 min.' },
+      { id: 'l3', title: 'CRUD via API', duration: '30 min', description: 'GET, POST, PUT, PATCH, DELETE — exemples pratiques.' },
+      { id: 'l4', title: 'Codes HTTP et gestion d\'erreurs', duration: '15 min', description: '200, 201, 204, 400, 401, 403, 404, 409, 500.' },
+      { id: 'l5', title: 'Scripts d\'automatisation', duration: '15 min', description: 'Bash + curl, Python + requests, exemples réels.' },
     ],
     tools: ['Jamf Pro', 'macOS'],
-    certificationRelated: ['Jamf 170', 'Jamf 200'],
+    certificationRelated: ['Jamf 170 Course', 'Jamf 200 Course'],
     order: 1,
   },
   {
@@ -510,7 +512,7 @@ const module3Courses: Course[] = [
       { id: 'l5', title: 'Bibliothèque de scripts réutilisables', duration: '10 min', description: 'Logging function, error handling pattern.' },
     ],
     tools: ['Jamf Pro', 'macOS'],
-    certificationRelated: ['Jamf 170', 'Jamf 200'],
+    certificationRelated: ['Jamf 170 Course', 'Jamf 200 Course'],
     order: 2,
   },
   {
@@ -538,7 +540,7 @@ const module3Courses: Course[] = [
       { id: 'l4', title: 'Signature et notarisation', duration: '20 min', description: 'Developer ID Installer, xcrun notarytool.' },
     ],
     tools: ['Jamf Pro', 'macOS'],
-    certificationRelated: ['Jamf 170'],
+    certificationRelated: ['Jamf 170 Course'],
     order: 3,
   },
   {
@@ -567,7 +569,7 @@ const module3Courses: Course[] = [
       { id: 'l5', title: 'Documentation du workflow', duration: '30 min', description: 'Diagrammes, runbook, maintenance.' },
     ],
     tools: ['Jamf Pro', 'Jamf Connect', 'Apple Business Manager', 'macOS'],
-    certificationRelated: ['Jamf 200'],
+    certificationRelated: ['Jamf 200 Course'],
     order: 4,
   },
   {
@@ -595,7 +597,7 @@ const module3Courses: Course[] = [
       { id: 'l4', title: 'Audit et reporting', duration: '15 min', description: 'History, logs, reporting conformité.' },
     ],
     tools: ['Jamf Pro', 'macOS'],
-    certificationRelated: ['Jamf 200'],
+    certificationRelated: ['Jamf 200 Course'],
     order: 5,
   },
   {
@@ -623,7 +625,7 @@ const module3Courses: Course[] = [
       { id: 'l4', title: 'Stratégie de déploiement multi-vagues', duration: '15 min', description: 'Pilote, early adopters, production, rollback.' },
     ],
     tools: ['Jamf Pro', 'macOS'],
-    certificationRelated: ['Jamf 200'],
+    certificationRelated: ['Jamf 200 Course'],
     order: 6,
   },
 ];
@@ -656,7 +658,7 @@ const module4Courses: Course[] = [
       { id: 'l4', title: 'Console Jamf Protect', duration: '10 min', description: 'Alertes, événements, investigation.' },
     ],
     tools: ['Jamf Protect', 'Jamf Pro', 'macOS'],
-    certificationRelated: ['Jamf 200'],
+    certificationRelated: ['Jamf 200 Course'],
     order: 1,
   },
   {
@@ -684,7 +686,7 @@ const module4Courses: Course[] = [
       { id: 'l4', title: 'Gestion des risques et alertes', duration: '15 min', description: 'Risk score, alertes, remédiation.' },
     ],
     tools: ['Jamf Security Cloud', 'Jamf Pro', 'macOS', 'iOS', 'iPadOS'],
-    certificationRelated: ['Jamf 200'],
+    certificationRelated: ['Jamf 200 Course'],
     order: 2,
   },
   {
@@ -712,7 +714,7 @@ const module4Courses: Course[] = [
       { id: 'l4', title: 'Reporting FileVault', duration: '10 min', description: 'Rapports conformité, smart groups.' },
     ],
     tools: ['Jamf Pro', 'macOS'],
-    certificationRelated: ['Jamf 100', 'Jamf 200'],
+    certificationRelated: ['Jamf 100 Course', 'Jamf 200 Course', 'Apple Deployment and Management'],
     order: 3,
   },
   {
@@ -740,7 +742,7 @@ const module4Courses: Course[] = [
       { id: 'l4', title: 'System Extensions et Kernel Extensions', duration: '10 min', description: 'SEXT, KEXT, approbation MDM.' },
     ],
     tools: ['Jamf Pro', 'Jamf Protect', 'macOS'],
-    certificationRelated: ['Jamf 200'],
+    certificationRelated: ['Jamf 200 Course'],
     order: 4,
   },
   {
@@ -768,7 +770,7 @@ const module4Courses: Course[] = [
       { id: 'l4', title: 'Rapport d\'audit CIS', duration: '15 min', description: 'Export, scoring, présentation RSSI.' },
     ],
     tools: ['Jamf Protect', 'Jamf Pro', 'macOS'],
-    certificationRelated: ['Jamf 200'],
+    certificationRelated: ['Jamf 200 Course', 'Jamf 270 Course', 'Apple Certified IT Professional'],
     order: 5,
   },
   {
@@ -796,7 +798,7 @@ const module4Courses: Course[] = [
       { id: 'l4', title: 'Programme de conformité continu', duration: '25 min', description: 'Métriques, KPI, rapport direction.' },
     ],
     tools: ['Jamf Protect', 'Jamf Security Cloud', 'Jamf Pro', 'macOS'],
-    certificationRelated: ['Jamf 200'],
+    certificationRelated: ['Jamf 200 Course'],
     order: 6,
   },
 ];
@@ -829,7 +831,7 @@ const module5Courses: Course[] = [
       { id: 'l4', title: 'Cas d\'usage Education', duration: '10 min', description: 'iPads scolaires, classes, enseignants.' },
     ],
     tools: ['Jamf School', 'Apple Business Manager', 'iPadOS'],
-    certificationRelated: [],
+    certificationRelated: ['Jamf 140 Course', 'Jamf 240 Course'],
     order: 1,
   },
   {
@@ -1002,7 +1004,7 @@ const module6Courses: Course[] = [
       { id: 'l4', title: 'Déploiement et premiers tests', duration: '10 min', description: 'Package, config profile, test login.' },
     ],
     tools: ['Jamf Connect', 'Jamf Pro', 'macOS'],
-    certificationRelated: ['Jamf 200'],
+    certificationRelated: ['Jamf 200 Course'],
     order: 1,
   },
   {
@@ -1030,7 +1032,7 @@ const module6Courses: Course[] = [
       { id: 'l4', title: 'Troubleshooting avancé', duration: '20 min', description: 'Logs Jamf Connect, erreurs OIDC, debug.' },
     ],
     tools: ['Jamf Connect', 'Jamf Pro', 'macOS'],
-    certificationRelated: ['Jamf 200'],
+    certificationRelated: ['Jamf 200 Course'],
     order: 2,
   },
   {
@@ -1058,7 +1060,7 @@ const module6Courses: Course[] = [
       { id: 'l4', title: 'Diagnostic SSO', duration: '10 min', description: 'klist, kcpassword, logs, common issues.' },
     ],
     tools: ['Jamf Connect', 'Jamf Pro', 'macOS'],
-    certificationRelated: ['Jamf 200'],
+    certificationRelated: ['Jamf 200 Course'],
     order: 3,
   },
   {
@@ -1086,7 +1088,7 @@ const module6Courses: Course[] = [
       { id: 'l4', title: 'Troubleshooting sync', duration: '10 min', description: 'Logs, diagnostic, résolution.' },
     ],
     tools: ['Jamf Connect', 'macOS'],
-    certificationRelated: ['Jamf 200'],
+    certificationRelated: ['Jamf 200 Course'],
     order: 4,
   },
   {
@@ -1114,7 +1116,7 @@ const module6Courses: Course[] = [
       { id: 'l4', title: 'Architecture Zero Trust complète', duration: '20 min', description: 'Diagramme, flux, maintenance.' },
     ],
     tools: ['Jamf Connect', 'Jamf Pro', 'Jamf Protect', 'macOS'],
-    certificationRelated: ['Jamf 200'],
+    certificationRelated: ['Jamf 200 Course'],
     order: 5,
   },
 ];
@@ -1147,7 +1149,7 @@ const module7Courses: Course[] = [
       { id: 'l4', title: 'Navigation portail Intune (Apple)', duration: '10 min', description: 'Devices, Policies, Apps, Reports.' },
     ],
     tools: ['Microsoft Intune', 'Apple Business Manager', 'macOS', 'iOS', 'iPadOS'],
-    certificationRelated: ['Microsoft MD-102'],
+    certificationRelated: ['Microsoft 365 Certified: Endpoint Administrator Associate'],
     order: 1,
   },
   {
@@ -1175,7 +1177,7 @@ const module7Courses: Course[] = [
       { id: 'l4', title: 'Test et validation', duration: '15 min', description: 'Workflow complet, vérification Intune.' },
     ],
     tools: ['Microsoft Intune', 'Apple Business Manager', 'macOS', 'iOS', 'iPadOS'],
-    certificationRelated: ['Microsoft MD-102'],
+    certificationRelated: ['Microsoft 365 Certified: Endpoint Administrator Associate'],
     order: 2,
   },
   {
@@ -1203,7 +1205,7 @@ const module7Courses: Course[] = [
       { id: 'l4', title: 'Software Updates macOS', duration: '15 min', description: 'DDM Intune, Managed Updates, policies.' },
     ],
     tools: ['Microsoft Intune', 'macOS'],
-    certificationRelated: ['Microsoft MD-102'],
+    certificationRelated: ['Microsoft 365 Certified: Endpoint Administrator Associate'],
     order: 3,
   },
   {
@@ -1231,7 +1233,7 @@ const module7Courses: Course[] = [
       { id: 'l4', title: 'Actions à distance et maintenance', duration: '15 min', description: 'Remote lock, wipe, sync, rename.' },
     ],
     tools: ['Microsoft Intune', 'Apple Business Manager', 'iOS', 'iPadOS'],
-    certificationRelated: ['Microsoft MD-102'],
+    certificationRelated: ['Microsoft 365 Certified: Endpoint Administrator Associate'],
     order: 4,
   },
   {
@@ -1259,7 +1261,7 @@ const module7Courses: Course[] = [
       { id: 'l4', title: 'Rapports de conformité', duration: '10 min', description: 'Device compliance dashboard, export.' },
     ],
     tools: ['Microsoft Intune', 'macOS', 'iOS', 'iPadOS'],
-    certificationRelated: ['Microsoft MD-102'],
+    certificationRelated: ['Microsoft 365 Certified: Endpoint Administrator Associate'],
     order: 5,
   },
   {
@@ -1287,7 +1289,11 @@ const module7Courses: Course[] = [
       { id: 'l4', title: 'Named Locations et exclusions', duration: '15 min', description: 'IP, pays, break-glass accounts.' },
     ],
     tools: ['Microsoft Intune', 'macOS', 'iOS', 'iPadOS'],
-    certificationRelated: ['Microsoft MD-102', 'Microsoft MS-102'],
+    certificationRelated: [
+      'Microsoft 365 Certified: Endpoint Administrator Associate',
+      'Microsoft 365 Certified: Administrator Expert',
+      'Microsoft Certified: Identity and Access Administrator Associate',
+    ],
     order: 6,
   },
   {
@@ -1315,7 +1321,7 @@ const module7Courses: Course[] = [
       { id: 'l4', title: 'Reporting et hunting', duration: '15 min', description: 'Advanced Hunting KQL, rapports sécurité.' },
     ],
     tools: ['Microsoft Intune', 'macOS', 'iOS', 'iPadOS'],
-    certificationRelated: ['Microsoft MD-102', 'Microsoft MS-102'],
+    certificationRelated: ['Microsoft 365 Certified: Endpoint Administrator Associate', 'Microsoft 365 Certified: Administrator Expert'],
     order: 7,
   },
   {
@@ -1343,7 +1349,7 @@ const module7Courses: Course[] = [
       { id: 'l4', title: 'Gestion des conflits de profils', duration: '10 min', description: 'Précédence, résolution, rapport.' },
     ],
     tools: ['Microsoft Intune', 'macOS', 'iOS', 'iPadOS'],
-    certificationRelated: ['Microsoft MD-102'],
+    certificationRelated: ['Microsoft 365 Certified: Endpoint Administrator Associate'],
     order: 8,
   },
 ];
@@ -1376,7 +1382,7 @@ const module8Courses: Course[] = [
       { id: 'l4', title: 'Choix du mode adapté', duration: '10 min', description: 'BYOD, COBO, COSU, COPE — guide décision.' },
     ],
     tools: ['Android Enterprise', 'Microsoft Intune'],
-    certificationRelated: ['Microsoft MD-102'],
+    certificationRelated: ['Microsoft 365 Certified: Endpoint Administrator Associate'],
     order: 1,
   },
   {
@@ -1404,7 +1410,7 @@ const module8Courses: Course[] = [
       { id: 'l4', title: 'Compliance et restrictions Work Profile', duration: '10 min', description: 'Compliance policies, copy-paste restrictions.' },
     ],
     tools: ['Android Enterprise', 'Microsoft Intune'],
-    certificationRelated: ['Microsoft MD-102'],
+    certificationRelated: ['Microsoft 365 Certified: Endpoint Administrator Associate'],
     order: 2,
   },
   {
@@ -1432,7 +1438,7 @@ const module8Courses: Course[] = [
       { id: 'l4', title: 'Zero-Touch Enrollment Android', duration: '10 min', description: 'Customer portail ZT, config JSON, déploiement.' },
     ],
     tools: ['Android Enterprise', 'Microsoft Intune'],
-    certificationRelated: ['Microsoft MD-102'],
+    certificationRelated: ['Microsoft 365 Certified: Endpoint Administrator Associate'],
     order: 3,
   },
   {
@@ -1460,7 +1466,7 @@ const module8Courses: Course[] = [
       { id: 'l4', title: 'Restrictions et politique COPE', duration: '10 min', description: 'Personal profile limits, screen capture.' },
     ],
     tools: ['Android Enterprise', 'Microsoft Intune'],
-    certificationRelated: ['Microsoft MD-102'],
+    certificationRelated: ['Microsoft 365 Certified: Endpoint Administrator Associate'],
     order: 4,
   },
   {
@@ -1488,7 +1494,7 @@ const module8Courses: Course[] = [
       { id: 'l4', title: 'Gestion à distance des kiosques', duration: '10 min', description: 'Actions, diagnostics, mise à jour.' },
     ],
     tools: ['Android Enterprise', 'Microsoft Intune'],
-    certificationRelated: ['Microsoft MD-102'],
+    certificationRelated: ['Microsoft 365 Certified: Endpoint Administrator Associate'],
     order: 5,
   },
   {
@@ -1516,7 +1522,7 @@ const module8Courses: Course[] = [
       { id: 'l4', title: 'Private Apps et APK', duration: '10 min', description: 'Upload, gestion, mises à jour.' },
     ],
     tools: ['Android Enterprise', 'Microsoft Intune'],
-    certificationRelated: ['Microsoft MD-102'],
+    certificationRelated: ['Microsoft 365 Certified: Endpoint Administrator Associate'],
     order: 6,
   },
   {
@@ -1544,7 +1550,7 @@ const module8Courses: Course[] = [
       { id: 'l4', title: 'Rapports et monitoring', duration: '10 min', description: 'Dashboard, per-policy, per-device.' },
     ],
     tools: ['Android Enterprise', 'Microsoft Intune'],
-    certificationRelated: ['Microsoft MD-102'],
+    certificationRelated: ['Microsoft 365 Certified: Endpoint Administrator Associate'],
     order: 7,
   },
   {
@@ -1572,47 +1578,20 @@ const module8Courses: Course[] = [
       { id: 'l4', title: 'Stratégie sécurité Android globale', duration: '20 min', description: 'Architecture, documentation, maintenance.' },
     ],
     tools: ['Android Enterprise', 'Microsoft Intune'],
-    certificationRelated: ['Microsoft MD-102'],
+    certificationRelated: ['Microsoft 365 Certified: Endpoint Administrator Associate'],
     order: 8,
   },
 ];
 
 // ─── MODULE 9 — Certifications ──────────────────────────────────────────────
+// Prep course pictograms: see PREP_COURSE_ICONS in lib/certifications.ts
 
 const module9Courses: Course[] = [
-  {
-    id: 'cert-overview',
-    slug: 'certifications',
-    title: 'Vue d\'ensemble des certifications',
-    description: 'Guide complet des certifications professionnelles Apple, Jamf Pro et Microsoft — comment se préparer, quel parcours suivre, par où commencer.',
-    moduleId: 'module-9',
-    moduleTitle: 'Certifications',
-    level: 'Débutant',
-    status: 'À jour',
-    lastUpdated: '2025-05-01',
-    duration: '30 min',
-    objectives: [
-      'Identifier les certifications Apple, Jamf et Microsoft disponibles',
-      'Comprendre le parcours certifiant recommandé selon son profil',
-      'Connaître les prérequis et le format de chaque examen',
-      'Planifier sa stratégie de certification',
-    ],
-    prerequisites: [],
-    lessons: [
-      { id: 'l1', title: 'Certifications Apple', duration: '8 min', description: 'Apple Device Support, Apple Deployment and Management.' },
-      { id: 'l2', title: 'Certifications Jamf', duration: '10 min', description: 'Jamf 100, 170, 200 — parcours et format.' },
-      { id: 'l3', title: 'Certifications Microsoft', duration: '8 min', description: 'MD-102, MS-102 — endpoint et enterprise.' },
-      { id: 'l4', title: 'Stratégie de certification', duration: '4 min', description: 'Quel ordre, quelle priorité selon votre rôle.' },
-    ],
-    tools: ['Apple Business Manager', 'Jamf Pro', 'Microsoft Intune'],
-    certificationRelated: ['Jamf 100 Course', 'Apple Deployment and Management', 'Microsoft MD-102'],
-    order: 0,
-  },
   {
     id: 'cert-apple-device-support',
     slug: 'certification-apple-device-support',
     title: 'Apple Certified Support Professional',
-    description: 'Préparer la certification Apple Device Support pour valider vos compétences en support et administration des appareils Apple.',
+    description: 'Préparer l\'examen Apple Device Support et la certification Apple Certified Support Professional.',
     moduleId: 'module-9',
     moduleTitle: 'Certifications',
     level: 'Intermédiaire',
@@ -1633,7 +1612,7 @@ const module9Courses: Course[] = [
       { id: 'l4', title: 'Stratégie d\'examen', duration: '20 min', description: 'Temps, méthode, gestion du stress.' },
     ],
     tools: ['macOS', 'iOS', 'iPadOS', 'Apple Business Manager'],
-    certificationRelated: ['Apple Device Support'],
+    certificationRelated: ['Apple Certified Support Professional', 'Apple Device Support'],
     order: 1,
   },
   {
@@ -1667,8 +1646,8 @@ const module9Courses: Course[] = [
   {
     id: 'cert-jamf-100',
     slug: 'certification-jamf-100',
-    title: 'Jamf 100 Course — Guide de préparation',
-    description: 'Préparer le Jamf 100 Course : fondamentaux Jamf Pro, enrôlement, profils, politiques et inventaire.',
+    title: 'Jamf 100 Course',
+    description: 'Préparer le Jamf 100 Course et valider les fondamentaux Jamf Pro pour l\'administration Apple.',
     moduleId: 'module-9',
     moduleTitle: 'Certifications',
     level: 'Débutant',
@@ -1689,14 +1668,14 @@ const module9Courses: Course[] = [
       { id: 'l4', title: 'Conseils de passage', duration: '20 min', description: 'Stratégie, gestion du temps, révision finale.' },
     ],
     tools: ['Jamf Pro', 'Apple Business Manager', 'macOS'],
-    certificationRelated: ['Jamf 100'],
+    certificationRelated: ['Jamf 100 Course'],
     order: 3,
   },
   {
     id: 'cert-jamf-170',
     slug: 'certification-jamf-170',
-    title: 'Jamf 170 Course — Guide de préparation',
-    description: 'Préparer le Jamf 170 Course : administration avancée macOS, automatisation, scripting Bash, packaging et sécurité.',
+    title: 'Jamf 170 Course',
+    description: 'Préparer le Jamf 170 Course — scripting, API, automatisation et gestion avancée Jamf Pro.',
     moduleId: 'module-9',
     moduleTitle: 'Certifications',
     level: 'Avancé',
@@ -1717,14 +1696,14 @@ const module9Courses: Course[] = [
       { id: 'l4', title: 'Préparation finale Jamf 170', duration: '30 min', description: 'Questions types, stratégie, dernière révision.' },
     ],
     tools: ['Jamf Pro', 'macOS'],
-    certificationRelated: ['Jamf 170'],
+    certificationRelated: ['Jamf 170 Course'],
     order: 4,
   },
   {
     id: 'cert-jamf-200',
     slug: 'certification-jamf-200',
-    title: 'Jamf 200 Course — Guide de préparation',
-    description: 'Préparer le Jamf 200 Course : architecture avancée, haute disponibilité, LDAP, PKI, gestion multi-sites et sécurité enterprise.',
+    title: 'Jamf 200 Course',
+    description: 'Préparer le Jamf 200 Course — administration avancée, architecture et projets Jamf Pro complexes.',
     moduleId: 'module-9',
     moduleTitle: 'Certifications',
     level: 'Expert',
@@ -1746,14 +1725,14 @@ const module9Courses: Course[] = [
       { id: 'l5', title: 'Portfolio professionnel Jamf', duration: '20 min', description: 'CV, LinkedIn, projets GitHub.' },
     ],
     tools: ['Jamf Pro', 'Jamf Protect', 'Jamf Connect', 'Jamf Security Cloud', 'macOS'],
-    certificationRelated: ['Jamf 200'],
+    certificationRelated: ['Jamf 200 Course'],
     order: 5,
   },
   {
     id: 'cert-md102',
     slug: 'certification-md-102',
-    title: 'Microsoft MD-102 — Endpoint Administrator',
-    description: 'Préparer l\'examen Microsoft MD-102 pour la certification Microsoft 365 Certified: Endpoint Administrator Associate.',
+    title: 'Microsoft 365 Certified: Endpoint Administrator Associate',
+    description: 'Préparer l\'examen MD-102 pour la certification Microsoft 365 Certified: Endpoint Administrator Associate.',
     moduleId: 'module-9',
     moduleTitle: 'Certifications',
     level: 'Avancé',
@@ -1775,14 +1754,14 @@ const module9Courses: Course[] = [
       { id: 'l5', title: 'Ressources complémentaires', duration: '20 min', description: 'Microsoft Learn, labs, sandbox.' },
     ],
     tools: ['Microsoft Intune', 'macOS', 'iOS', 'iPadOS', 'Android Enterprise'],
-    certificationRelated: ['Microsoft MD-102'],
+    certificationRelated: ['Microsoft 365 Certified: Endpoint Administrator Associate'],
     order: 6,
   },
   {
     id: 'cert-ms102',
     slug: 'certification-ms-102',
-    title: 'Microsoft MS-102 — Enterprise Administrator',
-    description: 'Préparer l\'examen MS-102 pour la certification Microsoft 365 Certified: Enterprise Administrator Expert.',
+    title: 'Microsoft 365 Certified: Administrator Expert',
+    description: 'Préparer l\'examen MS-102 pour la certification Microsoft 365 Certified: Administrator Expert.',
     moduleId: 'module-9',
     moduleTitle: 'Certifications',
     level: 'Expert',
@@ -1803,8 +1782,283 @@ const module9Courses: Course[] = [
       { id: 'l4', title: 'Entraînement final MS-102', duration: '60 min', description: 'Questions expert, cas complexes.' },
     ],
     tools: ['Microsoft Intune'],
-    certificationRelated: ['Microsoft MS-102'],
+    certificationRelated: ['Microsoft 365 Certified: Administrator Expert'],
     order: 7,
+  },
+];
+
+// ─── MODULE 10 — Gestion Moderne Apple ─────────────────────────────────────
+
+const module10Courses: Course[] = [
+  {
+    id: 'modern-mdm-history',
+    slug: 'histoire-mdm-apple',
+    title: 'Histoire du MDM Apple',
+    description:
+      'Retracez l\'évolution de la gestion des appareils Apple — des profils iOS 2 à l\'ère Declarative Device Management et à la gestion moderne.',
+    moduleId: 'module-10',
+    moduleTitle: 'Gestion Moderne Apple',
+    level: 'Débutant',
+    status: 'À jour',
+    lastUpdated: '2025-06-21',
+    duration: '45 min',
+    objectives: [
+      'Comprendre les étapes clés du protocole MDM Apple',
+      'Relier l\'évolution technique aux besoins enterprise modernes',
+      'Identifier les limites du MDM impératif classique',
+    ],
+    prerequisites: ['ecosysteme-apple-entreprise'],
+    lessons: [
+      { id: 'l1', title: 'Origines du MDM Apple (2009–2014)', duration: '15 min', description: 'iPhone Configuration Utility, supervision, APNS.' },
+      { id: 'l2', title: 'Ère enterprise macOS (2015–2020)', duration: '15 min', description: 'ADE, DEP, TCC, Apple Silicon.' },
+      { id: 'l3', title: 'Vers la gestion moderne (2021–)', duration: '15 min', description: 'DDM, cloud-first, identité et confiance.' },
+    ],
+    tools: ['Apple Business Manager', 'macOS', 'iOS', 'iPadOS'],
+    certificationRelated: ['Apple Deployment and Management'],
+    order: 1,
+  },
+  {
+    id: 'modern-mdm-classic-vs-ddm',
+    slug: 'mdm-classique-vs-ddm',
+    title: 'MDM classique vs DDM',
+    description:
+      'Comparez le modèle impératif (commande/réponse) et le modèle déclaratif (état souhaité) pour comprendre la transition vers la gestion moderne.',
+    moduleId: 'module-10',
+    moduleTitle: 'Gestion Moderne Apple',
+    level: 'Intermédiaire',
+    status: 'À jour',
+    lastUpdated: '2025-06-21',
+    duration: '1h',
+    objectives: [
+      'Distinguer MDM impératif et Declarative Device Management',
+      'Comprendre polling APNS vs autonomie device-side',
+      'Évaluer l\'impact sur l\'expérience admin et utilisateur',
+    ],
+    prerequisites: ['histoire-mdm-apple'],
+    lessons: [
+      { id: 'l1', title: 'Modèle impératif classique', duration: '20 min', description: 'Commandes, check-in, latence.' },
+      { id: 'l2', title: 'Modèle déclaratif DDM', duration: '25 min', description: 'Déclarations, status channel, autonomie.' },
+      { id: 'l3', title: 'Coexistence et migration', duration: '15 min', description: 'Hybride, priorités, feuille de route.' },
+    ],
+    tools: ['Jamf Pro', 'macOS', 'iOS'],
+    certificationRelated: ['Jamf 200 Course', 'Apple Deployment and Management'],
+    order: 2,
+  },
+  {
+    id: 'modern-ddm',
+    slug: 'declarative-device-management',
+    title: 'Declarative Device Management',
+    description:
+      'Maîtrisez les piliers DDM : déclarations, assets, activations et canal de statut pour une gestion proactive des appareils Apple.',
+    moduleId: 'module-10',
+    moduleTitle: 'Gestion Moderne Apple',
+    level: 'Avancé',
+    status: 'À jour',
+    lastUpdated: '2025-06-21',
+    duration: '1h 30min',
+    objectives: [
+      'Comprendre declarations, configurations et assets DDM',
+      'Utiliser le status channel pour le reporting en temps réel',
+      'Déployer des use cases DDM (updates, passcode, restrictions)',
+    ],
+    prerequisites: ['mdm-classique-vs-ddm'],
+    lessons: [
+      { id: 'l1', title: 'Architecture DDM', duration: '30 min', description: 'Declarations, activations, status items.' },
+      { id: 'l2', title: 'Software Update Declarations', duration: '30 min', description: 'Version cible, enforcement, délais.' },
+      { id: 'l3', title: 'DDM avec Jamf Pro', duration: '30 min', description: 'Blueprints, compatibilité, bonnes pratiques.' },
+    ],
+    tools: ['Jamf Pro', 'macOS', 'iOS', 'iPadOS'],
+    certificationRelated: ['Jamf 200 Course', 'Jamf 170 Course'],
+    order: 3,
+  },
+  {
+    id: 'modern-cloud-first',
+    slug: 'cloud-first-management',
+    title: 'Cloud First Management',
+    description:
+      'Adoptez une stratégie cloud-first : ABM, IdP cloud, MDM SaaS et élimination des dépendances on-premise pour la gestion Apple.',
+    moduleId: 'module-10',
+    moduleTitle: 'Gestion Moderne Apple',
+    level: 'Intermédiaire',
+    status: 'À jour',
+    lastUpdated: '2025-06-21',
+    duration: '1h',
+    objectives: [
+      'Définir une architecture cloud-first pour le parc Apple',
+      'Remplacer AD on-premise par identité cloud et Jamf Connect',
+      'Évaluer Jamf Cloud vs on-premise dans un contexte moderne',
+    ],
+    prerequisites: ['declarative-device-management'],
+    lessons: [
+      { id: 'l1', title: 'Principes cloud-first', duration: '20 min', description: 'SaaS MDM, ABM, fédération identité.' },
+      { id: 'l2', title: 'Fin du bind AD local', duration: '25 min', description: 'Entra ID, OIDC, comptes locaux nommés.' },
+      { id: 'l3', title: 'Architecture cible', duration: '15 min', description: 'Schéma de référence modern management.' },
+    ],
+    tools: ['Apple Business Manager', 'Jamf Pro', 'Jamf Connect'],
+    certificationRelated: ['Apple Deployment and Management', 'Jamf 300 Course'],
+    order: 4,
+  },
+  {
+    id: 'modern-device-trust',
+    slug: 'device-trust-apple',
+    title: 'Device Trust',
+    description:
+      'Construisez la confiance appareil : signaux de conformité, attestation, posture de sécurité et intégration Conditional Access.',
+    moduleId: 'module-10',
+    moduleTitle: 'Gestion Moderne Apple',
+    level: 'Avancé',
+    status: 'À jour',
+    lastUpdated: '2025-06-21',
+    duration: '1h 15min',
+    objectives: [
+      'Définir device trust dans un écosystème Apple enterprise',
+      'Collecter et transmettre des signaux de conformité',
+      'Intégrer Jamf + Entra ID pour l\'accès conditionnel',
+    ],
+    prerequisites: ['cloud-first-management'],
+    lessons: [
+      { id: 'l1', title: 'Fondements device trust', duration: '25 min', description: 'Posture, signaux, Zero Trust.' },
+      { id: 'l2', title: 'Signaux Jamf et Intune', duration: '25 min', description: 'Compliance, EA, reporting DDM.' },
+      { id: 'l3', title: 'Conditional Access macOS', duration: '25 min', description: 'Entra ID, blocage accès non conforme.' },
+    ],
+    tools: ['Jamf Pro', 'Jamf Connect', 'Microsoft Intune'],
+    certificationRelated: ['Microsoft 365 Certified: Endpoint Administrator Associate', 'Jamf 270 Course'],
+    order: 5,
+  },
+  {
+    id: 'modern-iam',
+    slug: 'identity-access-management-apple',
+    title: 'Identity and Access Management',
+    description:
+      'Unifiez identité et accès sur Apple : Managed Apple Accounts, fédération IdP, SSO et cycle de vie utilisateur.',
+    moduleId: 'module-10',
+    moduleTitle: 'Gestion Moderne Apple',
+    level: 'Intermédiaire',
+    status: 'À jour',
+    lastUpdated: '2025-06-21',
+    duration: '1h',
+    objectives: [
+      'Distinguer Apple ID, Managed Apple Account et compte IdP',
+      'Configurer la fédération ABM avec Entra ID ou Google',
+      'Aligner IAM cloud et expérience de connexion macOS',
+    ],
+    prerequisites: ['device-trust-apple'],
+    lessons: [
+      { id: 'l1', title: 'Modèles d\'identité Apple', duration: '20 min', description: 'MAA, fédération, Platform SSO.' },
+      { id: 'l2', title: 'Fédération et provisioning', duration: '25 min', description: 'SCIM, OIDC, ABM sync.' },
+      { id: 'l3', title: 'IAM et MDM', duration: '15 min', description: 'Jonction identité-appareil-conformité.' },
+    ],
+    tools: ['Apple Business Manager', 'Jamf Connect', 'Microsoft Intune'],
+    certificationRelated: ['Microsoft Certified: Identity and Access Administrator Associate', 'Apple Deployment and Management'],
+    order: 6,
+  },
+  {
+    id: 'modern-jamf-connect',
+    slug: 'jamf-connect-gestion-moderne',
+    title: 'Jamf Connect',
+    description:
+      'Intégrez Jamf Connect dans une stack de gestion moderne : login cloud, synchronisation mot de passe et identité macOS.',
+    moduleId: 'module-10',
+    moduleTitle: 'Gestion Moderne Apple',
+    level: 'Intermédiaire',
+    status: 'À jour',
+    lastUpdated: '2025-06-21',
+    duration: '1h 15min',
+    objectives: [
+      'Comprendre le rôle de Jamf Connect dans la gestion moderne',
+      'Configurer login et verify avec Entra ID',
+      'Relier identité utilisateur et conformité appareil',
+    ],
+    prerequisites: ['identity-access-management-apple'],
+    lessons: [
+      { id: 'l1', title: 'Jamf Connect dans l\'architecture', duration: '25 min', description: 'Login, Verify, Deploy.' },
+      { id: 'l2', title: 'Configuration Entra ID', duration: '30 min', description: 'OIDC, claims, comptes locaux.' },
+      { id: 'l3', title: 'Bonnes pratiques modernes', duration: '20 min', description: 'Offline login, MFA, déploiement.' },
+    ],
+    tools: ['Jamf Connect', 'Jamf Pro'],
+    certificationRelated: ['Jamf 200 Course'],
+    order: 7,
+  },
+  {
+    id: 'modern-zero-trust',
+    slug: 'zero-trust-apple',
+    title: 'Zero Trust Apple',
+    description:
+      'Appliquez Zero Trust au parc Apple : vérification explicite, moindre privilège et présomption de compromission.',
+    moduleId: 'module-10',
+    moduleTitle: 'Gestion Moderne Apple',
+    level: 'Avancé',
+    status: 'À jour',
+    lastUpdated: '2025-06-21',
+    duration: '1h 30min',
+    objectives: [
+      'Traduire les principes Zero Trust en contrôles Apple concrets',
+      'Combiner Jamf Pro, Jamf Connect et Conditional Access',
+      'Mesurer et auditer la posture Zero Trust macOS/iOS',
+    ],
+    prerequisites: ['jamf-connect-gestion-moderne'],
+    lessons: [
+      { id: 'l1', title: 'Principes Zero Trust', duration: '25 min', description: 'Verify explicitly, least privilege.' },
+      { id: 'l2', title: 'Stack Zero Trust Apple', duration: '35 min', description: 'Jamf + Entra + Defender.' },
+      { id: 'l3', title: 'Maturité et audit', duration: '30 min', description: 'Indicateurs, gaps, roadmap.' },
+    ],
+    tools: ['Jamf Pro', 'Jamf Connect', 'Microsoft Intune'],
+    certificationRelated: ['Microsoft Certified: Identity and Access Administrator Associate', 'Jamf 370 Course'],
+    order: 8,
+  },
+  {
+    id: 'modern-compliance',
+    slug: 'conformite-moderne-apple',
+    title: 'Conformité moderne',
+    description:
+      'Alignez conformité réglementaire et gestion moderne : CIS, NIST, privacy by design et reporting automatisé.',
+    moduleId: 'module-10',
+    moduleTitle: 'Gestion Moderne Apple',
+    level: 'Avancé',
+    status: 'À jour',
+    lastUpdated: '2025-06-21',
+    duration: '1h',
+    objectives: [
+      'Mapper CIS/NIST aux contrôles MDM Apple',
+      'Automatiser le reporting conformité avec DDM et Smart Groups',
+      'Intégrer privacy et transparence utilisateur',
+    ],
+    prerequisites: ['zero-trust-apple'],
+    lessons: [
+      { id: 'l1', title: 'Cadres de conformité', duration: '25 min', description: 'CIS, NIST, ISO mapping.' },
+      { id: 'l2', title: 'Contrôles MDM modernes', duration: '20 min', description: 'Profils, DDM, remédiation.' },
+      { id: 'l3', title: 'Reporting et audit', duration: '15 min', description: 'Dashboards, preuves, continuité.' },
+    ],
+    tools: ['Jamf Pro', 'Jamf Protect'],
+    certificationRelated: ['Apple Certified IT Professional', 'Jamf 270 Course'],
+    order: 9,
+  },
+  {
+    id: 'modern-mdm-future',
+    slug: 'futur-mdm-apple',
+    title: 'Futur du MDM Apple',
+    description:
+      'Anticipez l\'avenir de la gestion Apple : DDM étendu, Rapid Security Response, passkeys enterprise et IA admin.',
+    moduleId: 'module-10',
+    moduleTitle: 'Gestion Moderne Apple',
+    level: 'Expert',
+    status: 'À jour',
+    lastUpdated: '2025-06-21',
+    duration: '45 min',
+    objectives: [
+      'Identifier les tendances MDM annoncées par Apple et l\'industrie',
+      'Préparer une feuille de route gestion moderne sur 2–3 ans',
+      'Adopter une posture d\'apprentissage continu (WWDC, Jamf Learn)',
+    ],
+    prerequisites: ['conformite-moderne-apple'],
+    lessons: [
+      { id: 'l1', title: 'Tendances 2025–2027', duration: '15 min', description: 'DDM, RSR, Platform SSO, passkeys.' },
+      { id: 'l2', title: 'Feuille de route IT', duration: '15 min', description: 'Priorisation, quick wins, migration.' },
+      { id: 'l3', title: 'Veille et communauté', duration: '15 min', description: 'WWDC, AppleSeed, Jamf Nation.' },
+    ],
+    tools: ['Jamf Pro', 'Apple Business Manager'],
+    certificationRelated: ['Apple Certified IT Professional', 'Jamf 400 Course'],
+    order: 10,
   },
 ];
 
@@ -1895,11 +2149,22 @@ export const MODULES: Module[] = [
     id: 'module-9',
     slug: 'certifications',
     title: 'Certifications',
-    description: 'Préparez vos certifications professionnelles : Apple, Jamf 100/170/200, Microsoft MD-102 et MS-102.',
+    description: 'Préparez vos certifications professionnelles : Apple, Jamf Training et Microsoft Learn (MD-102, MS-102, SC-300).',
     icon: '🏆',
     color: 'yellow',
     order: 9,
     courses: module9Courses,
+  },
+  {
+    id: 'module-10',
+    slug: 'gestion-moderne-apple',
+    title: 'Gestion Moderne Apple',
+    description:
+      'Maîtrisez la gestion moderne Apple : DDM, cloud-first, device trust, identité, Zero Trust et l\'avenir du MDM.',
+    icon: '🚀',
+    color: 'purple',
+    order: 10,
+    courses: module10Courses,
   },
 ];
 
@@ -1942,7 +2207,7 @@ export const STATS = {
   totalModules: MODULES.length,
   totalCourses: getAllCourses().length,
   totalDuration: '80+ heures',
-  certifications: 7,
+  certifications: 17,
 };
 
 export function getModuleForCourse(course: Course): Module | undefined {
@@ -1952,4 +2217,8 @@ export function getModuleForCourse(course: Course): Module | undefined {
 export function getFeaturedCourses(): Course[] {
   // First course of each of the first 3 modules
   return MODULES.slice(0, 3).map((m) => m.courses[0]).filter(Boolean);
+}
+
+export function getModernAppleModule(): Module | undefined {
+  return MODULES.find((m) => m.id === 'module-10');
 }

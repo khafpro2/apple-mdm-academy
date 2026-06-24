@@ -6,7 +6,7 @@ import LessonPlayer from '@/components/cours/LessonPlayer';
 import Quiz from '@/components/cours/Quiz';
 import { type Lesson } from '@/lib/courses';
 import { type QuizQuestion } from '@/components/cours/Quiz';
-import { markCourseComplete, recordVisit } from '@/lib/progress';
+import { useProgress } from '@/hooks/useProgress';
 
 interface CourseInteractiveProps {
   courseSlug: string;
@@ -64,21 +64,25 @@ export default function CourseInteractive({
   lessons,
   quizQuestions,
 }: CourseInteractiveProps) {
-
+  const { isCourseComplete, recordVisit, toggleCourse } = useProgress();
 
   useEffect(() => {
     recordVisit(courseSlug);
-  }, [courseSlug]);
+  }, [courseSlug, recordVisit]);
+
+  const completeCourse = () => {
+    if (!isCourseComplete(courseSlug)) toggleCourse(courseSlug);
+  };
 
   const handleAllLessonsComplete = () => {
     if (quizQuestions.length === 0) {
-      markCourseComplete(courseSlug);
+      completeCourse();
     }
   };
 
   const handleQuizComplete = (score: number) => {
     if (score >= 70) {
-      markCourseComplete(courseSlug);
+      completeCourse();
     }
   };
 

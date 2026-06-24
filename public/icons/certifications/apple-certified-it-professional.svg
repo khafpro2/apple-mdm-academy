@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Pictogramme éditorial — Apple Certified IT Professional</title>
+  <rect width="64" height="64" rx="14" fill="#171A21"/>
+  <rect x="12" y="28" width="14" height="20" rx="3" fill="none" stroke="#94A3B8" stroke-width="2"/>
+  <rect x="25" y="22" width="14" height="26" rx="3" fill="none" stroke="#CBD5E1" stroke-width="2.5"/>
+  <rect x="38" y="30" width="14" height="18" rx="3" fill="none" stroke="#94A3B8" stroke-width="2"/>
+  <path d="M28 14h8l2 4h-12l2-4Z" fill="none" stroke="#A1A1AA" stroke-width="2" stroke-linejoin="round"/>
+  <circle cx="32" cy="12" r="2" fill="#E2E8F0"/>
+</svg>

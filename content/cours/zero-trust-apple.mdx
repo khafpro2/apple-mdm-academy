@@ -1,0 +1,42 @@
+---
+title: "Zero Trust Apple"
+slug: "zero-trust-apple"
+---
+
+## Introduction
+
+**Zero Trust** sur Apple signifie : ne jamais faire confiance au réseau, vérifier identité + appareil à chaque accès, et assumer qu'une compromission est possible. Jamf Pro, Jamf Connect et Entra ID forment la stack de référence.
+
+> **Sources** — [Apple Platform Security](https://support.apple.com/guide/security/welcome/web) · [Microsoft SC-300](https://learn.microsoft.com/credentials/certifications/exams/sc-300/)
+
+## Trois principes appliqués au Mac
+
+1. **Vérifier explicitement** — MFA + appareil compliant avant M365
+2. **Moindre privilège** — admin temporaire, pas de compte permanent
+3. **Présumer la compromission** — monitoring Jamf Protect, réponse auto
+
+## Stack Zero Trust macOS
+
+```
+Utilisateur ──► Jamf Connect (MFA Entra)
+Mac ──► Jamf Pro (conformité) ──► Entra Conditional Access
+Apps ──► Accès conditionnel (compliant + MFA + risk)
+```
+
+## Mesurer la maturité
+
+| Niveau | Caractéristiques |
+|---|---|
+| 1 — Basique | MDM + FileVault |
+| 2 — Intermédiaire | + Jamf Connect + CA |
+| 3 — Avancé | + DDM + Protect + CA basé risque |
+
+## Bonnes pratiques
+
+- Bloquer accès M365 si FileVault désactivé ou OS obsolète
+- Éviter VPN « trusted network » comme unique contrôle
+- Auditer trimestriellement les exceptions CA
+
+## Résumé
+
+Zero Trust Apple n'est pas un produit — c'est une architecture combinant identité cloud, conformité MDM et politiques d'accès dynamiques.

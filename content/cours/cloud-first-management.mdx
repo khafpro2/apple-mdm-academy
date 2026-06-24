@@ -1,0 +1,39 @@
+---
+title: "Cloud First Management"
+slug: "cloud-first-management"
+---
+
+## Introduction
+
+**Cloud-first** signifie concevoir la gestion Apple sans dépendre d'une infrastructure locale : identité dans le cloud, MDM en SaaS, appareils enrôlés via ABM — et plus de bind Active Directory au poste.
+
+> **Source** — [La gestion moderne : l'avenir des solutions MDM](https://www.jamf.com/fr/ressources/livres-blancs/gestion-moderne-mdm/) · [Apple Platform Deployment](https://support.apple.com/guide/deployment/welcome/web)
+
+## Principes cloud-first
+
+- **Identité** : Entra ID, Okta ou Google Workspace — plus AD on-premise au Mac
+- **MDM** : Jamf Cloud ou équivalent SaaS — pas de serveur Linux à maintenir
+- **Apps & devices** : ABM + ADE — provisioning sans toucher l'appareil
+- **Réseau** : accès applicatif (Zero Trust) plutôt que confiance LAN/VPN
+
+## Architecture de référence
+
+```
+ABM ──► Jamf Cloud ──► Mac/iOS (ADE + supervision)
+Entra ID ◄── Jamf Connect (login macOS)
+Entra ID ◄── Conditional Access ◄── conformité Jamf
+```
+
+## Fin du bind AD
+
+Le bind `dsconfigad` créait dépendance réseau, latence login et complexité hors ligne. **Jamf Connect** + compte local nommé synchronisé remplace ce modèle pour le Mac moderne.
+
+## Bonnes pratiques
+
+- Migrer par vagues : nouveaux Mac cloud-first d'abord
+- Tester login offline (cache credentials Jamf Connect)
+- Documenter les apps encore dépendantes d'AD on-premise
+
+## Résumé
+
+Cloud-first aligne la gestion Apple sur la réalité du travail hybride : identité, MDM et sécurité dans le cloud, appareils autonomes sur le terrain.

@@ -140,6 +140,20 @@ export default function TerminalLab({ lab, onComplete }: TerminalLabProps) {
             <p className="text-xs text-[#9AA2B4]">{lab.objective}</p>
           </div>
         </div>
+        {lab.docReference && (
+          <div className="mt-3 pt-3 border-t border-white/5">
+            <p className="text-[10px] text-blue-400/70 mb-1">Documentation officielle</p>
+            <p className="text-[11px] text-[#9AA2B4] leading-relaxed mb-2">{lab.docReference.summary}</p>
+            <a
+              href={lab.docReference.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[11px] text-blue-400 hover:text-blue-300 underline underline-offset-2"
+            >
+              {lab.docReference.title} ↗
+            </a>
+          </div>
+        )}
       </div>
 
       {/* Terminal */}

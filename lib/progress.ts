@@ -27,7 +27,7 @@ export function getProgress(): ProgressData {
   }
 }
 
-function defaultProgress(): ProgressData {
+export function defaultProgress(): ProgressData {
   return {
     completedCourses: [],
     completedLessons: {},
@@ -40,7 +40,7 @@ function defaultProgress(): ProgressData {
   };
 }
 
-function saveProgress(data: ProgressData): void {
+export function saveProgress(data: ProgressData): void {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -91,11 +91,22 @@ export function markLessonComplete(courseSlug: string, lessonId: string): void {
   saveProgress(p);
 }
 
+export function markLessonIncomplete(courseSlug: string, lessonId: string): void {
+  const p = getProgress();
+  p.completedLessons[courseSlug] = (p.completedLessons[courseSlug] ?? []).filter(
+    (id) => id !== lessonId,
+  );
+  saveProgress(p);
+}
+
 export function saveQuizScore(courseSlug: string, score: number): void {
   const p = getProgress();
   const prev = p.quizScores[courseSlug] ?? 0;
-  p.quizScores[courseSlug] = Math.max(prev, score);
-  if (score >= 70) p.totalXP += Math.round((score / 100) * 50);
+  const best = Math.max(prev, score);
+  const previousXP = prev >= 70 ? Math.round((prev / 100) * 50) : 0;
+  const bestXP = best >= 70 ? Math.round((best / 100) * 50) : 0;
+  p.quizScores[courseSlug] = best;
+  p.totalXP += Math.max(0, bestXP - previousXP);
   saveProgress(p);
 }
 

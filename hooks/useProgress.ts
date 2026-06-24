@@ -1,60 +1,27 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import {
-  getProgress,
-  getModuleProgress, toggleCourseComplete as _toggle,
-  markLessonComplete as _markLesson, saveQuizScore as _saveQuiz,
-  recordVisit as _recordVisit, getRecentCourses, getXPLevel,
-  ProgressData,
-} from '@/lib/progress';
+import { useProgressContext } from '@/components/providers/ProgressProvider';
+import { getXPLevel } from '@/lib/progress';
 
 export function useProgress() {
-  const [progress, setProgress] = useState<ProgressData>(() => {
-    if (typeof window === 'undefined') return {
-      completedCourses: [], completedLessons: {}, quizScores: {},
-      labsCompleted: {}, lastVisited: {}, totalXP: 0, streakDays: 0, lastActivityDate: '',
-    };
-    return getProgress();
-  });
-
-  const refresh = useCallback(() => setProgress(getProgress()), []);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    refresh();
-    window.addEventListener('mdm-progress-update', refresh);
-    return () => window.removeEventListener('mdm-progress-update', refresh);
-  }, [refresh]);
-
-  const toggleCourse = useCallback((slug: string) => {
-    _toggle(slug);
-  }, []);
-
-  const markLesson = useCallback((courseSlug: string, lessonId: string) => {
-    _markLesson(courseSlug, lessonId);
-  }, []);
-
-  const saveQuiz = useCallback((courseSlug: string, score: number) => {
-    _saveQuiz(courseSlug, score);
-  }, []);
-
-  const recordVisit = useCallback((slug: string) => {
-    _recordVisit(slug);
-  }, []);
+  const context = useProgressContext();
+  const { progress } = context;
 
   return {
-    progress,
+    ...context,
     completedCourses: progress.completedCourses,
     totalXP: progress.totalXP,
     xpInfo: getXPLevel(progress.totalXP),
     isCourseComplete: (slug: string) => progress.completedCourses.includes(slug),
     getCompletedLessons: (slug: string) => progress.completedLessons[slug] ?? [],
-    getModuleProgress: (slugs: string[]) => getModuleProgress(slugs),
-    getRecentCourses: (limit?: number) => getRecentCourses(limit),
-    toggleCourse,
-    markLesson,
-    saveQuiz,
-    recordVisit,
+    getModuleProgress: (slugs: string[]) => {
+      if (slugs.length === 0) return 0;
+      const completed = slugs.filter((slug) => progress.completedCourses.includes(slug)).length;
+      return Math.round((completed / slugs.length) * 100);
+    },
+    getRecentCourses: (limit = 5) => Object.entries(progress.lastVisited)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, limit)
+      .map(([slug, timestamp]) => ({ slug, timestamp })),
   };
 }

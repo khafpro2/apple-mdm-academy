@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { CheckCircle, Circle, Clock, ChevronDown, ChevronRight, BookOpen } from 'lucide-react';
 import clsx from 'clsx';
 import { Lesson } from '@/lib/courses';
-import { markLessonComplete, getCompletedLessons } from '@/lib/progress';
+import { useProgress } from '@/hooks/useProgress';
 
 interface LessonPlayerProps {
   courseSlug: string;
@@ -13,21 +13,14 @@ interface LessonPlayerProps {
 }
 
 export default function LessonPlayer({ courseSlug, lessons, onAllComplete }: LessonPlayerProps) {
-  const [completed, setCompleted] = useState<Set<string>>(
-    () => new Set(getCompletedLessons(courseSlug))
-  );
+  const { getCompletedLessons, markLesson } = useProgress();
+  const completed = new Set(getCompletedLessons(courseSlug));
   const [expanded, setExpanded] = useState<string | null>(lessons[0]?.id ?? null);
 
   const toggle = (id: string) => {
-    const next = new Set(completed);
-    if (next.has(id)) {
-      next.delete(id);
-    } else {
-      next.add(id);
-      markLessonComplete(courseSlug, id);
-      if (next.size === lessons.length) onAllComplete?.();
-    }
-    setCompleted(next);
+    const willComplete = !completed.has(id);
+    markLesson(courseSlug, id, willComplete);
+    if (willComplete && completed.size + 1 === lessons.length) onAllComplete?.();
   };
 
   const completedCount = completed.size;

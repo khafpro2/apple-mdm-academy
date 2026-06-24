@@ -1,0 +1,50 @@
+---
+title: "MDM classique vs DDM"
+slug: "mdm-classique-vs-ddm"
+---
+
+## Introduction
+
+Deux philosophies coexistent : le **MDM impératif** (le serveur ordonne) et le **Declarative Device Management** (le serveur déclare l'état souhaité, l'appareil s'adapte). La gestion moderne s'appuie sur les deux, avec une migration progressive vers DDM.
+
+> **Sources** — [Apple DDM Documentation](https://developer.apple.com/documentation/devicemanagement/declarativedevicemanagement) · [Livre blanc DDM Jamf FR](https://www.jamf.com/fr/ressources/livres-blancs/gestion-declarative-des-appareils/)
+
+## MDM classique (impératif)
+
+```
+Serveur MDM ──APNS──► Appareil ──► Exécute commande ──► Rapport
+         ▲                              │
+         └──────── check-in ────────────┘
+```
+
+- **Forces** : mature, couvre tous les cas (wipe, lock, profils)
+- **Limites** : latence, charge serveur, données inventaire parfois stale
+
+## DDM (déclaratif)
+
+```
+Serveur MDM ──► Déclarations (état souhaité)
+Appareil ──► Applique localement + status channel ──► Serveur
+```
+
+- **Forces** : réactivité, autonomie, reporting proactif
+- **Limites** : couverture encore en extension ; coexistence avec impératif
+
+## Tableau comparatif
+
+| Critère | MDM classique | DDM |
+|---|---|---|
+| Modèle | Commande/réponse | État déclaré |
+| Initiateur | Serveur | Appareil + serveur |
+| Inventaire | Check-in périodique | Status channel |
+| Mises à jour OS | Policies / scripts | Software Update Declarations |
+
+## Bonnes pratiques migration
+
+- Ne pas « big bang » : identifier use cases DDM (updates, passcode)
+- Conserver impératif pour actions destructives (wipe, lock)
+- Tester sur groupe pilote avant déploiement global
+
+## Résumé
+
+MDM classique et DDM ne s'opposent pas — ils se complètent. La gestion moderne maximise DDM là où l'autonomie apporte le plus de valeur.

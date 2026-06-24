@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import clsx from 'clsx';
 import { CheckCircle, XCircle, Award, RotateCcw } from 'lucide-react';
-import { saveQuizScore } from '@/lib/progress';
+import { useProgress } from '@/hooks/useProgress';
 
 export interface QuizQuestion {
   id: string;
@@ -21,6 +21,7 @@ interface QuizProps {
 }
 
 export default function Quiz({ courseSlug, title = 'Quiz de validation', questions, onComplete }: QuizProps) {
+  const { saveQuiz } = useProgress();
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [submitted, setSubmitted] = useState(false);
   const [currentQ, setCurrentQ] = useState(0);
@@ -47,7 +48,7 @@ export default function Quiz({ courseSlug, title = 'Quiz de validation', questio
   const handleSubmit = () => {
     if (!allAnswered) return;
     setSubmitted(true);
-    saveQuizScore(courseSlug, score);
+    saveQuiz(courseSlug, score);
     onComplete?.(score);
   };
 

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Pictogramme éditorial — Android Enterprise</title>
+  <rect width="64" height="64" rx="12" fill="#0F1F17"/>
+  <rect x="20" y="14" width="24" height="36" rx="5" fill="none" stroke="#10B981" stroke-width="2.5"/>
+  <circle cx="26" cy="24" r="2" fill="#6EE7B7"/>
+  <circle cx="38" cy="24" r="2" fill="#6EE7B7"/>
+  <path d="M26 32h12" stroke="#34D399" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M18 20h-4M46 20h4" stroke="#10B981" stroke-width="2" stroke-linecap="round"/>
+</svg>

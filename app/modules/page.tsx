@@ -35,8 +35,8 @@ export default function ModulesPage() {
 
       {/* Modules grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {MODULES.map((mod, i) => (
-          <ModuleCard key={mod.id} module={mod} index={i} />
+        {MODULES.map((mod) => (
+          <ModuleCard key={mod.id} module={mod} />
         ))}
       </div>
 

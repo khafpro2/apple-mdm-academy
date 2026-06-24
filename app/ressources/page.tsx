@@ -11,6 +11,7 @@ import {
   getAllResources, RESOURCE_TYPE_LABELS,
   type Resource, type ResourceType, type ResourcePlatform
 } from '@/lib/resources';
+import OfficialSourcesSection from '@/components/ressources/OfficialSourcesSection';
 
 const TYPE_ICONS: Record<ResourceType, React.ElementType> = {
   script: Terminal, profile: FileCode, policy: Shield,
@@ -119,6 +120,16 @@ function ResourceCard({ resource }: { resource: Resource }) {
 
         <div className="flex items-center justify-between mt-3">
           <div className="flex flex-wrap gap-1.5">
+            {resource.language && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-400">
+                {resource.language}
+              </span>
+            )}
+            {resource.version && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-white/5 text-gray-500">
+                v{resource.version}
+              </span>
+            )}
             {resource.tags.slice(0, 3).map((tag) => (
               <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded-md bg-white/5 text-gray-500">
                 {tag}
@@ -147,6 +158,26 @@ function ResourceCard({ resource }: { resource: Resource }) {
             </div>
           )}
 
+          {resource.externalUrl ? (
+            <div className="p-5 space-y-4">
+              <pre className="text-[11px] text-gray-300 bg-[#0a0d14] border border-white/6 rounded-xl p-4 overflow-x-auto font-mono leading-relaxed whitespace-pre-wrap">
+                {resource.content}
+              </pre>
+              <a
+                href={resource.externalUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600/80 border border-indigo-500/40 text-xs text-white hover:bg-indigo-600 transition-all"
+              >
+                {resource.externalUrl.includes('github.com')
+                  ? 'Ouvrir sur GitHub ↗'
+                  : resource.externalUrl.includes('developer.jamf.com')
+                    ? 'Ouvrir sur developer.jamf.com ↗'
+                    : 'Ouvrir la source officielle ↗'}
+              </a>
+            </div>
+          ) : (
+            <>
           {/* Code block */}
           <div className="p-5">
             <div className="flex items-center justify-between mb-2">
@@ -166,6 +197,8 @@ function ResourceCard({ resource }: { resource: Resource }) {
             <span>•</span>
             <span>Par {resource.author}</span>
           </div>
+            </>
+          )}
         </div>
       )}
     </div>
@@ -215,9 +248,11 @@ export default function RessourcesPage() {
         </h1>
         <p className="text-sm text-[#5A6478] max-w-2xl">
           Scripts Bash, Configuration Profiles, politiques Intune, templates Android Enterprise —
-          prêts à utiliser dans votre environnement.
+          et liens vers les sources officielles Jamf (Jamf Learn, documentation, API, JamfSync).
         </p>
       </div>
+
+      <OfficialSourcesSection />
 
       {/* Search + filters */}
       <div className="mb-6 space-y-3">

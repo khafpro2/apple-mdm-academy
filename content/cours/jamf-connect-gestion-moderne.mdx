@@ -1,0 +1,42 @@
+---
+title: "Jamf Connect"
+slug: "jamf-connect-gestion-moderne"
+---
+
+## Introduction
+
+Dans une stack de **gestion moderne**, **Jamf Connect** est le pont entre l'identité cloud (Entra ID, Okta) et la session macOS — login, vérification mot de passe et alignement avec la conformité appareil.
+
+> **Sources** — [Jamf Connect Documentation](https://learn.jamf.com/bundle/jamf-connect-documentation-current/page/Jamf_Connect_Documentation.html) · [Livre blanc gestion moderne](https://www.jamf.com/fr/ressources/livres-blancs/gestion-moderne-mdm/)
+
+## Composants Jamf Connect
+
+| Composant | Rôle |
+|---|---|
+| **Login** | Écran de connexion cloud à la place du login local |
+| **Verify** | Alignement mot de passe Mac ↔ IdP |
+| **Deploy** | Déploiement des réglages Connect via MDM |
+
+## Configuration Entra ID (schéma)
+
+1. App registration OIDC dans Entra ID
+2. Profil MDM Jamf Connect avec client ID / tenant
+3. Mapping attributs → nom de compte local (`displayName`, UPN)
+4. Test login + offline cache
+
+## Jamf Connect et gestion moderne
+
+Sans bind AD, Jamf Connect :
+- Authentifie via **MFA Entra**
+- Crée un **compte local nommé** stable pour FileVault
+- Alimente **Conditional Access** via conformité Jamf associée
+
+## Bonnes pratiques
+
+- Prévoir login offline (cache credentials)
+- Synchroniser Verify après changement mot de passe IdP
+- Déployer via profil MDM, pas installation manuelle
+
+## Résumé
+
+Jamf Connect est le composant identité indispensable du Mac moderne — il remplace AD local et unifie l'expérience utilisateur cloud.

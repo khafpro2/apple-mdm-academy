@@ -1,0 +1,41 @@
+---
+title: "Conformité moderne"
+slug: "conformite-moderne-apple"
+---
+
+## Introduction
+
+La **conformité moderne** aligne exigences réglementaires (CIS, NIST, RGPD) avec les capacités MDM actuelles : DDM pour le reporting temps réel, Smart Groups pour la remédiation, et transparence utilisateur.
+
+> **Sources** — [Apple Platform Security](https://support.apple.com/guide/security/welcome/web) · [CIS macOS Benchmark](https://www.cisecurity.org/cis-benchmarks)
+
+## Mapping cadres → contrôles MDM
+
+| Cadre | Contrôle | Implémentation Jamf |
+|---|---|---|
+| CIS | FileVault activé | Profil + Smart Group non conformes |
+| NIST | Patch OS | DDM Software Update Declaration |
+| RGPD | Chiffrement données | FileVault + escrow |
+| SOC2 | Inventaire à jour | DDM status channel + recon |
+
+## Reporting automatisé
+
+- **Smart Groups** dynamiques pour Mac non conformes
+- **Extension Attributes** pour critères custom
+- **DDM status** pour état des déclarations sans polling
+
+## Privacy by design
+
+- Minimiser données collectées dans EA
+- Informer utilisateurs (transparence Self Service)
+- Séparer BYOD et corporate (User Enrollment vs ADE)
+
+## Bonnes pratiques
+
+- Prioriser les contrôles à plus haut risque (chiffrement, patch)
+- Automatiser remédiation avant audit manuel
+- Conserver preuves (exports inventaire datés)
+
+## Résumé
+
+Conformité moderne = cadres reconnus + automatisation MDM/DDM + culture privacy — pas une checklist statique annuelle.

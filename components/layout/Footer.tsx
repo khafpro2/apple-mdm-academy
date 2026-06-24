@@ -1,101 +1,115 @@
 import Link from 'next/link';
-import { BookOpen, GraduationCap, Trophy, Shield, Terminal } from 'lucide-react';
+import { MODULES, STATS } from '@/lib/courses';
+import { CERTIFICATIONS_WITH_PREP } from '@/lib/certifications';
+import ModuleIcon from '@/components/icons/ModuleIcon';
+import { GraduationCap, Shield, BookOpen, Trophy, Heart } from 'lucide-react';
 
-const FOOTER_NAV = [
-  {
-    title: 'Formation',
-    links: [
-      { label: 'Parcours de formation', href: '/parcours' },
-      { label: 'Tous les modules',      href: '/modules' },
-      { label: 'Labs pratiques',        href: '/labs' },
-      { label: 'Ressources',            href: '/ressources' },
-    ],
-  },
-  {
-    title: 'Certifications',
-    links: [
-      { label: 'Jamf 100 Course',         href: '/certifications' },
-      { label: 'Jamf 200 Course',         href: '/certifications' },
-      { label: 'Apple Deployment & Mgmt', href: '/certifications' },
-      { label: 'Microsoft MD-102',        href: '/certifications' },
-    ],
-  },
-  {
-    title: 'Technologies',
-    links: [
-      { label: 'Apple Business Manager', href: '/parcours' },
-      { label: 'Jamf Pro',               href: '/parcours' },
-      { label: 'Microsoft Intune',       href: '/parcours' },
-      { label: 'Android Enterprise',     href: '/parcours' },
-    ],
-  },
+const CERT_LINKS = CERTIFICATIONS_WITH_PREP.map((cert) => ({
+  label: cert.examCode ? `${cert.id} (${cert.examCode})` : cert.id,
+  href: cert.prepCourseUrl ?? `/certifications#${cert.slug}`,
+}));
+
+const QUICK_LINKS = [
+  { label: 'Parcours de formation', href: '/parcours' },
+  { label: 'Tous les modules', href: '/modules' },
+  { label: 'Certifications', href: '/certifications' },
+  { label: 'Bibliothèque de ressources', href: '/ressources' },
+  { label: 'Tableau de bord', href: '/dashboard' },
 ];
 
 export default function Footer() {
   return (
-    <footer className="border-t border-white/6 bg-[#080B12] mt-auto">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-
-        {/* Top section */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10 mb-12">
+    <footer className="mt-24 border-t border-white/6 bg-[#080B12]">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-14 pb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
 
           {/* Brand */}
-          <div>
-            <div className="flex items-center gap-2.5 mb-4">
-              <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700">
-                <span className="text-xs font-black text-white tracking-tighter">MDM</span>
+          <div className="lg:col-span-1">
+            <Link href="/" className="flex items-center gap-2.5 mb-5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 shadow-lg shadow-indigo-500/25">
+                <span className="text-[10px] font-black text-white">MDM</span>
               </div>
-              <span className="text-sm font-bold text-white">Academy</span>
-            </div>
-            <p className="text-xs text-gray-500 leading-relaxed mb-4 max-w-[220px]">
+              <span className="font-bold text-white text-sm">Academy</span>
+            </Link>
+            <p className="text-xs text-[#5A6478] leading-relaxed mb-5">
               Plateforme de formation professionnelle Apple Enterprise, Jamf, Microsoft Intune et Android Enterprise.
             </p>
-            <div className="flex flex-wrap gap-2 text-[10px] text-gray-600">
-              {[
-                { icon: GraduationCap, text: 'Formation structurée' },
-                { icon: Trophy,        text: '7 certifications' },
-                { icon: Terminal,      text: 'Labs pratiques' },
-                { icon: Shield,        text: 'Contenu à jour' },
-              ].map(({ icon: Icon, text }) => (
-                <span key={text} className="flex items-center gap-1">
-                  <Icon size={10} />
-                  {text}
-                </span>
-              ))}
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-[#3A4156]">
+              <span className="flex items-center gap-1"><BookOpen size={10} />{STATS.totalModules} modules</span>
+              <span className="flex items-center gap-1"><GraduationCap size={10} />{STATS.totalCourses} cours</span>
+              <span className="flex items-center gap-1"><Trophy size={10} />{STATS.certifications} certifs</span>
             </div>
           </div>
 
-          {/* Nav columns */}
-          {FOOTER_NAV.map((section) => (
-            <div key={section.title}>
-              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4">
-                {section.title}
-              </p>
-              <ul className="space-y-2.5">
-                {section.links.map(({ label, href }) => (
-                  <li key={label}>
-                    <Link
-                      href={href}
-                      className="text-xs text-gray-500 hover:text-gray-200 transition-colors"
-                    >
-                      {label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+          {/* Modules */}
+          <div>
+            <h3 className="text-xs font-semibold text-[#9AA2B4] uppercase tracking-widest mb-4 flex items-center gap-1.5">
+              <Shield size={11} />
+              Modules
+            </h3>
+            <ul className="space-y-2">
+              {MODULES.slice(0, 6).map((m) => (
+                <li key={m.id}>
+                  <Link
+                    href={`/modules/${m.slug}`}
+                    className="flex items-center gap-1.5 text-xs text-[#5A6478] hover:text-[#9AA2B4] transition-colors group"
+                  >
+                    <ModuleIcon moduleSlug={m.slug} size={16} className="h-4 w-4 opacity-60" />
+                    <span className="group-hover:translate-x-0.5 transition-transform">{m.title}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Certifications */}
+          <div>
+            <h3 className="text-xs font-semibold text-[#9AA2B4] uppercase tracking-widest mb-4 flex items-center gap-1.5">
+              <Trophy size={11} />
+              Certifications
+            </h3>
+            <ul className="space-y-2">
+              {CERT_LINKS.slice(0, 7).map(({ label, href }) => (
+                <li key={href}>
+                  <Link
+                    href={href}
+                    className="text-xs text-[#5A6478] hover:text-[#9AA2B4] transition-colors block hover:translate-x-0.5 transform"
+                  >
+                    {label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Platform */}
+          <div>
+            <h3 className="text-xs font-semibold text-[#9AA2B4] uppercase tracking-widest mb-4">
+              Plateforme
+            </h3>
+            <ul className="space-y-2">
+              {QUICK_LINKS.map(({ label, href }) => (
+                <li key={href}>
+                  <Link
+                    href={href}
+                    className="text-xs text-[#5A6478] hover:text-[#9AA2B4] transition-colors block hover:translate-x-0.5 transform"
+                  >
+                    {label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
 
         {/* Bottom bar */}
-        <div className="pt-8 border-t border-white/6 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-gray-600">
-          <p>
-            © {new Date().getFullYear()} MDM Academy · Plateforme de formation professionnelle
+        <div className="border-t border-white/5 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-xs text-[#3A4156]">
+            © 2025–2026 MDM Academy — Ressources pédagogiques professionnelles
           </p>
-          <div className="flex items-center gap-1.5">
-            <BookOpen size={10} />
-            <span>Apple · Jamf · Microsoft Intune · Android Enterprise</span>
-          </div>
+          <p className="text-xs text-[#3A4156] flex items-center gap-1">
+            Construit avec <Heart size={10} className="text-rose-600/60" /> pour les équipes IT Apple
+          </p>
         </div>
       </div>
     </footer>

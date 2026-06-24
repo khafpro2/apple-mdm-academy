@@ -1,0 +1,40 @@
+---
+title: "Declarative Device Management"
+slug: "declarative-device-management"
+---
+
+## Introduction
+
+**DDM** transforme le protocole MDM : l'appareil devient acteur de sa propre conformité. Apple le décrit comme l'avenir de la gestion des appareils — Jamf Pro l'implémente via Blueprints et déclarations natives.
+
+> **Sources** — [Apple Developer — DDM](https://developer.apple.com/documentation/devicemanagement/declarativedevicemanagement) · [Jamf — Gestion déclarative FR](https://www.jamf.com/fr/ressources/livres-blancs/gestion-declarative-des-appareils/)
+
+## Les trois piliers
+
+1. **Déclarations** — configurations, assets et activations définissant l'état cible
+2. **Status channel** — l'appareil remonte l'état sans attendre un poll
+3. **Extensibilité** — nouveaux types de déclarations à chaque release OS
+
+## Types de déclarations courantes
+
+- **Configurations** — passcode, restrictions, software update
+- **Assets** — certificats, identité utilisateur
+- **Activations** — règles d'application des configurations
+
+## Software Update Declarations
+
+Le MDM déclare une **version OS cible** ; macOS/iOS gère le téléchargement et l'installation selon les fenêtres de maintenance définies — sans commandes `ScheduleOSUpdate` répétées.
+
+## DDM et Jamf Pro
+
+Jamf Pro 11.15+ supporte DDM via **Blueprints** — bundles de déclarations déployés à des groupes cibles. Idéal pour standardiser postes de travail modernes.
+
+## Bonnes pratiques
+
+- Vérifier compatibilité OS minimum (macOS 13+, iOS 16+)
+- Combiner DDM updates avec communication utilisateur (Nudge)
+- Monitorer le status channel dans les rapports Jamf
+
+## Résumé
+
+DDM déplace l'intelligence vers l'appareil : déclarations claires, exécution locale, reporting proactif — cœur de la gestion moderne Apple.

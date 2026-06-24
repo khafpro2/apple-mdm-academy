@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Pictogramme éditorial — Automatisation Jamf Pro</title>
+  <rect width="64" height="64" rx="16" fill="#1E1033"/>
+  <circle cx="32" cy="32" r="14" fill="none" stroke="#A855F7" stroke-width="2.5"/>
+  <path d="M32 18v6M32 40v6M18 32h6M40 32h6" stroke="#C084FC" stroke-width="2" stroke-linecap="round"/>
+  <path d="M28 28h8v8h-8z" fill="none" stroke="#E879F9" stroke-width="2"/>
+</svg>

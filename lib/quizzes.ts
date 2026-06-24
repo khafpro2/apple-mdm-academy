@@ -112,6 +112,18 @@ export const QUIZZES: Record<string, QuizQuestion[]> = {
       correctIndex: 1,
       explanation: 'Un Smart Group est un groupe dynamique Jamf Pro. Son appartenance est recalculée automatiquement en fonction de critères définis (version macOS, présence d\'un fichier, statut FileVault, etc.). C\'est la base du ciblage dans Jamf Pro.',
     },
+    {
+      id: 'q3',
+      question: 'Quel est le rôle d\'un PreStage Enrollment dans un déploiement Zero-Touch ?',
+      options: [
+        'Créer des comptes utilisateur locaux avant la livraison',
+        'Automatiser l\'enrôlement ADE et appliquer profils, policies et packages dès le premier démarrage',
+        'Remplacer Apple Business Manager',
+        'Désactiver la supervision MDM',
+      ],
+      correctIndex: 1,
+      explanation: 'Un PreStage Enrollment lie un flux ADE (Automated Device Enrollment) à des actions Jamf : profils, policies, packages et scripts s\'appliquent automatiquement au premier setup, sans intervention IT sur chaque Mac.',
+    },
   ],
   'managed-apple-accounts': [
     {
@@ -297,6 +309,18 @@ export const QUIZZES: Record<string, QuizQuestion[]> = {
       correctIndex: 2,
       explanation: 'Le déclencheur "Self Service" s\'active uniquement quand l\'utilisateur clique sur le bouton correspondant dans l\'application Jamf Self Service. C\'est le seul déclencheur initié par l\'utilisateur final.',
     },
+    {
+      id: 'q3',
+      question: 'Une Policy ne s\'exécute pas sur un Mac ciblé. Quelle vérification est la plus pertinente en premier ?',
+      options: [
+        'Réinstaller macOS sur le Mac',
+        'Vérifier le scope (Smart Group), le trigger, la fréquence d\'exécution et les logs jamf.log',
+        'Supprimer et recréer le compte utilisateur macOS',
+        'Désactiver SIP sur le Mac',
+      ],
+      correctIndex: 1,
+      explanation: 'Le diagnostic d\'une Policy commence par le scope (le Mac est-il dans le groupe ?), le trigger (événement déclenché ?), la fréquence (Once per computer déjà exécutée ?) et les logs `/var/log/jamf.log` pour voir si Jamf a tenté l\'exécution.',
+    },
   ],
 
   'smart-groups-jamf': [
@@ -312,6 +336,18 @@ export const QUIZZES: Record<string, QuizQuestion[]> = {
       correctIndex: 1,
       explanation: 'Le critère "Operating System Version > is less than > 14.0.0" cible tous les Mac avec une version inférieure à 14.0.0. Ce Smart Group se met à jour automatiquement quand les Mac effectuent leur mise à jour.',
     },
+    {
+      id: 'q2',
+      question: 'Un Smart Group affiche 0 appareil alors que des Mac devraient correspondre. Quelle est la première cause à vérifier ?',
+      options: [
+        'Le serveur Jamf Pro est en maintenance planifiée',
+        'Les critères utilisent un opérateur incorrect ou une Extension Attribute non collectée (recon manquant)',
+        'Les Smart Groups ne fonctionnent que sur les appareils iOS',
+        'Il faut redémarrer le Mac pour recalculer le groupe',
+      ],
+      correctIndex: 1,
+      explanation: 'Les Smart Groups s\'appuient sur l\'inventaire Jamf. Si un Extension Attribute n\'a jamais été collecté (recon absent) ou si l\'opérateur/critère est mal formulé, le groupe restera vide. Vérifiez l\'inventaire du Mac et les critères AND/OR.',
+    },
   ],
 
   'filevault-gestion-jamf': [
@@ -326,6 +362,18 @@ export const QUIZZES: Record<string, QuizQuestion[]> = {
       ],
       correctIndex: 1,
       explanation: 'L\'escrow FileVault stocke la clé de récupération personnelle (PRK) dans Jamf Pro. Si un utilisateur oublie son mot de passe de démarrage, l\'IT peut récupérer la clé depuis Jamf Pro → Computer Record → Security → FileVault 2 Recovery Key.',
+    },
+    {
+      id: 'q2',
+      question: 'Un Mac affiche FileVault activé mais aucune clé de récupération dans Jamf Pro. Quelle cause est la plus probable ?',
+      options: [
+        'FileVault a été activé manuellement par l\'utilisateur sans profil MDM d\'escrow',
+        'Le Mac n\'est pas supervisé',
+        'Jamf Pro ne supporte pas FileVault sur Apple Silicon',
+        'La clé est stockée uniquement dans iCloud',
+      ],
+      correctIndex: 0,
+      explanation: 'L\'escrow nécessite un Configuration Profile FileVault avec la redirection de clé vers Jamf. Si FileVault a été activé hors MDM ou sans payload d\'escrow, Jamf ne recevra jamais la PRK — d\'où l\'importance d\'un déploiement centralisé via profil.',
     },
   ],
 
@@ -477,6 +525,13 @@ export const QUIZZES: Record<string, QuizQuestion[]> = {
       correctIndex: 1,
       explanation: 'Le Scope d\'une Policy détermine qui peut voir et exécuter l\'action dans Self Service. En ciblant un Smart Group basé sur le département, seuls les Mac concernés verront la Policy.',
     },
+    {
+      id: 'q3',
+      question: 'Quel trigger Jamf Pro est utilisé lorsqu\'un utilisateur lance une action depuis Self Service ?',
+      options: ['Login', 'Recurring Check-in', 'Self Service', 'Enrollment Complete'],
+      correctIndex: 2,
+      explanation: 'Le trigger "Self Service" ne s\'active que lorsque l\'utilisateur déclenche volontairement une Policy depuis l\'application Jamf Self Service — distinct du check-in récurrent ou du login.',
+    },
   ],
 
   'patch-management-jamf': [
@@ -503,6 +558,13 @@ export const QUIZZES: Record<string, QuizQuestion[]> = {
       ],
       correctIndex: 1,
       explanation: 'Une Patch Policy permet d\'automatiser les mises à jour avec une deadline (date limite) et un grace period (délai accordé à l\'utilisateur pour choisir le moment). Elle cible automatiquement les Mac ayant une version obsolète.',
+    },
+    {
+      id: 'q3',
+      question: 'Quel outil Jamf open source permet de synchroniser des titres logiciels et packages entre plusieurs instances Jamf Pro ?',
+      options: ['Jamf Composer', 'JamfSync', 'Jamf Connect', 'Jamf Protect'],
+      correctIndex: 1,
+      explanation: 'JamfSync (github.com/jamf/JamfSync) est l\'outil CLI officiel pour répliquer packages, titres et Distribution Points entre instances — utile pour les environnements dev/staging/prod ou multi-régions.',
     },
   ],
 
@@ -538,13 +600,25 @@ export const QUIZZES: Record<string, QuizQuestion[]> = {
       id: 'q2',
       question: 'Quelle est la durée de vie par défaut d\'un Bearer Token Jamf Pro API ?',
       options: [
-        '5 minutes',
+        '20 minutes',
         '30 minutes',
         '2 heures',
         '24 heures',
       ],
+      correctIndex: 0,
+      explanation: 'Les Bearer Tokens Jamf Pro API expirent après 20 minutes. Pour les scripts longue durée, prolongez le token via POST /v1/auth/keep-alive ou régénérez un nouveau token avant expiration.',
+    },
+    {
+      id: 'q3',
+      question: 'Quelle URL permet d\'accéder à la documentation API intégrée dans une instance Jamf Pro ?',
+      options: [
+        '/JSSResource/doc',
+        '/api/doc',
+        '/api/v1/swagger',
+        '/developer/doc',
+      ],
       correctIndex: 1,
-      explanation: 'Les Bearer Tokens Jamf Pro API expirent après 30 minutes par défaut. Pour les scripts longue durée, il faut implémenter un mécanisme de refresh via l\'endpoint /api/v1/auth/keep-alive ou régénérer un nouveau token avant expiration.',
+      explanation: 'Chaque instance Jamf Pro expose la documentation Swagger UI à /api/doc. La base URL de l\'API REST est /api ; la doc intégrée permet de tester les endpoints directement depuis le navigateur.',
     },
   ],
 
@@ -587,6 +661,30 @@ export const QUIZZES: Record<string, QuizQuestion[]> = {
       ],
       correctIndex: 1,
       explanation: 'pkgbuild est l\'outil Apple pour créer des composants de package PKG. L\'option --root spécifie le dossier payload, --identifier donne l\'identifiant bundle et --version la version. Pour des packages multi-composants, on utilise ensuite productbuild.',
+    },
+    {
+      id: 'q2',
+      question: 'À quoi sert un Distribution Point dans Jamf Pro ?',
+      options: [
+        'Héberger les packages et fichiers distribués aux Mac gérés via les Policies',
+        'Stocker les clés FileVault escrow',
+        'Gérer les certificats APNs Apple',
+        'Synchroniser les comptes Azure AD',
+      ],
+      correctIndex: 0,
+      explanation: 'Un Distribution Point (DP) est le dépôt de fichiers (packages, scripts, ressources) que les Mac téléchargent lors de l\'exécution des Policies. Il peut être local au JSS ou externe (CDN, cloud storage).',
+    },
+    {
+      id: 'q3',
+      question: 'JamfSync est principalement utilisé pour :',
+      options: [
+        'Synchroniser les mots de passe utilisateur avec Active Directory',
+        'Répliquer packages et titres logiciels entre instances Jamf Pro',
+        'Chiffrer les disques macOS à distance',
+        'Gérer les profils de configuration iOS',
+      ],
+      correctIndex: 1,
+      explanation: 'JamfSync automatise la réplication de contenu (packages, patch titles, Distribution Points) entre plusieurs serveurs Jamf Pro — évite la saisie manuelle dans chaque instance.',
     },
   ],
 
@@ -1109,7 +1207,7 @@ export const QUIZZES: Record<string, QuizQuestion[]> = {
         'Introduction — 30 minutes, 20 questions',
       ],
       correctIndex: 1,
-      explanation: 'Le Jamf 100 (Jamf Certified Tech) est un examen d\'entrée de gamme d\'environ 1h30 avec ~60 questions QCM. Il teste les fondamentaux Jamf Pro : enrôlement, Smart Groups, profils, policies, Self Service. C\'est le prérequis recommandé avant les certifications Jamf 170 et 200.',
+      explanation: 'Le Jamf 100 Course est un examen d\'entrée de gamme d\'environ 1h30 avec ~60 questions QCM. Il teste les fondamentaux Jamf Pro : enrôlement, Smart Groups, profils, policies, Self Service. C\'est le prérequis recommandé avant les parcours Jamf 170 et 200.',
     },
   ],
 
@@ -1124,22 +1222,22 @@ export const QUIZZES: Record<string, QuizQuestion[]> = {
         'Avoir une certification Apple Device Support',
       ],
       correctIndex: 1,
-      explanation: 'Jamf recommande d\'avoir la certification Jamf 100 avant de passer le Jamf 170 (Jamf Certified Admin). Une expérience pratique significative en scripting Bash, API Jamf Pro, packaging PKG et automatisation est nécessaire pour réussir cet examen avancé.',
+      explanation: 'Jamf recommande d\'avoir le Jamf 100 Course avant de passer le Jamf 170 Course. Une expérience pratique significative en scripting Bash, API Jamf Pro, packaging PKG et automatisation est nécessaire pour réussir cet examen avancé.',
     },
   ],
 
   'certification-jamf-200': [
     {
       id: 'q1',
-      question: 'Qu\'est-ce qui distingue le Jamf 200 (Expert) des autres certifications Jamf ?',
+      question: 'Qu\'est-ce qui distingue le Jamf 200 Course des autres parcours Jamf ?',
       options: [
         'Il est uniquement disponible en ligne',
-        'C\'est la certification la plus avancée Jamf, couvrant l\'architecture complète, Jamf Protect/Connect/Security Cloud, les intégrations Zero Trust et les projets enterprise complexes',
+        'C\'est un parcours intermédiaire couvrant l\'administration avancée Jamf Pro, le packaging, les scripts et les intégrations',
         'Il n\'y a pas d\'examen — c\'est basé sur un portfolio de projets uniquement',
         'Il est réservé aux ingénieurs Jamf employees',
       ],
       correctIndex: 1,
-      explanation: 'Le Jamf 200 (Jamf Certified Expert) est le niveau le plus élevé de certification Jamf. Il couvre l\'architecture complète de l\'écosystème Jamf (Pro, Protect, Connect, Security Cloud), les intégrations Zero Trust, les workflows enterprise complexes et la conception de solutions MDM à grande échelle.',
+      explanation: 'Le Jamf 200 Course approfondit l\'administration Jamf Pro : packaging, scripts, API, architecture et intégrations avancées. C\'est le niveau intermédiaire recommandé avant les parcours Jamf 300 et 400.',
     },
   ],
 
@@ -1169,7 +1267,258 @@ export const QUIZZES: Record<string, QuizQuestion[]> = {
         'Avoir une certification AWS ou GCP',
       ],
       correctIndex: 1,
-      explanation: 'MS-102 mène à "Microsoft 365 Certified: Enterprise Administrator Expert" — la certification Expert M365. Microsoft recommande d\'avoir d\'abord le MD-102 (ou MS-900, SC-900) car MS-102 couvre des sujets avancés : Entra ID governance, Microsoft Defender, Purview Compliance, et l\'administration tenant M365 complète.',
+      explanation: 'MS-102 mène à "Microsoft 365 Certified: Administrator Expert". Microsoft recommande d\'avoir d\'abord le MD-102 (Endpoint Administrator Associate) car MS-102 couvre des sujets avancés : Entra ID governance, Microsoft Defender, Purview Compliance, et l\'administration tenant M365 complète.',
+    },
+  ],
+
+  // ─── Module 10 — Gestion Moderne Apple ───────────────────────────────────
+  'histoire-mdm-apple': [
+    {
+      id: 'q1',
+      question: 'Quel service Apple est au cœur de la livraison des commandes MDM vers les appareils ?',
+      options: ['iCloud Drive', 'APNS (Apple Push Notification Service)', 'FaceTime', 'AirDrop'],
+      correctIndex: 1,
+      explanation: 'Le protocole MDM Apple s\'appuie sur APNS : le serveur envoie une notification push, l\'appareil se connecte ensuite au MDM pour récupérer les commandes en attente.',
+    },
+    {
+      id: 'q2',
+      question: 'Quelle innovation Apple (2021+) marque le passage vers la « gestion moderne » ?',
+      options: [
+        'Le retour du bind Active Directory obligatoire',
+        'Declarative Device Management (DDM)',
+        'La fin du chiffrement FileVault',
+        'La suppression d\'Apple Business Manager',
+      ],
+      correctIndex: 1,
+      explanation: 'DDM, annoncé à la WWDC 2021, introduit un modèle déclaratif où l\'appareil applique un état souhaité de façon autonome — pilier de la gestion moderne Apple.',
+    },
+  ],
+
+  'mdm-classique-vs-ddm': [
+    {
+      id: 'q1',
+      question: 'Quelle est la différence fondamentale entre MDM classique et DDM ?',
+      options: [
+        'DDM ne fonctionne que sur iPhone',
+        'MDM classique = commandes impératives serveur→appareil ; DDM = déclarations d\'état appliquées côté appareil',
+        'DDM remplace entièrement APNS',
+        'MDM classique est plus récent que DDM',
+      ],
+      correctIndex: 1,
+      explanation: 'Le MDM impératif attend des commandes explicites (InstallProfile, etc.). DDM envoie des déclarations : l\'appareil sait quel état maintenir et agit proactivement.',
+    },
+    {
+      id: 'q2',
+      question: 'Pourquoi le modèle classique atteint-il ses limites en environnement hybride ?',
+      options: [
+        'Il ne supporte pas FileVault',
+        'La latence check-in/polling et la charge serveur augmentent avec des appareils mobiles et distants',
+        'Il est incompatible avec Apple Silicon',
+        'Il nécessite un VPN permanent',
+      ],
+      correctIndex: 1,
+      explanation: 'En télétravail, les appareils ne check-in pas toujours au même rythme. Le polling constant crée latence et charge — DDM répartit l\'intelligence côté appareil.',
+    },
+  ],
+
+  'declarative-device-management': [
+    {
+      id: 'q1',
+      question: 'Quels sont les trois piliers de DDM selon Apple ?',
+      options: [
+        'VPN, AD et antivirus',
+        'Déclarations, status channel et extensibilité',
+        'ABM, APNS et iCloud',
+        'Smart Groups, Policies et Scripts',
+      ],
+      correctIndex: 1,
+      explanation: 'DDM repose sur les déclarations (état souhaité), le status channel (reporting appareil→serveur) et l\'extensibilité (nouveaux types de déclarations).',
+    },
+    {
+      id: 'q2',
+      question: 'Que permet une Software Update Declaration en DDM ?',
+      options: [
+        'Désactiver les mises à jour macOS',
+        'Définir une version cible que l\'appareil installera de façon autonome',
+        'Forcer un wipe à distance',
+        'Créer un compte admin local',
+      ],
+      correctIndex: 1,
+      explanation: 'Les Software Update Declarations permettent au MDM de déclarer la version OS cible ; l\'appareil gère le téléchargement et l\'installation sans commandes répétées.',
+    },
+  ],
+
+  'cloud-first-management': [
+    {
+      id: 'q1',
+      question: 'Quel principe définit une stratégie « cloud-first » pour Apple ?',
+      options: [
+        'Conserver Active Directory on-premise comme source d\'identité unique',
+        'IdP cloud, MDM SaaS et ABM comme fondations — minimiser l\'infra locale',
+        'Désactiver la supervision MDM',
+        'Utiliser uniquement des appareils non managés',
+      ],
+      correctIndex: 1,
+      explanation: 'Cloud-first place l\'identité (Entra ID, Google), le MDM (Jamf Cloud) et ABM dans le cloud, éliminant bind AD et serveurs MDM on-premise.',
+    },
+    {
+      id: 'q2',
+      question: 'Quel outil Jamf remplace typiquement le bind AD local sur macOS ?',
+      options: ['Jamf Protect', 'Jamf Connect', 'Jamf School', 'Jamf Composer'],
+      correctIndex: 1,
+      explanation: 'Jamf Connect authentifie les utilisateurs via IdP cloud (Entra ID) et crée des comptes locaux synchronisés — sans bind AD traditionnel.',
+    },
+  ],
+
+  'device-trust-apple': [
+    {
+      id: 'q1',
+      question: 'Qu\'est-ce qu\'un « signal de conformité » dans la gestion moderne ?',
+      options: [
+        'Un email de rappel aux utilisateurs',
+        'Une donnée remontée par le MDM (FileVault, OS version, etc.) utilisée pour décider l\'accès',
+        'Un certificat SSL du serveur MDM',
+        'Un profil Wi-Fi entreprise',
+      ],
+      correctIndex: 1,
+      explanation: 'Les signaux de conformité (FileVault actif, OS à jour, absence de malware) alimentent Conditional Access et device trust pour autoriser ou bloquer l\'accès.',
+    },
+    {
+      id: 'q2',
+      question: 'Comment Jamf Pro contribue-t-il au device trust avec Microsoft Entra ID ?',
+      options: [
+        'En remplaçant Entra ID',
+        'En remontant l\'état de conformité des Mac vers Entra pour Conditional Access',
+        'En désactivant MFA',
+        'En créant des comptes Apple ID',
+      ],
+      correctIndex: 1,
+      explanation: 'L\'intégration Jamf + Entra ID transmet la conformité du Mac (via Jamf) à Conditional Access, qui peut bloquer l\'accès M365 si l\'appareil n\'est pas conforme.',
+    },
+  ],
+
+  'identity-access-management-apple': [
+    {
+      id: 'q1',
+      question: 'Quelle est la différence entre un Apple ID personnel et un Managed Apple Account ?',
+      options: [
+        'Aucune — ce sont identiques',
+        'Le MAA est créé et géré par l\'organisation via ABM, pas par l\'utilisateur',
+        'Le MAA ne fonctionne que sur iPhone',
+        'L\'Apple ID personnel est obligatoire en entreprise',
+      ],
+      correctIndex: 1,
+      explanation: 'Les Managed Apple Accounts (MAA) sont provisionnés par l\'organisation via ABM ou fédération IdP — l\'IT contrôle le cycle de vie, contrairement à un Apple ID personnel.',
+    },
+    {
+      id: 'q2',
+      question: 'Quel protocole est couramment utilisé pour fédérer ABM avec Entra ID ?',
+      options: ['FTP', 'OIDC / SAML via fédération', 'SNMP', 'LDAP bind uniquement'],
+      correctIndex: 1,
+      explanation: 'La fédération ABM avec Entra ID utilise OIDC/SAML pour synchroniser identités et permettre aux utilisateurs de s\'authentifier avec leurs credentials entreprise.',
+    },
+  ],
+
+  'jamf-connect-gestion-moderne': [
+    {
+      id: 'q1',
+      question: 'Quel est le rôle principal de Jamf Connect Login ?',
+      options: [
+        'Installer des applications depuis Self Service',
+        'Authentifier l\'utilisateur via IdP cloud à l\'écran de connexion macOS',
+        'Chiffrer le disque FileVault',
+        'Gérer les certificats APNs',
+      ],
+      correctIndex: 1,
+      explanation: 'Jamf Connect Login remplace l\'écran de connexion local par une authentification cloud (Entra ID, Okta) et provisionne le compte macOS correspondant.',
+    },
+    {
+      id: 'q2',
+      question: 'Pourquoi Jamf Connect est-il central dans la gestion moderne ?',
+      options: [
+        'Il remplace Jamf Pro entièrement',
+        'Il unifie identité cloud et expérience Mac sans AD on-premise',
+        'Il gère uniquement les iPad',
+        'Il est requis pour DDM',
+      ],
+      correctIndex: 1,
+      explanation: 'La gestion moderne repose sur identité cloud + appareil conforme. Jamf Connect fait le lien entre IdP et session macOS, éliminant le bind AD legacy.',
+    },
+  ],
+
+  'zero-trust-apple': [
+    {
+      id: 'q1',
+      question: 'Quel principe Zero Trust signifie « ne jamais faire confiance au réseau » ?',
+      options: [
+        'Moindre privilège',
+        'Vérifier explicitement chaque accès, indépendamment du réseau (VPN ou bureau)',
+        'Présumer la compromission',
+        'Chiffrement FileVault',
+      ],
+      correctIndex: 1,
+      explanation: 'Zero Trust exige de vérifier identité, appareil et contexte à chaque accès — le fait d\'être « sur le réseau entreprise » ne suffit plus.',
+    },
+    {
+      id: 'q2',
+      question: 'Quelle combinaison typique implémente Zero Trust sur macOS ?',
+      options: [
+        'VPN permanent + antivirus seul',
+        'Jamf Pro (conformité) + Jamf Connect (identité) + Entra Conditional Access',
+        'Apple ID + iCloud',
+        'Bind AD + pare-feu réseau',
+      ],
+      correctIndex: 1,
+      explanation: 'La stack Zero Trust Apple combine conformité appareil (Jamf), identité cloud (Jamf Connect + Entra) et politiques d\'accès (Conditional Access).',
+    },
+  ],
+
+  'conformite-moderne-apple': [
+    {
+      id: 'q1',
+      question: 'Comment DDM améliore-t-il le reporting de conformité ?',
+      options: [
+        'Il supprime tout reporting',
+        'Le status channel remonte l\'état des déclarations en temps quasi réel',
+        'Il nécessite un audit manuel mensuel',
+        'Il remplace les Smart Groups',
+      ],
+      correctIndex: 1,
+      explanation: 'DDM permet aux appareils de reporter proactivement l\'état de leurs déclarations via le status channel — données plus fraîches pour la conformité.',
+    },
+    {
+      id: 'q2',
+      question: 'Quel cadre est souvent mappé aux contrôles MDM macOS en entreprise ?',
+      options: ['HTML5', 'CIS Apple macOS Benchmark', 'SMTP', 'DNSSEC'],
+      correctIndex: 1,
+      explanation: 'Le CIS Benchmark macOS fournit des contrôles mesurables (FileVault, Gatekeeper, etc.) alignables avec profils MDM et Smart Groups Jamf.',
+    },
+  ],
+
+  'futur-mdm-apple': [
+    {
+      id: 'q1',
+      question: 'Selon Apple et l\'industrie, quelle direction prend le protocole MDM ?',
+      options: [
+        'Retour au MDM impératif uniquement',
+        'Extension progressive de DDM et autonomie appareil',
+        'Fin du MDM au profit d\'antivirus',
+        'Obligation du bind AD',
+      ],
+      correctIndex: 1,
+      explanation: 'Apple positionne DDM comme l\'avenir du MDM : plus de types de déclarations, moins de commandes impératives, appareils plus autonomes.',
+    },
+    {
+      id: 'q2',
+      question: 'Quelle source est recommandée pour rester à jour sur l\'avenir MDM Apple ?',
+      options: [
+        'Forums Windows uniquement',
+        'WWDC Device Management sessions + Apple Developer Documentation + Jamf Learn',
+        'Documentation Oracle',
+        'RFC SMTP',
+      ],
+      correctIndex: 1,
+      explanation: 'Apple annonce les évolutions MDM/DDM à la WWDC ; la doc développeur et Jamf Learn complètent la veille pour les admins enterprise.',
     },
   ],
 

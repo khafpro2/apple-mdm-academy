@@ -1,5 +1,6 @@
 import clsx from 'clsx';
 import { type Level, type Status, type Tool } from '@/lib/courses';
+import ProductIcon from '@/components/icons/ProductIcon';
 
 // ── Level Badge ──────────────────────────────────────────────────────────────
 const LEVEL_STYLES: Record<Level, string> = {
@@ -79,9 +80,10 @@ const TOOL_COLORS: Partial<Record<Tool, string>> = {
 export function ToolBadge({ tool }: { tool: Tool }) {
   return (
     <span className={clsx(
-      'inline-flex items-center px-2 py-0.5 rounded-full border text-[11px] font-medium',
+      'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[11px] font-medium',
       TOOL_COLORS[tool] ?? 'bg-gray-500/12 text-gray-400 border-gray-500/20'
     )}>
+      <ProductIcon tool={tool} size={14} className="h-3.5 w-3.5" />
       {tool}
     </span>
   );
