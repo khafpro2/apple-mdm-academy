@@ -12,7 +12,7 @@ import { isClerkConfigured, isCloudProgressEnabled } from '@/lib/auth-config';
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL ?? 'https://mdm-academy.vercel.app'),
   title: { default: 'MDM Academy', template: '%s — MDM Academy' },
-  description: 'Plateforme de formation professionnelle Apple Enterprise, Jamf Pro, Microsoft Intune et Android Enterprise. 60 cours, 9 modules, 16 certifications officielles.',
+  description: 'Plateforme de formation professionnelle Apple Enterprise, Jamf Pro, Microsoft Intune et Android Enterprise. 70 cours, 10 modules, 17 certifications officielles, 12 labs interactifs.',
   keywords: [
     'Apple MDM', 'Jamf Pro', 'Microsoft Intune', 'Apple Business Manager',
     'Formation IT', 'macOS Management', 'iOS Management', 'Android Enterprise',
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     locale: 'fr_FR',
     siteName: 'MDM Academy',
     title: 'MDM Academy — Formation Apple Enterprise',
-    description: 'Plateforme de formation professionnelle Apple Enterprise, Jamf, Intune et Android Enterprise. 60 cours, 9 modules, 17 certifications officielles.',
+    description: 'Plateforme de formation professionnelle Apple Enterprise, Jamf, Intune et Android Enterprise. 70 cours, 10 modules, 17 certifications officielles, 12 labs interactifs.',
     url: 'https://mdm-academy.vercel.app',
     images: [
       {
