@@ -9,7 +9,6 @@ import dynamic from 'next/dynamic';
 const AuthButton = dynamic(() => import('./AuthButton'), { ssr: false });
 import clsx from 'clsx';
 import { search, type SearchResult } from '@/lib/search';
-import { Show, SignInButton, UserButton } from '@clerk/nextjs';
 
 const NAV_LINKS = [
   { href: '/parcours',      label: 'Parcours',       icon: GraduationCap },
@@ -143,23 +142,6 @@ function SearchModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-function AuthControls() {
-  return (
-    <>
-      <Show when="signed-out">
-        <SignInButton mode="redirect">
-          <button className="px-3 py-2 text-xs font-semibold text-gray-300 hover:text-white transition-colors">
-            Connexion
-          </button>
-        </SignInButton>
-      </Show>
-      <Show when="signed-in">
-        <UserButton />
-      </Show>
-    </>
-  );
-}
-
 export default function Header({ authEnabled = false }: { authEnabled?: boolean }) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -241,7 +223,6 @@ export default function Header({ authEnabled = false }: { authEnabled?: boolean 
 
             {/* Mobile search + CTA + burger */}
             <div className="flex items-center gap-2">
-              {authEnabled && <AuthControls />}
               <button
                 onClick={() => setSearchOpen(true)}
                 className="sm:hidden p-2 rounded-lg text-gray-500 hover:text-gray-300 hover:bg-white/6 transition-colors"
@@ -260,9 +241,11 @@ export default function Header({ authEnabled = false }: { authEnabled?: boolean 
               </Link>
 
               {/* Auth — UserButton si connecté, SignInButton sinon */}
+              {authEnabled && (
               <div className="hidden sm:flex">
                 <AuthButton />
               </div>
+              )}
 
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
@@ -303,9 +286,11 @@ export default function Header({ authEnabled = false }: { authEnabled?: boolean 
                   <GraduationCap size={16} />
                   Commencer la formation
                 </Link>
+                {authEnabled && (
                 <div className="flex justify-center py-1">
                   <AuthButton />
                 </div>
+                )}
               </div>
             </nav>
           </div>

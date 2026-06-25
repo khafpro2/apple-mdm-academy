@@ -160,13 +160,17 @@ body {
   border-radius: var(--radius-lg);
   padding: 1.25rem 1.5rem;
   overflow-x: auto;
+  max-width: 100%;
   margin: 1.25rem 0;
   position: relative;
 }
 .prose pre code {
   background: none;
   border: none;
+  display: block;
   padding: 0;
+  min-width: 100%;
+  width: max-content;
   font-size: 0.875rem;
   color: #CBD5E1;
 }
@@ -179,7 +183,7 @@ body {
 }
 .prose blockquote p { color: #A8B4FF; margin: 0; }
 .prose hr { border: none; border-top: 1px solid var(--border-subtle); margin: 2rem 0; }
-.prose table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.875rem; }
+.prose table { display: block; width: 100%; max-width: 100%; overflow-x: auto; border-collapse: collapse; margin: 1rem 0; font-size: 0.875rem; }
 .prose th { background: var(--surface-3); color: var(--text-primary); font-weight: 600; text-align: left; padding: 0.6rem 0.875rem; border-bottom: 1px solid var(--border-default); }
 .prose td { padding: 0.5rem 0.875rem; border-bottom: 1px solid var(--border-subtle); }
 .prose tr:last-child td { border-bottom: none; }
