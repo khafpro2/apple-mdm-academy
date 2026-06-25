@@ -1,12 +1,12 @@
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
-import { MODULES, getAllCourses } from '@/lib/courses';
+import { MODULES, getAllCourses, STATS } from '@/lib/courses';
 import ModuleCard from '@/components/cours/ModuleCard';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Modules de formation — MDM Academy',
-  description: 'Parcourez les 9 modules de formation Apple, Jamf et Microsoft Intune — du débutant à l\'expert.',
+  description: `Parcourez les ${STATS.totalModules} modules de formation Apple, Jamf et Microsoft Intune — du débutant à l'expert.`,
 };
 
 export default function ModulesPage() {
